@@ -1,0 +1,8 @@
+# Ignorar arquivos sensíveis
+/php/db.php
+
+# Ignorar arquivos temporários
+/public/gerar_hash.php
+
+# Sistema
+.DS_Store
