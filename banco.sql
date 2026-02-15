@@ -1,3 +1,4 @@
+-- Active: 1767988838949@@127.0.0.1@3306@bolao_copa
 -- =========================================================
 -- BANCO: Bolão Copa (multi-edição), com zebra por jogo
 -- =========================================================
@@ -204,5 +205,22 @@ CREATE TABLE IF NOT EXISTS pontos_palpite (
 INSERT INTO edicoes (nome, ano, ativo)
 VALUES ('Copa do Mundo 2026', 2026, 1)
 ON DUPLICATE KEY UPDATE nome = VALUES(nome), ativo = VALUES(ativo);
+
+
+INSERT INTO usuarios
+(id, nome, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo, criado_em, atualizado_em)
+VALUES
+(2,
+ 'Maurício Terra',
+ 'mauriciopterra@gmail.com',
+ '53981203614',
+ 'Rio Grande',
+ 'RS',
+ '$2y$10$ApdmEihf2DVmgSFuvyjHquxII.lvm6thGNrMKmNbb/Z76CHEw74Ki',
+ 'ADMIN',
+ 1,
+ '2026-02-15 10:56:27',
+ '2026-02-15 10:56:27');
+
 
 

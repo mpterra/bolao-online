@@ -1,52 +1,56 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-require_once 'db.php';
+session_start();
+
+require_once __DIR__ . "/conexao.php";
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    header("Location: /bolao-da-copa/public/index.php");
+    header("Location: /bolao-da-copa/public/cadastro.php");
     exit;
 }
 
-$nome     = trim($_POST["nome"]);
-$email    = trim($_POST["email"]);
-$telefone = trim($_POST["telefone"]);
-$cidade   = trim($_POST["cidade"]);
-$estado   = strtoupper(trim($_POST["estado"]));
-$senha    = $_POST["senha"];
+$nome     = trim($_POST["nome"] ?? "");
+$email    = trim($_POST["email"] ?? "");
+$telefone = trim($_POST["telefone"] ?? "");
+$cidade   = trim($_POST["cidade"] ?? "");
+$estado   = strtoupper(trim($_POST["estado"] ?? ""));
+$senha    = (string)($_POST["senha"] ?? "");
+
+if ($nome === "" || $email === "" || $telefone === "" || $cidade === "" || $estado === "" || $senha === "") {
+    exit("Preencha todos os campos.");
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    exit("Email inválido.");
+}
 
 if (strlen($estado) !== 2) {
-    exit("Estado inválido.");
+    exit("UF inválida. Use 2 letras.");
 }
 
-$senha_hash = password_hash($senha, PASSWORD_DEFAULT);
+$senhaHash = password_hash($senha, PASSWORD_DEFAULT);
 
 try {
+    // email é UNIQUE no schema (uk_usuarios_email)
+    $check = $pdo->prepare("SELECT id FROM usuarios WHERE email = ? LIMIT 1");
+    $check->execute([$email]);
 
-    $sql = "INSERT INTO usuarios 
-            (nome, email, telefone, cidade, estado, senha_hash, tipo_usuario)
-            VALUES 
-            (:nome, :email, :telefone, :cidade, :estado, :senha_hash, 'APOSTADOR')";
-
-    $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        ":nome"       => $nome,
-        ":email"      => $email,
-        ":telefone"   => $telefone,
-        ":cidade"     => $cidade,
-        ":estado"     => $estado,
-        ":senha_hash" => $senha_hash
-    ]);
-
-    header("Location: /bolao-da-copa/public/index.php?cadastro=sucesso");
-    exit;
-
-} catch (PDOException $e) {
-
-    if ($e->errorInfo[1] == 1062) {
-        exit("Email já cadastrado.");
+    if ($check->fetch()) {
+        exit("Já existe uma conta com esse email.");
     }
 
-    exit("Erro ao cadastrar usuário.");
+    // Schema real: senha_hash
+    $sql = "INSERT INTO usuarios (nome, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo)
+            VALUES (?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
+
+    $ins = $pdo->prepare($sql);
+    $ins->execute([$nome, $email, $telefone, $cidade, $estado, $senhaHash]);
+
+    // volta pra tela de cadastro para abrir o modal e, ao OK, retornar ao login
+    header("Location: /bolao-da-copa/public/cadastro.php?sucesso=1");
+    exit;
+
+} catch (Exception $e) {
+    exit("Erro ao cadastrar: " . $e->getMessage());
 }
