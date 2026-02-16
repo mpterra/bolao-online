@@ -89,12 +89,13 @@ try {
     }
 
     // -----------------------------
-    // SQL base (igual ao export individual)
+    // SQL base (igual ao export individual) + codigo_fifa
     // -----------------------------
     $sql = "
         SELECT
             g.codigo AS grupo_codigo,
             j.data_hora,
+            j.codigo_fifa,
             tc.nome AS casa_nome,
             p.gols_casa,
             tf.nome AS fora_nome,
@@ -146,6 +147,7 @@ try {
         $html .= "<tr>";
         $html .= "<th>Grupo</th>";
         $html .= "<th>Data/Hora</th>";
+        $html .= "<th>Código FIFA</th>";
         $html .= "<th>Time da casa</th>";
         $html .= "<th>Placar casa</th>";
         $html .= "<th>Time visitante</th>";
@@ -156,10 +158,17 @@ try {
 
         foreach ($rows as $r) {
             $grupo = (string)$r["grupo_codigo"];
+
             $dhRaw = (string)$r["data_hora"];
             $dh = $dhRaw;
             $ts2 = strtotime($dhRaw);
             if ($ts2 !== false) $dh = date("d/m/Y H:i", $ts2);
+
+            $codigoFifaRaw = $r["codigo_fifa"] ?? "";
+            $codigoFifa = "";
+            if ($codigoFifaRaw !== null) {
+                $codigoFifa = trim((string)$codigoFifaRaw);
+            }
 
             $casa = (string)$r["casa_nome"];
             $fora = (string)$r["fora_nome"];
@@ -172,6 +181,7 @@ try {
             $html .= "<tr>";
             $html .= "<td>" . strh($grupo) . "</td>";
             $html .= "<td>" . strh($dh) . "</td>";
+            $html .= "<td>" . strh($codigoFifa) . "</td>";
             $html .= "<td>" . strh($casa) . "</td>";
             $html .= "<td>" . strh($gcStr) . "</td>";
             $html .= "<td>" . strh($fora) . "</td>";

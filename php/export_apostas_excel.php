@@ -71,6 +71,7 @@ try {
         SELECT
             g.codigo AS grupo_codigo,
             j.data_hora,
+            j.codigo_fifa,
             tc.nome AS casa_nome,
             p.gols_casa,
             tf.nome AS fora_nome,
@@ -112,6 +113,7 @@ try {
     echo "<tr>";
     echo "<th>Grupo</th>";
     echo "<th>Data/Hora</th>";
+    echo "<th>Código FIFA</th>";
     echo "<th>Time da casa</th>";
     echo "<th>Placar casa</th>";
     echo "<th>Time visitante</th>";
@@ -122,10 +124,17 @@ try {
 
     foreach ($rows as $r) {
         $grupo = (string)$r["grupo_codigo"];
+
         $dhRaw = (string)$r["data_hora"];
         $dh = $dhRaw;
         $ts2 = strtotime($dhRaw);
         if ($ts2 !== false) $dh = date("d/m/Y H:i", $ts2);
+
+        $codigoFifaRaw = $r["codigo_fifa"] ?? "";
+        $codigoFifa = "";
+        if ($codigoFifaRaw !== null) {
+            $codigoFifa = trim((string)$codigoFifaRaw);
+        }
 
         $casa = (string)$r["casa_nome"];
         $fora = (string)$r["fora_nome"];
@@ -138,6 +147,7 @@ try {
         echo "<tr>";
         echo "<td>" . strh($grupo) . "</td>";
         echo "<td>" . strh($dh) . "</td>";
+        echo "<td>" . strh($codigoFifa) . "</td>";
         echo "<td>" . strh($casa) . "</td>";
         echo "<td>" . strh($gcStr) . "</td>";
         echo "<td>" . strh($fora) . "</td>";
