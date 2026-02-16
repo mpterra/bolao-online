@@ -151,6 +151,10 @@ function logical_bet_day(DateTimeImmutable $dt): string {
  *     * jogos na madrugada do dia seguinte (00:00–04:59), que “pertencem” ao dia
  *
  * Retorna null se não existir jogo naquele dia lógico.
+ *
+ * ✅ FIX CRÍTICO:
+ * Alguns ambientes com PDO MySQL não aceitam o MESMO placeholder nomeado repetido na query.
+ * Por isso usamos :day1 e :day2 (evita SQLSTATE[HY093]).
  */
 function compute_lock_for_logical_day(PDO $pdo, string $dayYmd): ?DateTimeImmutable {
 	$sql = "
@@ -160,12 +164,15 @@ function compute_lock_for_logical_day(PDO $pdo, string $dayYmd): ?DateTimeImmuta
 		WHERE j.grupo_id IS NOT NULL
 		  AND (j.fase = 'GRUPOS' OR j.fase = 'GRUPO' OR j.fase = 'FASE_DE_GRUPOS' OR j.fase LIKE '%GRUP%')
 		  AND (
-				(DATE(j.data_hora) = :day AND TIME(j.data_hora) >= '05:00:00')
-			 OR (DATE(j.data_hora) = DATE_ADD(:day, INTERVAL 1 DAY) AND TIME(j.data_hora) < '05:00:00')
+				(DATE(j.data_hora) = :day1 AND TIME(j.data_hora) >= '05:00:00')
+			 OR (DATE(j.data_hora) = DATE_ADD(:day2, INTERVAL 1 DAY) AND TIME(j.data_hora) < '05:00:00')
 		  )
 	";
 	$st = $pdo->prepare($sql);
-	$st->execute([":day" => $dayYmd]);
+	$st->execute([
+		":day1" => $dayYmd,
+		":day2" => $dayYmd,
+	]);
 	$minDt = $st->fetchColumn();
 
 	$first = dt_from_mysql(is_string($minDt) ? $minDt : null);
@@ -395,6 +402,7 @@ try {
 	$sqlJogos = "
         SELECT
             j.id,
+            j.codigo_fifa,
             j.grupo_id,
             g.codigo AS grupo_codigo,
             j.rodada,
@@ -612,6 +620,8 @@ try {
 									$csig = (string)$j["casa_sigla"];
 									$fsig = (string)$j["fora_sigla"];
 
+									$codigoFifa = isset($j["codigo_fifa"]) ? trim((string)$j["codigo_fifa"]) : "";
+
 									$dtGame = dt_from_mysql((string)$j["data_hora"]);
 									$lockReason = lock_reason_for_game($dtGame, $now, $pdo, $lockCache);
 									$isLocked = ($lockReason !== null);
@@ -634,12 +644,16 @@ try {
 											 data-when="<?php echo strh($dh); ?>"
 											 data-home="<?php echo strh($casa); ?>"
 											 data-away="<?php echo strh($fora); ?>"
+											 data-fifa="<?php echo strh($codigoFifa); ?>"
 											 data-locked="<?php echo $isLocked ? "1" : "0"; ?>">
 										<div class="match-top">
 											<div class="match-when">
 												<span class="when"><?php echo strh($dh); ?></span>
 												<?php if ($rodada !== null): ?>
 													<span class="round">Rodada <?php echo $rodada; ?></span>
+												<?php endif; ?>
+												<?php if ($codigoFifa !== ""): ?>
+													<span class="round">FIFA <?php echo strh($codigoFifa); ?></span>
 												<?php endif; ?>
 											</div>
 
