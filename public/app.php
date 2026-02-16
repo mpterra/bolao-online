@@ -20,7 +20,16 @@ require_once __DIR__ . "/../php/conexao.php";
 | - Botão "Anterior (Grupo X)" ao final do grupo (NOVO)
 | - Botão "Recibo" imprime todas as apostas do apostador (por grupo)
 |--------------------------------------------------------------------------
+|
+| ✅ REGRA DE BLOQUEIO (NOVO)
+| - Jogos passados (data_hora <= agora): sempre bloqueados.
+| - Jogos de HOJE: 1h antes do PRIMEIRO jogo do dia, bloqueia TODOS os jogos de hoje.
+| - Jogos futuros: liberados.
+|--------------------------------------------------------------------------
 */
+
+// ✅ Timezone oficial da aplicação (evita UTC “comendo” seu horário)
+date_default_timezone_set('America/Sao_Paulo');
 
 function json_response(array $data, int $code = 200): void {
 	http_response_code($code);
@@ -44,6 +53,10 @@ function fmt_datahora(string $dt): string {
 	$ts = strtotime($dt);
 	if ($ts === false) return $dt;
 	return date("d/m H:i", $ts);
+}
+
+function fmt_hm(DateTimeInterface $dt): string {
+	return $dt->format('H:i');
 }
 
 /**
@@ -91,6 +104,78 @@ function flag_url(string $teamName): ?string {
 	return null;
 }
 
+/**
+ * Converte string DATETIME do MySQL -> DateTimeImmutable no timezone oficial.
+ * Retorna null se não conseguir interpretar.
+ */
+function dt_from_mysql(?string $dt): ?DateTimeImmutable {
+	if (!$dt) return null;
+	try {
+		$tz = new DateTimeZone('America/Sao_Paulo');
+		// formato típico MySQL: Y-m-d H:i:s
+		$parsed = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dt, $tz);
+		if ($parsed instanceof DateTimeImmutable) return $parsed;
+
+		// fallback mais permissivo
+		$parsed2 = new DateTimeImmutable($dt, $tz);
+		return $parsed2;
+	} catch (Throwable $e) {
+		return null;
+	}
+}
+
+/**
+ * Calcula o instante do bloqueio de HOJE:
+ * - se existe jogo hoje: (primeiro jogo hoje - 1h)
+ * - se não existe jogo hoje: null
+ */
+function compute_lock_today(PDO $pdo, string $todayYmd): ?DateTimeImmutable {
+	$sqlFirstToday = "
+		SELECT MIN(j.data_hora)
+		FROM jogos j
+		INNER JOIN edicoes e ON e.id = j.edicao_id AND e.ativo = 1
+		WHERE j.grupo_id IS NOT NULL
+		  AND (j.fase = 'GRUPOS' OR j.fase = 'GRUPO' OR j.fase = 'FASE_DE_GRUPOS' OR j.fase LIKE '%GRUP%')
+		  AND DATE(j.data_hora) = :today
+	";
+	$st = $pdo->prepare($sqlFirstToday);
+	$st->execute([":today" => $todayYmd]);
+	$minDt = $st->fetchColumn();
+
+	$first = dt_from_mysql(is_string($minDt) ? $minDt : null);
+	if (!$first) return null;
+
+	return $first->sub(new DateInterval('PT1H'));
+}
+
+/**
+ * Decide se um jogo está bloqueado e por quê, seguindo as regras.
+ */
+function lock_reason_for_game(
+	?DateTimeImmutable $gameDt,
+	DateTimeImmutable $now,
+	string $todayYmd,
+	?DateTimeImmutable $lockTodayAt
+): ?string {
+	if (!$gameDt) {
+		return "Data/hora inválida do jogo.";
+	}
+
+	// (1) Jogo passado / já iniciado
+	if ($gameDt <= $now) {
+		return "Jogo já iniciado/encerrado.";
+	}
+
+	// (2) Regra do dia: 1h antes do primeiro jogo de hoje, trava TODOS de hoje
+	if ($gameDt->format('Y-m-d') === $todayYmd && $lockTodayAt instanceof DateTimeImmutable) {
+		if ($now >= $lockTodayAt) {
+			return "Apostas de hoje bloqueadas desde " . fmt_hm($lockTodayAt) . ".";
+		}
+	}
+
+	return null; // liberado
+}
+
 require_login();
 
 $usuarioId   = (int)$_SESSION["usuario_id"];
@@ -98,6 +183,10 @@ $usuarioNome = isset($_SESSION["usuario_nome"]) ? (string)$_SESSION["usuario_nom
 
 $tipoUsuario = isset($_SESSION["tipo_usuario"]) ? (string)$_SESSION["tipo_usuario"] : "";
 $isAdmin = (mb_strtoupper($tipoUsuario, "UTF-8") === "ADMIN");
+
+$tz = new DateTimeZone('America/Sao_Paulo');
+$now = new DateTimeImmutable('now', $tz);
+$todayYmd = $now->format('Y-m-d');
 
 /* ---------------------------
    Logout (opcional)
@@ -150,10 +239,14 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	}
 
 	try {
+		// calcula o lock do dia UMA vez por request
+		$lockTodayAt = compute_lock_today($pdo, $todayYmd);
+
 		$pdo->beginTransaction();
 
+		// ✅ agora traz também data_hora, pois precisamos validar bloqueio
 		$sqlCheck = "
-            SELECT j.id
+            SELECT j.id, j.data_hora
             FROM jogos j
             INNER JOIN edicoes e ON e.id = j.edicao_id AND e.ativo = 1
             WHERE j.id = :jogo_id
@@ -173,11 +266,31 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
         ";
 		$stUpsert = $pdo->prepare($sqlUpsert);
 
+		$blocked = [];
 		$saved = 0;
+
 		foreach ($normalized as $row) {
 			$stCheck->execute([":jogo_id" => $row["jogo_id"]]);
-			$ok = (bool)$stCheck->fetchColumn();
-			if (!$ok) continue;
+			$game = $stCheck->fetch(PDO::FETCH_ASSOC);
+
+			if (!is_array($game) || empty($game["id"])) {
+				$blocked[] = [
+					"jogo_id" => $row["jogo_id"],
+					"reason"  => "Jogo inválido (não é fase de grupos/edição ativa)."
+				];
+				continue;
+			}
+
+			$gameDt = dt_from_mysql(isset($game["data_hora"]) ? (string)$game["data_hora"] : null);
+			$reason = lock_reason_for_game($gameDt, $now, $todayYmd, $lockTodayAt);
+
+			if ($reason !== null) {
+				$blocked[] = [
+					"jogo_id" => (int)$row["jogo_id"],
+					"reason"  => $reason,
+				];
+				continue;
+			}
 
 			$stUpsert->execute([
 				":usuario_id" => $usuarioId,
@@ -186,6 +299,19 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 				":gols_fora"  => $row["gols_fora"],
 			]);
 			$saved++;
+		}
+
+		// Se tentou salvar qualquer jogo bloqueado, falha o request (regra rígida)
+		if (count($blocked) > 0) {
+			if ($pdo->inTransaction()) $pdo->rollBack();
+
+			$firstMsg = $blocked[0]["reason"] ?? "Apostas bloqueadas.";
+			json_response([
+				"ok" => false,
+				"message" => $firstMsg,
+				"blocked_count" => count($blocked),
+				"blocked" => $blocked,
+			], 423);
 		}
 
 		$pdo->commit();
@@ -209,6 +335,10 @@ try {
 	if ($edicaoId <= 0) {
 		throw new RuntimeException("Nenhuma edição ativa.");
 	}
+
+	// calcula o lock do dia para o render (UI)
+	$lockTodayAt = compute_lock_today($pdo, $todayYmd);
+	$lockTodayActive = ($lockTodayAt instanceof DateTimeImmutable) ? ($now >= $lockTodayAt) : false;
 
 	$sqlGrupos = "
         SELECT g.id, g.codigo, COALESCE(g.nome, CONCAT('Grupo ', g.codigo)) AS nome
@@ -377,6 +507,12 @@ try {
 
 				<div class="hint">
 					Dica: preencha os placares e salve. Você também pode salvar jogo a jogo.
+					<?php if (isset($lockTodayAt) && $lockTodayAt instanceof DateTimeImmutable): ?>
+						<br>
+						<small>
+							Hoje trava às <strong><?php echo strh(fmt_hm($lockTodayAt)); ?></strong> (1h antes do primeiro jogo do dia).
+						</small>
+					<?php endif; ?>
 				</div>
 			</div>
 		</aside>
@@ -432,6 +568,11 @@ try {
 									$fora = (string)$j["fora_nome"];
 									$csig = (string)$j["casa_sigla"];
 									$fsig = (string)$j["fora_sigla"];
+
+									$dtGame = dt_from_mysql((string)$j["data_hora"]);
+									$lockReason = lock_reason_for_game($dtGame, $now, $todayYmd, $lockTodayAt ?? null);
+									$isLocked = ($lockReason !== null);
+
 									$dh = fmt_datahora((string)$j["data_hora"]);
 									$rodada = $j["rodada"] !== null ? (int)$j["rodada"] : null;
 
@@ -444,12 +585,13 @@ try {
 									$flagCasa = flag_url($casa);
 									$flagFora = flag_url($fora);
 									?>
-									<article class="match-card"
+									<article class="match-card <?php echo $isLocked ? "is-locked" : ""; ?>"
 											 data-jogo-id="<?php echo $jid; ?>"
 											 data-grupo="<?php echo strh($codigo); ?>"
 											 data-when="<?php echo strh($dh); ?>"
 											 data-home="<?php echo strh($casa); ?>"
-											 data-away="<?php echo strh($fora); ?>">
+											 data-away="<?php echo strh($fora); ?>"
+											 data-locked="<?php echo $isLocked ? "1" : "0"; ?>">
 										<div class="match-top">
 											<div class="match-when">
 												<span class="when"><?php echo strh($dh); ?></span>
@@ -484,11 +626,13 @@ try {
 											<div class="scorebox">
 												<input class="score score-home" type="number" inputmode="numeric" min="0" max="99"
 													   value="<?php echo strh($pcVal); ?>"
-													   placeholder="0" aria-label="Gols casa">
+													   placeholder="0" aria-label="Gols casa"
+													   <?php echo $isLocked ? "disabled" : ""; ?>>
 												<div class="x">×</div>
 												<input class="score score-away" type="number" inputmode="numeric" min="0" max="99"
 													   value="<?php echo strh($pfVal); ?>"
-													   placeholder="0" aria-label="Gols fora">
+													   placeholder="0" aria-label="Gols fora"
+													   <?php echo $isLocked ? "disabled" : ""; ?>>
 											</div>
 
 											<div class="team team-away">
@@ -510,10 +654,14 @@ try {
 										</div>
 
 										<div class="match-actions">
-											<button class="btn-save-one" type="button" title="Salvar este jogo">
-												Salvar
+											<button class="btn-save-one" type="button" title="Salvar este jogo" <?php echo $isLocked ? "disabled" : ""; ?>>
+												<?php echo $isLocked ? "Bloqueado" : "Salvar"; ?>
 											</button>
-											<div class="save-state" aria-live="polite"></div>
+											<div class="save-state" aria-live="polite">
+												<?php if ($isLocked): ?>
+													<span class="lock-reason"><?php echo strh($lockReason); ?></span>
+												<?php endif; ?>
+											</div>
 										</div>
 									</article>
 								<?php endforeach; ?>
@@ -552,6 +700,13 @@ try {
   window.__APP_USER__ = <?php echo json_encode([
       "nome" => $usuarioNome,
       "id"   => $usuarioId,
+  ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+
+  // Info útil pro front (se você quiser mostrar em algum lugar no JS)
+  window.__LOCK_INFO__ = <?php echo json_encode([
+      "today" => $todayYmd,
+      "lock_today_at" => (isset($lockTodayAt) && $lockTodayAt instanceof DateTimeImmutable) ? $lockTodayAt->format('Y-m-d H:i:s') : null,
+      "lock_today_active" => (isset($lockTodayActive) ? (bool)$lockTodayActive : false),
   ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 </script>
 

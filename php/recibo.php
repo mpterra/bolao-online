@@ -8,6 +8,13 @@ ini_set('display_startup_errors', '1');
 session_start();
 require_once __DIR__ . "/../php/conexao.php";
 
+/**
+ * ✅ FIX FUSO HORÁRIO (BRASIL)
+ * Garante que date() e strtotime() usem o fuso correto no recibo.
+ * Coloquei AQUI (antes de qualquer date/strtotime), sem usar echo/log, sem quebrar PDF.
+ */
+date_default_timezone_set('America/Sao_Paulo');
+
 function require_login(): void {
 	if (empty($_SESSION["usuario_id"])) {
 		header("Location: /bolao-da-copa/public/index.php");

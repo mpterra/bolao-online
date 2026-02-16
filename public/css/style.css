@@ -1319,9 +1319,38 @@ body::before{
 }
 
 /* =========================================================
-   ADMIN — Exportar apostas (layout)
+   ADMIN — Exportar apostas (layout) — REFACTOR
+   - mantém visual e intenção
+   - reduz repetição com tokens utilitários
+   - adiciona foco acessível e mobile polish
    ========================================================= */
 
+:root{
+  --admin-radius-lg: 18px;
+  --admin-radius-md: 16px;
+  --admin-pill: 999px;
+
+  --admin-bd-weak: rgba(255,255,255,.10);
+  --admin-bd: rgba(255,255,255,.12);
+  --admin-bd-strong: rgba(255,255,255,.14);
+
+  --admin-bg-soft: rgba(255,255,255,.06);
+  --admin-bg-soft2: rgba(255,255,255,.09);
+  --admin-bg-card: rgba(0,0,0,.10);
+
+  --admin-txt: rgba(255,255,255,.92);
+  --admin-txt2: rgba(255,255,255,.78);
+  --admin-muted: rgba(255,255,255,.70);
+
+  --admin-shadow: 0 12px 26px rgba(0,0,0,.22);
+  --admin-shadow2: 0 14px 30px rgba(0,0,0,.22);
+  --admin-shadow3: 0 16px 34px rgba(0,0,0,.28);
+
+  --admin-tr: 180ms ease;
+  --admin-focus: 0 0 0 4px rgba(16,208,138,.20);
+}
+
+/* ---------- Base layout ---------- */
 .admin-wrap{ padding-top: 8px; }
 
 .admin-shell{
@@ -1336,6 +1365,43 @@ body::before{
   border-top: 0;
 }
 
+/* ---------- Shared primitives ---------- */
+.admin-surface{
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-bd);
+  background: var(--admin-bg-card);
+}
+
+.admin-title{
+  font-weight: 900;
+  font-size: 13px;
+  color: var(--admin-txt);
+}
+
+.admin-text{
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--admin-txt2);
+}
+
+.admin-ellip{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.admin-click{
+  transition: var(--admin-tr);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-click:focus-visible{
+  outline: none;
+  box-shadow: var(--admin-focus);
+}
+
+/* ---------- Botão “voltar” / ações laterais ---------- */
 .btn-admin-back{
   width: 100%;
   display:flex;
@@ -1344,30 +1410,37 @@ body::before{
   gap: 10px;
   text-decoration:none;
 
-  border-radius: 16px;
+  border-radius: var(--admin-radius-md);
   padding: 12px 14px;
 
   font-weight: 900;
   font-size: 14px;
 
   color: rgba(255,255,255,.92);
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: 0 14px 30px rgba(0,0,0,.22);
-  transition: 180ms ease;
+  background: var(--admin-bg-soft);
+  border: 1px solid var(--admin-bd-strong);
+  box-shadow: var(--admin-shadow2);
+  transition: var(--admin-tr);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-admin-back:hover{
   background: rgba(255,255,255,.10);
   transform: translateY(-1px);
-  box-shadow: 0 16px 34px rgba(0,0,0,.28);
+  box-shadow: var(--admin-shadow3);
 }
 
 .btn-admin-back:active{ transform: translateY(0) scale(.99); }
 
+.btn-admin-back:focus-visible{
+  outline: none;
+  box-shadow: var(--admin-shadow2), var(--admin-focus);
+}
+
+/* ---------- Card informativo ---------- */
 .admin-info{
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-bd);
   background:
     radial-gradient(700px 240px at 15% 10%, rgba(70,220,255,.12), transparent 58%),
     radial-gradient(760px 260px at 85% 20%, rgba(16,208,138,.10), transparent 58%),
@@ -1393,7 +1466,7 @@ body::before{
   display:inline-block;
   margin-top: 6px;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--admin-pill);
   border: 1px solid rgba(247,201,72,.22);
   background: rgba(247,201,72,.10);
   color: rgba(255,245,210,.95);
@@ -1401,10 +1474,11 @@ body::before{
   font-size: 11px;
 }
 
+/* ---------- Card principal ---------- */
 .admin-card{
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.10);
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-bd);
+  background: var(--admin-bg-card);
   padding: 14px;
 }
 
@@ -1412,7 +1486,7 @@ body::before{
   font-weight: 900;
   font-size: 13px;
   margin-bottom: 10px;
-  color: rgba(255,255,255,.92);
+  color: var(--admin-txt);
 }
 
 .admin-user-list{
@@ -1421,38 +1495,51 @@ body::before{
   gap: 10px;
 }
 
+/* ---------- Linha do usuário ---------- */
 .admin-user-row{
   text-decoration:none;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.06);
+  border-radius: var(--admin-radius-md);
+  border: 1px solid var(--admin-bd-weak);
+  background: var(--admin-bg-soft);
   padding: 12px;
+
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap: 10px;
-  transition: 180ms ease;
+
+  transition: var(--admin-tr);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .admin-user-row:hover{
-  background: rgba(255,255,255,.09);
+  background: var(--admin-bg-soft2);
   transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(0,0,0,.22);
+  box-shadow: var(--admin-shadow);
+}
+
+.admin-user-row:active{ transform: translateY(0) scale(.995); }
+
+.admin-user-row:focus-visible{
+  outline: none;
+  box-shadow: var(--admin-shadow), var(--admin-focus);
 }
 
 .admin-user-main{ min-width: 0; }
+
 .admin-user-name{
   font-weight: 900;
   font-size: 13px;
-  color: rgba(255,255,255,.92);
+  color: var(--admin-txt);
   overflow:hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .admin-user-sub{
   margin-top: 3px;
   font-size: 11px;
-  color: rgba(255,255,255,.70);
+  color: var(--admin-muted);
   overflow:hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1465,15 +1552,16 @@ body::before{
   flex: 0 0 auto;
 }
 
+/* ---------- Tags ---------- */
 .admin-tag{
   display:inline-flex;
   align-items:center;
   justify-content:center;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--admin-pill);
   font-weight: 900;
   font-size: 11px;
-  border: 1px solid rgba(255,255,255,.14);
+  border: 1px solid var(--admin-bd-strong);
 }
 
 .admin-tag-admin{
@@ -1488,6 +1576,22 @@ body::before{
   border-color: rgba(255,255,255,.10);
 }
 
+/* ---------- Mobile ---------- */
 @media (max-width: 860px){
   .admin-shell{ grid-template-columns: 1fr; }
+  .admin-menu{ padding: 12px; }
+  .admin-card{ padding: 12px; }
+  .admin-info{ padding: 12px; }
+}
+
+/* Ajuste “toque” em mobile */
+@media (hover: none){
+  .admin-user-row:hover{
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-admin-back:hover{
+    transform: none;
+    box-shadow: var(--admin-shadow2);
+  }
 }

@@ -89,11 +89,19 @@ try {
             <div class="menu-title">Ações</div>
 
             <div class="menu-actions" style="margin-top:0;border-top:0;padding-top:0;">
-                <a class="btn-receipt" href="/bolao-da-copa/public/app.php" style="display:block;text-align:center;text-decoration:none;">
+                
+                <a class="btn-receipt"
+                   href="/bolao-da-copa/public/app.php"
+                   style="display:block;text-align:center;text-decoration:none;">
                     Voltar para Palpites
                 </a>
 
-                
+                <a class="btn-receipt"
+                   href="/bolao-da-copa/php/export_apostas_todas_zip.php"
+                   style="display:block;text-align:center;text-decoration:none;margin-top:10px;">
+                    Baixar TODAS as apostas (ZIP)
+                </a>
+
             </div>
         </aside>
 
@@ -105,7 +113,14 @@ try {
 
             <div class="admin-card">
                 <h2>Usuários ativos</h2>
-                <p>Colunas no Excel: <strong>Grupo</strong>, <strong>Data/Hora</strong>, <strong>Time casa</strong>, <strong>Placar casa</strong>, <strong>Time visitante</strong>, <strong>Placar visitante</strong>.</p>
+                <p>Colunas no Excel: 
+                    <strong>Grupo</strong>, 
+                    <strong>Data/Hora</strong>, 
+                    <strong>Time casa</strong>, 
+                    <strong>Placar casa</strong>, 
+                    <strong>Time visitante</strong>, 
+                    <strong>Placar visitante</strong>.
+                </p>
 
                 <div class="admin-grid">
                     <?php foreach ($usuarios as $u): ?>
