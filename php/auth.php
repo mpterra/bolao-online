@@ -52,8 +52,9 @@ try {
     // Como você disse: index é só login.
     // Então aqui você redireciona para a primeira tela REAL pós-login do seu sistema.
     // Se você ainda não tem, aponte para uma landing simples (ex: /public/home.php).
-    header("Location: /bolao-da-copa/public/home.php");
-    exit;
+    header("Location: /bolao-da-copa/public/app.php");
+exit;
+
 
 } catch (Exception $e) {
     exit("Erro no login: " . $e->getMessage());

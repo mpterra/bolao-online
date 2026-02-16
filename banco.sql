@@ -199,6 +199,15 @@ CREATE TABLE IF NOT EXISTS pontos_palpite (
   KEY idx_pontos (pontos)
 ) ENGINE=InnoDB;
 
+USE bolao_copa;
+
+ALTER TABLE jogos
+ADD COLUMN codigo_fifa VARCHAR(20) NULL AFTER edicao_id;
+ALTER TABLE jogos
+ADD UNIQUE KEY uk_jogos_codigo_fifa (edicao_id, codigo_fifa),
+ADD KEY idx_jogos_codigo_fifa (codigo_fifa);
+
+
 -- =========================================================
 -- SEED: cria a edição 2026
 -- =========================================================
@@ -221,6 +230,5 @@ VALUES
  1,
  '2026-02-15 10:56:27',
  '2026-02-15 10:56:27');
-
 
 
