@@ -21,10 +21,15 @@ require_once __DIR__ . "/../php/conexao.php";
 | - Botão "Recibo" imprime todas as apostas do apostador (por grupo)
 |--------------------------------------------------------------------------
 |
-| ✅ REGRA DE BLOQUEIO (NOVO)
+| ✅ REGRA DE BLOQUEIO (ATUALIZADA — DIA LÓGICO)
 | - Jogos passados (data_hora <= agora): sempre bloqueados.
-| - Jogos de HOJE: 1h antes do PRIMEIRO jogo do dia, bloqueia TODOS os jogos de hoje.
-| - Jogos futuros: liberados.
+| - “Dia lógico”:
+|     * Jogos entre 00:00 e 04:59 pertencem ao DIA ANTERIOR.
+|     * Jogos a partir de 05:00 pertencem ao mesmo dia do calendário.
+| - Trava por “dia lógico”:
+|     * 1h antes do PRIMEIRO jogo do dia lógico, bloqueia TODOS os jogos
+|       daquele dia lógico (incluindo os da madrugada 00:00–04:59 do dia seguinte).
+| - Jogos futuros (outros dias lógicos): liberados até seu dia lógico travar.
 |--------------------------------------------------------------------------
 */
 
@@ -125,21 +130,42 @@ function dt_from_mysql(?string $dt): ?DateTimeImmutable {
 }
 
 /**
- * Calcula o instante do bloqueio de HOJE:
- * - se existe jogo hoje: (primeiro jogo hoje - 1h)
- * - se não existe jogo hoje: null
+ * “Dia lógico” de apostas:
+ * - 00:00 a 04:59 pertencem ao dia anterior
+ * - 05:00 em diante pertencem ao mesmo dia
+ * Retorna string Y-m-d no timezone da aplicação.
  */
-function compute_lock_today(PDO $pdo, string $todayYmd): ?DateTimeImmutable {
-	$sqlFirstToday = "
+function logical_bet_day(DateTimeImmutable $dt): string {
+	$hour = (int)$dt->format('H');
+	if ($hour >= 0 && $hour < 5) {
+		return $dt->sub(new DateInterval('P1D'))->format('Y-m-d');
+	}
+	return $dt->format('Y-m-d');
+}
+
+/**
+ * Calcula o instante de bloqueio de um “dia lógico” específico:
+ * - 1h antes do PRIMEIRO jogo do dia lógico
+ * - “primeiro jogo do dia lógico” é o MIN(data_hora) considerando:
+ *     * jogos no próprio dia com hora >= 05:00
+ *     * jogos na madrugada do dia seguinte (00:00–04:59), que “pertencem” ao dia
+ *
+ * Retorna null se não existir jogo naquele dia lógico.
+ */
+function compute_lock_for_logical_day(PDO $pdo, string $dayYmd): ?DateTimeImmutable {
+	$sql = "
 		SELECT MIN(j.data_hora)
 		FROM jogos j
 		INNER JOIN edicoes e ON e.id = j.edicao_id AND e.ativo = 1
 		WHERE j.grupo_id IS NOT NULL
 		  AND (j.fase = 'GRUPOS' OR j.fase = 'GRUPO' OR j.fase = 'FASE_DE_GRUPOS' OR j.fase LIKE '%GRUP%')
-		  AND DATE(j.data_hora) = :today
+		  AND (
+				(DATE(j.data_hora) = :day AND TIME(j.data_hora) >= '05:00:00')
+			 OR (DATE(j.data_hora) = DATE_ADD(:day, INTERVAL 1 DAY) AND TIME(j.data_hora) < '05:00:00')
+		  )
 	";
-	$st = $pdo->prepare($sqlFirstToday);
-	$st->execute([":today" => $todayYmd]);
+	$st = $pdo->prepare($sql);
+	$st->execute([":day" => $dayYmd]);
 	$minDt = $st->fetchColumn();
 
 	$first = dt_from_mysql(is_string($minDt) ? $minDt : null);
@@ -149,13 +175,26 @@ function compute_lock_today(PDO $pdo, string $todayYmd): ?DateTimeImmutable {
 }
 
 /**
- * Decide se um jogo está bloqueado e por quê, seguindo as regras.
+ * Resolve (com cache) o lockAt para um dia lógico.
+ */
+function get_lock_for_logical_day(PDO $pdo, array &$cache, string $logicalDayYmd): ?DateTimeImmutable {
+	if (array_key_exists($logicalDayYmd, $cache)) {
+		$val = $cache[$logicalDayYmd];
+		return ($val instanceof DateTimeImmutable) ? $val : null;
+	}
+	$lockAt = compute_lock_for_logical_day($pdo, $logicalDayYmd);
+	$cache[$logicalDayYmd] = $lockAt;
+	return $lockAt;
+}
+
+/**
+ * Decide se um jogo está bloqueado e por quê, seguindo as regras (dia lógico).
  */
 function lock_reason_for_game(
 	?DateTimeImmutable $gameDt,
 	DateTimeImmutable $now,
-	string $todayYmd,
-	?DateTimeImmutable $lockTodayAt
+	PDO $pdo,
+	array &$lockCache
 ): ?string {
 	if (!$gameDt) {
 		return "Data/hora inválida do jogo.";
@@ -166,10 +205,13 @@ function lock_reason_for_game(
 		return "Jogo já iniciado/encerrado.";
 	}
 
-	// (2) Regra do dia: 1h antes do primeiro jogo de hoje, trava TODOS de hoje
-	if ($gameDt->format('Y-m-d') === $todayYmd && $lockTodayAt instanceof DateTimeImmutable) {
-		if ($now >= $lockTodayAt) {
-			return "Apostas de hoje bloqueadas desde " . fmt_hm($lockTodayAt) . ".";
+	// (2) Regra do dia lógico: 1h antes do primeiro jogo do dia lógico, trava TODOS daquele dia lógico
+	$logicalDay = logical_bet_day($gameDt);
+	$lockAt = get_lock_for_logical_day($pdo, $lockCache, $logicalDay);
+
+	if ($lockAt instanceof DateTimeImmutable) {
+		if ($now >= $lockAt) {
+			return "Apostas do dia bloqueadas desde " . fmt_hm($lockAt) . ".";
 		}
 	}
 
@@ -186,7 +228,10 @@ $isAdmin = (mb_strtoupper($tipoUsuario, "UTF-8") === "ADMIN");
 
 $tz = new DateTimeZone('America/Sao_Paulo');
 $now = new DateTimeImmutable('now', $tz);
-$todayYmd = $now->format('Y-m-d');
+$nowLogicalDay = logical_bet_day($now);
+
+// cache global por request (dia lógico -> lockAt|null)
+$lockCache = [];
 
 /* ---------------------------
    Logout (opcional)
@@ -239,12 +284,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	}
 
 	try {
-		// calcula o lock do dia UMA vez por request
-		$lockTodayAt = compute_lock_today($pdo, $todayYmd);
-
 		$pdo->beginTransaction();
 
-		// ✅ agora traz também data_hora, pois precisamos validar bloqueio
+		// ✅ traz data_hora para validar bloqueio
 		$sqlCheck = "
             SELECT j.id, j.data_hora
             FROM jogos j
@@ -282,7 +324,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 			}
 
 			$gameDt = dt_from_mysql(isset($game["data_hora"]) ? (string)$game["data_hora"] : null);
-			$reason = lock_reason_for_game($gameDt, $now, $todayYmd, $lockTodayAt);
+			$reason = lock_reason_for_game($gameDt, $now, $pdo, $lockCache);
 
 			if ($reason !== null) {
 				$blocked[] = [
@@ -336,9 +378,9 @@ try {
 		throw new RuntimeException("Nenhuma edição ativa.");
 	}
 
-	// calcula o lock do dia para o render (UI)
-	$lockTodayAt = compute_lock_today($pdo, $todayYmd);
-	$lockTodayActive = ($lockTodayAt instanceof DateTimeImmutable) ? ($now >= $lockTodayAt) : false;
+	// lock do “dia lógico atual” (para exibir no hint)
+	$lockNowLogicalDayAt = get_lock_for_logical_day($pdo, $lockCache, $nowLogicalDay);
+	$lockNowLogicalDayActive = ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? ($now >= $lockNowLogicalDayAt) : false;
 
 	$sqlGrupos = "
         SELECT g.id, g.codigo, COALESCE(g.nome, CONCAT('Grupo ', g.codigo)) AS nome
@@ -507,10 +549,11 @@ try {
 
 				<div class="hint">
 					Dica: preencha os placares e salve. Você também pode salvar jogo a jogo.
-					<?php if (isset($lockTodayAt) && $lockTodayAt instanceof DateTimeImmutable): ?>
+					<?php if ($lockNowLogicalDayAt instanceof DateTimeImmutable): ?>
 						<br>
 						<small>
-							Hoje trava às <strong><?php echo strh(fmt_hm($lockTodayAt)); ?></strong> (1h antes do primeiro jogo do dia).
+							Trava do dia (lógico) às <strong><?php echo strh(fmt_hm($lockNowLogicalDayAt)); ?></strong>
+							(1h antes do primeiro jogo do dia).
 						</small>
 					<?php endif; ?>
 				</div>
@@ -570,7 +613,7 @@ try {
 									$fsig = (string)$j["fora_sigla"];
 
 									$dtGame = dt_from_mysql((string)$j["data_hora"]);
-									$lockReason = lock_reason_for_game($dtGame, $now, $todayYmd, $lockTodayAt ?? null);
+									$lockReason = lock_reason_for_game($dtGame, $now, $pdo, $lockCache);
 									$isLocked = ($lockReason !== null);
 
 									$dh = fmt_datahora((string)$j["data_hora"]);
@@ -702,11 +745,12 @@ try {
       "id"   => $usuarioId,
   ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 
-  // Info útil pro front (se você quiser mostrar em algum lugar no JS)
+  // Info útil pro front (dia lógico + trava do dia lógico atual)
   window.__LOCK_INFO__ = <?php echo json_encode([
-      "today" => $todayYmd,
-      "lock_today_at" => (isset($lockTodayAt) && $lockTodayAt instanceof DateTimeImmutable) ? $lockTodayAt->format('Y-m-d H:i:s') : null,
-      "lock_today_active" => (isset($lockTodayActive) ? (bool)$lockTodayActive : false),
+      "now_logical_day" => $nowLogicalDay,
+      "lock_logical_day_at" => ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? $lockNowLogicalDayAt->format('Y-m-d H:i:s') : null,
+      "lock_logical_day_active" => (bool)$lockNowLogicalDayActive,
+      "logical_day_rule" => "00:00-04:59 pertence ao dia anterior",
   ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 </script>
 
