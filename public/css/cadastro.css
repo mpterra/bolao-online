@@ -1,17 +1,27 @@
 /* =========================================================
-   cadastro.css — COMPLETO
-   - Estende login.css
-   - Select UF customizado
+   cadastro.css — COMPLETO (CADASTRO)
+   - Estende login.css (NÃO redefine body/page/card)
+   - Mantém EXATAMENTE o padrão antigo do style.css
+   - INPUT + SELECT (UF) no mesmo bloco (mesma altura/visual)
+   - Floating label correto
    - Modal sucesso
    ========================================================= */
 
+
 /* =========================================================
-   SELECT (UF)
+   INPUTS + SELECT (UF) — IGUAL AO ANTES (style.css antigo)
    ========================================================= */
 
+.input-group{
+  position: relative;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.input-group input,
 .input-group select{
   width: 100%;
-  padding: 12px 42px 12px 14px;
+  padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,.18);
   background: rgba(255,255,255,.10);
@@ -23,19 +33,32 @@
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+}
 
+.input-group select{
+  padding-right: 42px;
   cursor: pointer;
 
   background-image:
-    linear-gradient(45deg, transparent 50%, rgba(255,255,255,.85) 50%),
-    linear-gradient(135deg, rgba(255,255,255,.85) 50%, transparent 50%);
+    linear-gradient(45deg, transparent 50%, rgba(255,255,255,.80) 50%),
+    linear-gradient(135deg, rgba(255,255,255,.80) 50%, transparent 50%),
+    linear-gradient(to right, rgba(255,255,255,.00), rgba(255,255,255,.00));
   background-position:
     calc(100% - 18px) calc(50% + 1px),
-    calc(100% - 12px) calc(50% + 1px);
-  background-size: 6px 6px, 6px 6px;
+    calc(100% - 12px) calc(50% + 1px),
+    calc(100% - 42px) 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    1px 100%;
   background-repeat: no-repeat;
 }
 
+.input-group select:invalid{
+  color: rgba(255,255,255,.55);
+}
+
+.input-group input:focus,
 .input-group select:focus{
   border-color: rgba(16,208,138,.55);
   box-shadow:
@@ -44,8 +67,27 @@
   background: rgba(255,255,255,.12);
 }
 
-.input-group select:invalid{
-  color: rgba(255,255,255,.55);
+.input-group label{
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,.70);
+  pointer-events: none;
+  transition: 220ms ease;
+  padding: 0 8px;
+  border-radius: 8px;
+}
+
+.input-group.has-value label,
+.input-group input:focus + label{
+  top: -9px;
+  left: 10px;
+  font-size: 11px;
+  color: rgba(255,255,255,.92);
+  background: linear-gradient(90deg, rgba(16,208,138,.32), rgba(247,201,72,.28));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 8px 16px rgba(0,0,0,.20);
 }
 
 .input-group select:focus + label,
@@ -59,8 +101,9 @@
   box-shadow: 0 8px 16px rgba(0,0,0,.20);
 }
 
+
 /* =========================================================
-   MODAL SUCESSO
+   MODAL SUCESSO CADASTRO — IGUAL AO ANTES
    ========================================================= */
 
 @keyframes modalIn{
@@ -80,9 +123,7 @@
   backdrop-filter: blur(8px);
 }
 
-.modal-overlay.is-open{
-  display: flex;
-}
+.modal-overlay.is-open{ display: flex; }
 
 .modal-card{
   width: min(560px, 100%);
@@ -146,37 +187,15 @@
   transition: transform 140ms ease, filter 180ms ease;
 }
 
-.btn-modal-ok:hover{
-  filter: saturate(1.06);
-  transform: translateY(-1px);
-}
+.btn-modal-ok:hover{ filter: saturate(1.06); transform: translateY(-1px); }
+.btn-modal-ok:active{ transform: translateY(0) scale(.99); }
 
-.btn-modal-ok:active{
-  transform: translateY(0) scale(.99);
-}
 
 /* =========================================================
-   RESPONSIVO
+   RESPONSIVO (igual ao antes)
    ========================================================= */
 
 @media (max-width: 560px){
-  .modal-card{
-    padding: 16px;
-  }
-
-  .modal-titles h2{
-    font-size: 16px;
-  }
-
-  .modal-titles p{
-    font-size: 13px;
-  }
-
-  .btn-modal-ok{
-    width: 100%;
-  }
-
-  .modal-actions{
-    justify-content: stretch;
-  }
+  .input-group input,
+  .input-group select{ font-size: 15px; }
 }

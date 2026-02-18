@@ -1012,6 +1012,6 @@ try {
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
 </script>
 
-<script src="/bolao-da-copa/public/js/script.js"></script>
+<script src="/bolao-da-copa/public/js/app.js"></script>
 </body>
 </html>

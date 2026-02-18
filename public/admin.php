@@ -142,5 +142,6 @@ try {
     </div>
 </div>
 
+<script src="/bolao-da-copa/public/js/admin.js"></script>
 </body>
 </html>

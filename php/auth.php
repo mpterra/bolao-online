@@ -5,6 +5,16 @@ session_start();
 
 require_once __DIR__ . "/conexao.php";
 
+function redirect_login_with_flash(string $msg, string $type = "error"): void {
+    $_SESSION["flash_login"] = [
+        "type" => $type, // error | warn | info | ok
+        "msg"  => $msg,
+        "ts"   => time(),
+    ];
+    header("Location: /bolao-da-copa/public/index.php");
+    exit;
+}
+
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: /bolao-da-copa/public/index.php");
     exit;
@@ -14,11 +24,11 @@ $email = trim($_POST["usuario"] ?? "");
 $senha = (string)($_POST["senha"] ?? "");
 
 if ($email === "" || $senha === "") {
-    exit("Informe email e senha.");
+    redirect_login_with_flash("Informe e-mail e senha para continuar.", "warn");
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    exit("Email inválido.");
+    redirect_login_with_flash("Digite um e-mail válido.", "warn");
 }
 
 try {
@@ -33,29 +43,25 @@ try {
     $u = $stmt->fetch();
 
     if (!$u) {
-        exit("Email ou senha inválidos.");
+        redirect_login_with_flash("E-mail ou senha inválidos.", "error");
     }
 
     if ((int)$u["ativo"] !== 1) {
-        exit("Usuário inativo. Fale com o administrador.");
+        redirect_login_with_flash("Usuário inativo. Fale com o administrador.", "warn");
     }
 
-    if (!password_verify($senha, $u["senha_hash"])) {
-        exit("Email ou senha inválidos.");
+    if (!password_verify($senha, (string)$u["senha_hash"])) {
+        redirect_login_with_flash("E-mail ou senha inválidos.", "error");
     }
 
     $_SESSION["usuario_id"] = (int)$u["id"];
-    $_SESSION["usuario_nome"] = $u["nome"];
-    $_SESSION["usuario_email"] = $u["email"];
-    $_SESSION["tipo_usuario"] = $u["tipo_usuario"];
+    $_SESSION["usuario_nome"] = (string)$u["nome"];
+    $_SESSION["usuario_email"] = (string)$u["email"];
+    $_SESSION["tipo_usuario"] = (string)$u["tipo_usuario"];
 
-    // Como você disse: index é só login.
-    // Então aqui você redireciona para a primeira tela REAL pós-login do seu sistema.
-    // Se você ainda não tem, aponte para uma landing simples (ex: /public/home.php).
     header("Location: /bolao-da-copa/public/app.php");
-exit;
-
+    exit;
 
 } catch (Exception $e) {
-    exit("Erro no login: " . $e->getMessage());
+    redirect_login_with_flash("Erro no login. Tente novamente.", "error");
 }

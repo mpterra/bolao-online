@@ -2,6 +2,26 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 session_start();
+
+/**
+ * Flash message vindo do auth.php:
+ * $_SESSION["flash_login"] = ["type"=>"error|warn|info|ok","msg"=>"...","ts"=>time()];
+ */
+$flash = null;
+if (!empty($_SESSION["flash_login"]) && is_array($_SESSION["flash_login"])) {
+    $flash = $_SESSION["flash_login"];
+    unset($_SESSION["flash_login"]); // consome uma vez
+}
+
+function h(?string $s): string {
+    return htmlspecialchars((string)($s ?? ""), ENT_QUOTES, "UTF-8");
+}
+
+$flashType = is_array($flash) ? (string)($flash["type"] ?? "") : "";
+$flashMsg  = is_array($flash) ? (string)($flash["msg"] ?? "")  : "";
+
+$allowed = ["error","warn","info","ok"];
+if (!in_array($flashType, $allowed, true)) $flashType = "";
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -12,7 +32,14 @@ session_start();
 
     <link rel="stylesheet" href="/bolao-da-copa/public/css/login.css">
 </head>
-<body>
+
+<body
+  data-flash-type="<?php echo h($flashType); ?>"
+  data-flash-msg="<?php echo h($flashMsg); ?>"
+>
+
+<!-- Host do toast (fica no topo, dentro da mesma tela) -->
+<div class="toast-host" aria-live="polite" aria-atomic="true"></div>
 
 <div class="page">
 
@@ -47,6 +74,6 @@ session_start();
 
 </div>
 
-<script src="/bolao-da-copa/public/js/script.js"></script>
+<script src="/bolao-da-copa/public/js/index.js"></script>
 </body>
 </html>
