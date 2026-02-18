@@ -1,0 +1,382 @@
+/* =========================================================
+   login.css — COMPLETO (INDEX / LOGIN)
+   - Standalone (não depende de style.css)
+   - Mantém exatamente o “visual original” do style.css
+   - Logo com zoom-out + float, card com kick, inputs com floating label
+   - Sem CSS do APP (somente login/cadastro)
+   ========================================================= */
+
+:root{
+  --bg0:#071a1f;
+  --bg1:#0c2a30;
+  --bg2:#0b2330;
+
+  --green:#00c27a;
+  --green2:#10d08a;
+  --gold:#f7c948;
+  --gold2:#ffd86b;
+
+  --ice:#cfeff2;
+  --text:#ffffff;
+  --muted: rgba(255,255,255,.75);
+
+  --card: rgba(255,255,255,.08);
+  --card2: rgba(255,255,255,.12);
+  --stroke: rgba(255,255,255,.18);
+
+  --shadow: 0 24px 60px rgba(0,0,0,.55);
+  --shadow2: 0 12px 30px rgba(0,0,0,.45);
+
+  /* safe-area (notch) */
+  --safe-top: env(safe-area-inset-top);
+  --safe-right: env(safe-area-inset-right);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+
+  --in-ease: cubic-bezier(.2,.9,.2,1);
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+html, body{
+  height: 100%;
+  height: 100dvh;
+}
+
+body{
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--text);
+
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(16,208,138,.18), transparent 55%),
+    radial-gradient(900px 700px at 80% 20%, rgba(247,201,72,.16), transparent 55%),
+    radial-gradient(900px 700px at 60% 90%, rgba(0,194,122,.12), transparent 55%),
+    linear-gradient(135deg, var(--bg0), var(--bg1), var(--bg2));
+
+  position: relative;
+  overflow-x:hidden;
+
+  display:block;
+
+  padding:
+    calc(10px + var(--safe-top))
+    calc(10px + var(--safe-right))
+    calc(14px + var(--safe-bottom))
+    calc(10px + var(--safe-left));
+}
+
+/* =========================================================
+   FUNDO (leve)
+   ========================================================= */
+@keyframes twinkle{
+  0%{ transform: translate3d(0,0,0); opacity:.20; }
+  50%{ opacity:.28; }
+  100%{ transform: translate3d(-34px,18px,0); opacity:.20; }
+}
+
+body::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.22) 50%, transparent 55%),
+    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,.18) 50%, transparent 55%),
+    radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,.14) 50%, transparent 55%),
+    radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,.16) 50%, transparent 55%);
+  background-size: 260px 260px;
+  opacity:.26;
+  pointer-events:none;
+  animation: twinkle 9s linear infinite;
+}
+
+/* =========================================================
+   ANIMAÇÕES (login)
+   ========================================================= */
+@keyframes logoFloat{
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes logoZoomOut{
+  0%   { opacity: 0; transform: translateY(10px) scale(1.22); filter: blur(2px); }
+  60%  { opacity: 1; transform: translateY(0) scale(0.985); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cardKick{
+  0%   { opacity: 0; transform: translateY(18px) scale(.96); }
+  60%  { opacity: 1; transform: translateY(-6px) scale(1.01); }
+  78%  { transform: translateY(2px) scale(.995); }
+  92%  { transform: translateY(-2px) scale(1.002); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes btnSheen{
+  from{ left:-65%; }
+  to{ left:120%; }
+}
+
+/* =========================================================
+   LOGIN / CADASTRO (estrutura)
+   ========================================================= */
+
+.page{
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+
+  min-height: calc(100dvh - (10px + var(--safe-top)) - (14px + var(--safe-bottom)));
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+
+  padding: 16px 12px;
+  text-align:center;
+  position: relative;
+  z-index: 2;
+}
+
+.logo-wrapper{
+  width: 100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin: 6px auto 12px;
+}
+
+.logo-wrapper img{
+  width: auto;
+  max-width: min(92vw, 525px);
+  max-height: min(37.5vh, 275px);
+
+  object-fit: contain;
+  display:block;
+
+  filter:
+    drop-shadow(0 22px 28px rgba(0,0,0,.55))
+    drop-shadow(0 6px 10px rgba(0,0,0,.35));
+
+  transform-origin: 50% 60%;
+
+  animation:
+    logoZoomOut 620ms var(--in-ease) both,
+    logoFloat 6.5s ease-in-out infinite;
+  animation-delay: 0ms, 620ms;
+}
+
+.login-card{
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+
+  padding: 18px 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--card), rgba(255,255,255,.06));
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--stroke);
+
+  position: relative;
+  overflow:hidden;
+  transform: translateZ(0);
+
+  animation: cardKick 720ms var(--in-ease) both;
+  animation-delay: 120ms;
+}
+
+.login-card h1{
+  margin-bottom: 12px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  text-shadow: 0 10px 18px rgba(0,0,0,.35);
+}
+
+.login-form{
+  width: 100%;
+}
+
+.input-group{
+  position: relative;
+  margin-bottom: 10px;
+  text-align:left;
+}
+
+/* =========================================================
+   INPUTS (login)
+   ========================================================= */
+.input-group input{
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.10);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: 220ms ease;
+}
+
+.input-group input:focus{
+  border-color: rgba(16,208,138,.55);
+  box-shadow:
+    0 0 0 4px rgba(16,208,138,.14),
+    0 10px 22px rgba(0,0,0,.25);
+  background: rgba(255,255,255,.12);
+}
+
+.input-group label{
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,.70);
+  pointer-events: none;
+  transition: 220ms ease;
+  padding: 0 8px;
+  border-radius: 8px;
+}
+
+.input-group.has-value label,
+.input-group input:focus + label{
+  top: -9px;
+  left: 10px;
+  font-size: 11px;
+  color: rgba(255,255,255,.92);
+  background: linear-gradient(90deg, rgba(16,208,138,.32), rgba(247,201,72,.28));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 8px 16px rgba(0,0,0,.20);
+}
+
+/* =========================================================
+   BOTÃO
+   ========================================================= */
+.btn-login{
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  color: #062027;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 14px 30px rgba(0,0,0,.35);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  position: relative;
+  overflow:hidden;
+}
+
+.btn-login::after{
+  content:"";
+  position:absolute;
+  top:-40%;
+  left:-65%;
+  width:60%;
+  height:180%;
+  background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.45), transparent 60%);
+  transform: rotate(18deg);
+  opacity:.0;
+}
+
+.btn-login:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 18px 38px rgba(0,0,0,.45);
+  filter: saturate(1.08);
+}
+
+.btn-login:hover::after{
+  opacity:.85;
+  animation: btnSheen 900ms ease;
+}
+
+.btn-login:active{
+  transform: translateY(0px) scale(.99);
+}
+
+/* =========================================================
+   LINK CADASTRO
+   ========================================================= */
+.cadastro-link{
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align:center;
+}
+
+.cadastro-link a{
+  color: var(--gold2);
+  text-decoration: none;
+  font-weight: 900;
+  margin-left: 6px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  background: rgba(247,201,72,.10);
+  border: 1px solid rgba(247,201,72,.22);
+  transition: 220ms ease;
+  display: inline-block;
+}
+
+.cadastro-link a:hover{
+  color: #041b20;
+  background: linear-gradient(90deg, rgba(247,201,72,.95), rgba(16,208,138,.85));
+  border-color: rgba(255,255,255,.10);
+  box-shadow: 0 12px 22px rgba(0,0,0,.25);
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   RESPONSIVO / LOGO +20% PC
+   ========================================================= */
+@media (max-height: 740px){
+  .page{ padding-top: 10px; padding-bottom: 10px; }
+  .logo-wrapper img{ max-height: min(34vh, 275px); }
+  .login-card{ padding: 16px 14px; }
+}
+
+@media (min-width: 861px){
+  .logo-wrapper img{
+    max-width: min(92vw, 630px);
+    max-height: min(45vh, 330px);
+  }
+}
+
+@media (max-width: 560px){
+  body{
+    padding:
+      calc(8px + var(--safe-top))
+      calc(8px + var(--safe-right))
+      calc(12px + var(--safe-bottom))
+      calc(8px + var(--safe-left));
+  }
+
+  .page{
+    max-width: 460px;
+    padding: 12px 10px;
+  }
+
+  .logo-wrapper img{
+    max-width: min(94vw, 525px);
+    max-height: min(35vh, 275px);
+  }
+
+  .logo-wrapper{ margin: 6px auto 10px; }
+  .login-card{ padding: 16px 14px; border-radius: 18px; }
+  .login-card h1{ font-size: 19px; }
+  .input-group input{ font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

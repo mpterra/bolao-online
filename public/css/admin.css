@@ -1,0 +1,445 @@
+/* =========================================================
+   admin.css — COMPLETO (ADMIN.PHP)
+   - Standalone (não depende de style.css)
+   - Reusa a mesma “linguagem visual” do app (glass + cards)
+   - Grid de usuários com botões bonitos, responsivo
+   ========================================================= */
+
+:root{
+  --bg0:#071a1f;
+  --bg1:#0c2a30;
+  --bg2:#0b2330;
+
+  --green:#00c27a;
+  --gold:#f7c948;
+
+  --text:#ffffff;
+  --muted: rgba(255,255,255,.75);
+
+  --stroke: rgba(255,255,255,.18);
+  --app-stroke: rgba(255,255,255,.12);
+
+  --app-glass: rgba(255,255,255,.06);
+  --app-glass2: rgba(255,255,255,.10);
+
+  --shadow: 0 24px 60px rgba(0,0,0,.55);
+  --shadow2: 0 16px 40px rgba(0,0,0,.28);
+
+  --head-grad: linear-gradient(90deg, rgba(16,208,138,.24), rgba(247,201,72,.18));
+  --card-grad: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+
+  --ok: rgba(16,208,138,.92);
+  --warn: rgba(247,201,72,.95);
+
+  /* safe-area */
+  --safe-top: env(safe-area-inset-top);
+  --safe-right: env(safe-area-inset-right);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+html, body{
+  height: 100%;
+  height: 100dvh;
+}
+
+body{
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--text);
+
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(16,208,138,.18), transparent 55%),
+    radial-gradient(900px 700px at 80% 20%, rgba(247,201,72,.16), transparent 55%),
+    radial-gradient(900px 700px at 60% 90%, rgba(0,194,122,.12), transparent 55%),
+    linear-gradient(135deg, var(--bg0), var(--bg1), var(--bg2));
+
+  position: relative;
+  overflow-x:hidden;
+
+  padding:
+    calc(10px + var(--safe-top))
+    calc(10px + var(--safe-right))
+    calc(14px + var(--safe-bottom))
+    calc(10px + var(--safe-left));
+}
+
+/* fundo leve */
+@keyframes twinkle{
+  0%{ transform: translate3d(0,0,0); opacity:.20; }
+  50%{ opacity:.28; }
+  100%{ transform: translate3d(-34px,18px,0); opacity:.20; }
+}
+
+body::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.22) 50%, transparent 55%),
+    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,.18) 50%, transparent 55%),
+    radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,.14) 50%, transparent 55%),
+    radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,.16) 50%, transparent 55%);
+  background-size: 260px 260px;
+  opacity:.26;
+  pointer-events:none;
+  animation: twinkle 9s linear infinite;
+}
+
+/* =========================================================
+   LAYOUT BASE (mesmas classes do HTML do admin.php)
+   ========================================================= */
+
+.app-wrap{
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.app-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.app-brand{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.app-brand img{
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.app-title{
+  display:flex;
+  flex-direction:column;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.app-title strong{
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  color: rgba(255,255,255,.96);
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
+.app-title span{
+  font-size: 12px;
+  color: rgba(255,255,255,.72);
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
+.app-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.user-chip{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  box-shadow: 0 12px 22px rgba(0,0,0,.18);
+}
+
+.user-chip .dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--green), var(--gold));
+  box-shadow: 0 0 0 4px rgba(16,208,138,.10);
+}
+
+.user-chip-name{
+  font-weight: 900;
+  font-size: 13px;
+  color: rgba(255,255,255,.92);
+  max-width: 220px;
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-logout{
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  border-radius: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 900;
+  transition: 180ms ease;
+  text-decoration: none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.btn-logout:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(0,0,0,.22);
+}
+
+.app-shell{
+  display:grid;
+  grid-template-columns: 240px 1fr;
+  gap: 12px;
+  align-items:start;
+}
+
+.app-menu,
+.app-content{
+  background: linear-gradient(180deg, var(--app-glass2), var(--app-glass));
+  border: 1px solid var(--app-stroke);
+  box-shadow: var(--shadow2);
+  backdrop-filter: blur(14px);
+  border-radius: 22px;
+}
+
+.app-menu{ padding: 14px; }
+.app-content{ padding: 16px; min-height: 360px; }
+
+.menu-title{
+  font-size: 12px;
+  color: rgba(255,255,255,.70);
+  margin-bottom: 10px;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+}
+
+.content-head{ margin-bottom: 12px; }
+
+.content-h1{
+  margin-bottom: 4px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.content-sub{
+  color: rgba(255,255,255,.74);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* =========================================================
+   BOTÕES (reuso do HTML: btn-receipt)
+   ========================================================= */
+
+.btn-receipt{
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  border-radius: 16px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 14px;
+  transition: 180ms ease;
+  box-shadow: 0 14px 30px rgba(0,0,0,.22);
+}
+
+.btn-receipt:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(0,0,0,.28);
+}
+
+.btn-receipt:active{
+  transform: translateY(0) scale(.99);
+}
+
+/* remove os inline styles (se existirem, ok — isso aqui garante consistência) */
+a.btn-receipt{
+  display:block;
+  text-align:center;
+  text-decoration:none;
+}
+
+/* =========================================================
+   CARD ADMIN
+   ========================================================= */
+
+.admin-card{
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.12);
+  background:
+    radial-gradient(900px 320px at 18% 10%, rgba(16,208,138,.12), transparent 58%),
+    radial-gradient(760px 300px at 82% 18%, rgba(247,201,72,.10), transparent 58%),
+    var(--card-grad);
+  box-shadow: 0 14px 34px rgba(0,0,0,.26);
+  overflow:hidden;
+  padding: 14px;
+}
+
+.admin-card h2{
+  font-size: 14px;
+  font-weight: 900;
+  margin-bottom: 8px;
+  letter-spacing: .2px;
+  color: rgba(255,255,255,.94);
+}
+
+.admin-card p{
+  font-size: 12px;
+  color: rgba(255,255,255,.78);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.admin-card strong{
+  color: rgba(255,255,255,.92);
+}
+
+/* =========================================================
+   GRID DE USUÁRIOS
+   ========================================================= */
+
+.admin-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-user-btn{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+
+  padding: 12px 12px;
+  border-radius: 16px;
+
+  text-decoration:none;
+  color: rgba(255,255,255,.92);
+
+  background:
+    radial-gradient(220px 80px at 18% 18%, rgba(70,220,255,.12), transparent 62%),
+    rgba(255,255,255,.06);
+
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 14px 28px rgba(0,0,0,.18);
+
+  transition: 180ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-user-btn:hover{
+  background:
+    radial-gradient(220px 80px at 18% 18%, rgba(70,220,255,.16), transparent 62%),
+    rgba(255,255,255,.09);
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(0,0,0,.22);
+}
+
+.admin-user-btn:active{
+  transform: translateY(0) scale(.99);
+}
+
+/* Nome (primeiro span) */
+.admin-user-btn > span:first-child{
+  font-weight: 900;
+  font-size: 13px;
+  min-width: 0;
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tipo (span.small) */
+.admin-user-btn .small{
+  font-weight: 900;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 999px;
+
+  color: #062027;
+  background: linear-gradient(90deg, rgba(16,208,138,.92), rgba(247,201,72,.92));
+  box-shadow: 0 10px 18px rgba(0,0,0,.18);
+
+  flex: 0 0 auto;
+}
+
+/* Se quiser diferenciar ADMIN visualmente (opcional, sem mudar HTML) */
+.admin-user-btn .small{
+  letter-spacing: .2px;
+}
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 920px){
+  .app-shell{ grid-template-columns: 1fr; }
+
+  .app-header{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .app-actions{
+    justify-content: space-between;
+  }
+
+  .user-chip-name{ max-width: 55vw; }
+}
+
+@media (max-width: 640px){
+  body{
+    padding:
+      calc(8px + var(--safe-top))
+      calc(8px + var(--safe-right))
+      calc(12px + var(--safe-bottom))
+      calc(8px + var(--safe-left));
+  }
+
+  .app-wrap{ padding: 10px; }
+  .app-menu{ padding: 12px; }
+  .app-content{ padding: 14px; }
+
+  .admin-card{ padding: 12px; }
+
+  .admin-grid{
+    grid-template-columns: 1fr;
+  }
+
+  .admin-user-btn{
+    padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

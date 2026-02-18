@@ -67,7 +67,10 @@ try {
         throw new RuntimeException("Nenhuma edição encontrada.");
     }
 
-    $sql = "
+    // =========================================================
+    // 1) Jogos + placares apostados
+    // =========================================================
+    $sqlJogos = "
         SELECT
             g.codigo AS grupo_codigo,
             j.data_hora,
@@ -90,14 +93,68 @@ try {
           AND (j.fase = 'GRUPOS' OR j.fase = 'GRUPO' OR j.fase = 'FASE_DE_GRUPOS' OR j.fase LIKE '%GRUP%')
         ORDER BY g.codigo, j.data_hora, j.id
     ";
-    $st = $pdo->prepare($sql);
-    $st->execute([
+    $stJogos = $pdo->prepare($sqlJogos);
+    $stJogos->execute([
         ":edicao_id1" => $edicaoId,
         ":edicao_id2" => $edicaoId,
         ":usuario_id" => $usuarioId,
     ]);
-    $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+    $rowsJogos = $stJogos->fetchAll(PDO::FETCH_ASSOC);
 
+    // =========================================================
+    // 2) Classificação (1º/2º/3º) por grupo — sempre lista TODOS os grupos da edição
+    // =========================================================
+    $sqlClass = "
+        SELECT
+            g.codigo AS grupo_codigo,
+            t1.nome AS primeiro_nome,
+            t2.nome AS segundo_nome,
+            t3.nome AS terceiro_nome
+        FROM grupos g
+        LEFT JOIN palpite_grupo_classificacao pgc
+               ON pgc.grupo_id = g.id
+              AND pgc.usuario_id = :usuario_id
+              AND pgc.edicao_id = :edicao_id1
+        LEFT JOIN times t1 ON t1.id = pgc.primeiro_time_id
+        LEFT JOIN times t2 ON t2.id = pgc.segundo_time_id
+        LEFT JOIN times t3 ON t3.id = pgc.terceiro_time_id
+        WHERE g.edicao_id = :edicao_id2
+        ORDER BY g.codigo
+    ";
+    $stClass = $pdo->prepare($sqlClass);
+    $stClass->execute([
+        ":usuario_id" => $usuarioId,
+        ":edicao_id1" => $edicaoId,
+        ":edicao_id2" => $edicaoId,
+    ]);
+    $rowsClass = $stClass->fetchAll(PDO::FETCH_ASSOC);
+
+    // =========================================================
+    // 3) Campeão — 1 por usuário por edição (se existir)
+    // =========================================================
+    $sqlCamp = "
+        SELECT t.nome AS campeao_nome
+        FROM palpite_campeao pc
+        INNER JOIN times t ON t.id = pc.time_id
+        WHERE pc.usuario_id = :usuario_id
+          AND pc.edicao_id = :edicao_id
+        LIMIT 1
+    ";
+    $stCamp = $pdo->prepare($sqlCamp);
+    $stCamp->execute([
+        ":usuario_id" => $usuarioId,
+        ":edicao_id"  => $edicaoId,
+    ]);
+    $campeaoNome = $stCamp->fetchColumn();
+    if ($campeaoNome === false || $campeaoNome === null) {
+        $campeaoNome = "";
+    } else {
+        $campeaoNome = (string)$campeaoNome;
+    }
+
+    // =========================================================
+    // Saída XLS (HTML)
+    // =========================================================
     $slug = filename_slug($usuarioNome);
     $ts = date("Y-m-d_H-i");
     $filename = "apostas_{$slug}_{$ts}.xls";
@@ -108,8 +165,59 @@ try {
     header("Expires: 0");
 
     echo "<html><head><meta charset='UTF-8'></head><body>";
+
+    // ---------- Cabeçalho rápido ----------
+    echo "<table border='1' cellspacing='0' cellpadding='6'>";
+    echo "<tbody>";
+    echo "<tr><th colspan='2'>Exportação de Apostas</th></tr>";
+    echo "<tr><td><b>Usuário</b></td><td>" . strh($usuarioNome) . "</td></tr>";
+    echo "<tr><td><b>Edição ID</b></td><td>" . strh((string)$edicaoId) . "</td></tr>";
+    echo "<tr><td><b>Campeão</b></td><td>" . strh($campeaoNome) . "</td></tr>";
+    echo "</tbody>";
+    echo "</table>";
+
+    echo "<br/>";
+
+    // ---------- Tabela: Classificação por Grupo ----------
     echo "<table border='1' cellspacing='0' cellpadding='6'>";
     echo "<thead>";
+    echo "<tr>";
+    echo "<th colspan='4'>Palpite de Classificação por Grupo (1º / 2º / 3º)</th>";
+    echo "</tr>";
+    echo "<tr>";
+    echo "<th>Grupo</th>";
+    echo "<th>1º</th>";
+    echo "<th>2º</th>";
+    echo "<th>3º</th>";
+    echo "</tr>";
+    echo "</thead>";
+    echo "<tbody>";
+
+    foreach ($rowsClass as $r) {
+        $grupo = (string)($r["grupo_codigo"] ?? "");
+        $p1 = (string)($r["primeiro_nome"] ?? "");
+        $p2 = (string)($r["segundo_nome"] ?? "");
+        $p3 = (string)($r["terceiro_nome"] ?? "");
+
+        echo "<tr>";
+        echo "<td>" . strh($grupo) . "</td>";
+        echo "<td>" . strh($p1) . "</td>";
+        echo "<td>" . strh($p2) . "</td>";
+        echo "<td>" . strh($p3) . "</td>";
+        echo "</tr>";
+    }
+
+    echo "</tbody>";
+    echo "</table>";
+
+    echo "<br/>";
+
+    // ---------- Tabela: Jogos ----------
+    echo "<table border='1' cellspacing='0' cellpadding='6'>";
+    echo "<thead>";
+    echo "<tr>";
+    echo "<th colspan='7'>Palpites de Jogos (Fase de Grupos)</th>";
+    echo "</tr>";
     echo "<tr>";
     echo "<th>Grupo</th>";
     echo "<th>Data/Hora</th>";
@@ -122,7 +230,7 @@ try {
     echo "</thead>";
     echo "<tbody>";
 
-    foreach ($rows as $r) {
+    foreach ($rowsJogos as $r) {
         $grupo = (string)$r["grupo_codigo"];
 
         $dhRaw = (string)$r["data_hora"];
@@ -157,6 +265,7 @@ try {
 
     echo "</tbody>";
     echo "</table>";
+
     echo "</body></html>";
     exit;
 

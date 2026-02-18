@@ -89,9 +89,9 @@ try {
     }
 
     // -----------------------------
-    // SQL base (igual ao export individual) + codigo_fifa
+    // SQL: Jogos + palpites (por usuário)
     // -----------------------------
-    $sql = "
+    $sqlJogos = "
         SELECT
             g.codigo AS grupo_codigo,
             j.data_hora,
@@ -114,7 +114,42 @@ try {
           AND (j.fase = 'GRUPOS' OR j.fase = 'GRUPO' OR j.fase = 'FASE_DE_GRUPOS' OR j.fase LIKE '%GRUP%')
         ORDER BY g.codigo, j.data_hora, j.id
     ";
-    $st = $pdo->prepare($sql);
+    $stJogos = $pdo->prepare($sqlJogos);
+
+    // -----------------------------
+    // SQL: Classificação 1º/2º/3º por grupo (por usuário) — lista TODOS os grupos da edição
+    // -----------------------------
+    $sqlClass = "
+        SELECT
+            g.codigo AS grupo_codigo,
+            t1.nome AS primeiro_nome,
+            t2.nome AS segundo_nome,
+            t3.nome AS terceiro_nome
+        FROM grupos g
+        LEFT JOIN palpite_grupo_classificacao pgc
+               ON pgc.grupo_id = g.id
+              AND pgc.usuario_id = :usuario_id
+              AND pgc.edicao_id = :edicao_id1
+        LEFT JOIN times t1 ON t1.id = pgc.primeiro_time_id
+        LEFT JOIN times t2 ON t2.id = pgc.segundo_time_id
+        LEFT JOIN times t3 ON t3.id = pgc.terceiro_time_id
+        WHERE g.edicao_id = :edicao_id2
+        ORDER BY g.codigo
+    ";
+    $stClass = $pdo->prepare($sqlClass);
+
+    // -----------------------------
+    // SQL: Campeão (por usuário)
+    // -----------------------------
+    $sqlCamp = "
+        SELECT t.nome AS campeao_nome
+        FROM palpite_campeao pc
+        INNER JOIN times t ON t.id = pc.time_id
+        WHERE pc.usuario_id = :usuario_id
+          AND pc.edicao_id = :edicao_id
+        LIMIT 1
+    ";
+    $stCamp = $pdo->prepare($sqlCamp);
 
     // Timestamp único do pacote
     $tsPack = date("Y-m-d_H-i");
@@ -127,23 +162,90 @@ try {
         $usuarioId = (int)$u["id"];
         $usuarioNome = (string)$u["nome"];
 
-        // Executa query para o usuário
-        $st->execute([
+        // Campeão do usuário
+        $stCamp->execute([
+            ":usuario_id" => $usuarioId,
+            ":edicao_id"  => $edicaoId,
+        ]);
+        $campeaoNome = $stCamp->fetchColumn();
+        if ($campeaoNome === false || $campeaoNome === null) {
+            $campeaoNome = "";
+        } else {
+            $campeaoNome = (string)$campeaoNome;
+        }
+
+        // Classificação por grupo do usuário
+        $stClass->execute([
+            ":usuario_id" => $usuarioId,
+            ":edicao_id1" => $edicaoId,
+            ":edicao_id2" => $edicaoId,
+        ]);
+        $rowsClass = $stClass->fetchAll(PDO::FETCH_ASSOC);
+
+        // Jogos do usuário
+        $stJogos->execute([
             ":edicao_id1" => $edicaoId,
             ":edicao_id2" => $edicaoId,
             ":usuario_id" => $usuarioId,
         ]);
-        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+        $rowsJogos = $stJogos->fetchAll(PDO::FETCH_ASSOC);
 
         $slug = filename_slug($usuarioNome);
         $filename = "apostas_{$slug}_id{$usuarioId}_{$tsPack}.xls";
         $zipPath = "{$folder}/{$filename}";
 
-        // Monta o mesmo "xls" em HTML (Excel abre)
+        // Monta o XLS (HTML)
         $html = "";
         $html .= "<html><head><meta charset='UTF-8'></head><body>";
+
+        // ---------- Cabeçalho ----------
+        $html .= "<table border='1' cellspacing='0' cellpadding='6'>";
+        $html .= "<tbody>";
+        $html .= "<tr><th colspan='2'>Exportação de Apostas</th></tr>";
+        $html .= "<tr><td><b>Usuário</b></td><td>" . strh($usuarioNome) . "</td></tr>";
+        $html .= "<tr><td><b>Edição ID</b></td><td>" . strh((string)$edicaoId) . "</td></tr>";
+        $html .= "<tr><td><b>Campeão</b></td><td>" . strh($campeaoNome) . "</td></tr>";
+        $html .= "</tbody>";
+        $html .= "</table>";
+
+        $html .= "<br/>";
+
+        // ---------- Classificação por Grupo ----------
         $html .= "<table border='1' cellspacing='0' cellpadding='6'>";
         $html .= "<thead>";
+        $html .= "<tr><th colspan='4'>Palpite de Classificação por Grupo (1º / 2º / 3º)</th></tr>";
+        $html .= "<tr>";
+        $html .= "<th>Grupo</th>";
+        $html .= "<th>1º</th>";
+        $html .= "<th>2º</th>";
+        $html .= "<th>3º</th>";
+        $html .= "</tr>";
+        $html .= "</thead>";
+        $html .= "<tbody>";
+
+        foreach ($rowsClass as $r) {
+            $grupo = (string)($r["grupo_codigo"] ?? "");
+            $p1 = (string)($r["primeiro_nome"] ?? "");
+            $p2 = (string)($r["segundo_nome"] ?? "");
+            $p3 = (string)($r["terceiro_nome"] ?? "");
+
+            $html .= "<tr>";
+            $html .= "<td>" . strh($grupo) . "</td>";
+            $html .= "<td>" . strh($p1) . "</td>";
+            $html .= "<td>" . strh($p2) . "</td>";
+            $html .= "<td>" . strh($p3) . "</td>";
+            $html .= "</tr>";
+        }
+
+        $html .= "</tbody>";
+        $html .= "</table>";
+
+        $html .= "<br/>";
+
+        // ---------- Jogos ----------
+        $html .= "<table border='1' cellspacing='0' cellpadding='6'>";
+        $html .= "<thead>";
+        $html .= "<tr><th colspan='7'>Palpites de Jogos (Fase de Grupos)</th></tr>";
         $html .= "<tr>";
         $html .= "<th>Grupo</th>";
         $html .= "<th>Data/Hora</th>";
@@ -156,7 +258,7 @@ try {
         $html .= "</thead>";
         $html .= "<tbody>";
 
-        foreach ($rows as $r) {
+        foreach ($rowsJogos as $r) {
             $grupo = (string)$r["grupo_codigo"];
 
             $dhRaw = (string)$r["data_hora"];
@@ -191,6 +293,7 @@ try {
 
         $html .= "</tbody>";
         $html .= "</table>";
+
         $html .= "</body></html>";
 
         $zip->addFromString($zipPath, $html);

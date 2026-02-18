@@ -1,0 +1,210 @@
+/* =========================================================
+   base.css — COMPLETO (GLOBAL)
+   - Reset + variáveis + fundo
+   - Utilidades
+   - NÃO contém regras específicas de páginas (login/app/admin)
+   ========================================================= */
+
+:root{
+  --bg0:#071a1f;
+  --bg1:#0c2a30;
+  --bg2:#0b2330;
+
+  --green:#00c27a;
+  --green2:#10d08a;
+  --gold:#f7c948;
+  --gold2:#ffd86b;
+
+  --ice:#cfeff2;
+  --text:#ffffff;
+  --muted: rgba(255,255,255,.75);
+
+  --card: rgba(255,255,255,.08);
+  --card2: rgba(255,255,255,.12);
+  --stroke: rgba(255,255,255,.18);
+
+  --shadow: 0 24px 60px rgba(0,0,0,.55);
+  --shadow2: 0 12px 30px rgba(0,0,0,.45);
+
+  /* safe-area (notch) */
+  --safe-top: env(safe-area-inset-top);
+  --safe-right: env(safe-area-inset-right);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+
+  /* app glass */
+  --app-glass: rgba(255,255,255,.06);
+  --app-glass2: rgba(255,255,255,.10);
+  --app-stroke: rgba(255,255,255,.12);
+  --app-soft: rgba(0,0,0,.16);
+
+  /* cores por seção */
+  --head-grad: linear-gradient(90deg, rgba(16,208,138,.24), rgba(247,201,72,.18));
+  --foot-grad: linear-gradient(90deg, rgba(70,220,255,.14), rgba(16,208,138,.12));
+  --card-grad: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+
+  --violet: rgba(140,120,255,.22);
+  --aqua: rgba(70,220,255,.18);
+
+  --ok: rgba(16,208,138,.92);
+  --warn: rgba(247,201,72,.95);
+  --bad: rgba(255,140,140,.95);
+
+  --in-ease: cubic-bezier(.2,.9,.2,1);
+}
+
+/* =========================================================
+   RESET / BASE
+   ========================================================= */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+html, body{
+  height: 100%;
+  height: 100dvh;
+}
+
+body{
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--text);
+
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(16,208,138,.18), transparent 55%),
+    radial-gradient(900px 700px at 80% 20%, rgba(247,201,72,.16), transparent 55%),
+    radial-gradient(900px 700px at 60% 90%, rgba(0,194,122,.12), transparent 55%),
+    linear-gradient(135deg, var(--bg0), var(--bg1), var(--bg2));
+
+  position: relative;
+  overflow-x:hidden;
+
+  display:block;
+
+  padding:
+    calc(10px + var(--safe-top))
+    calc(10px + var(--safe-right))
+    calc(14px + var(--safe-bottom))
+    calc(10px + var(--safe-left));
+}
+
+img{
+  max-width: 100%;
+  height: auto;
+  display:block;
+}
+
+a{
+  color: inherit;
+}
+
+button, input, select, textarea{
+  font: inherit;
+}
+
+::selection{
+  background: rgba(247,201,72,.30);
+}
+
+/* =========================================================
+   FUNDO (leve)
+   ========================================================= */
+@keyframes twinkle{
+  0%{ transform: translate3d(0,0,0); opacity:.20; }
+  50%{ opacity:.28; }
+  100%{ transform: translate3d(-34px,18px,0); opacity:.20; }
+}
+
+body::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.22) 50%, transparent 55%),
+    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,.18) 50%, transparent 55%),
+    radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,.14) 50%, transparent 55%),
+    radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,.16) 50%, transparent 55%);
+  background-size: 260px 260px;
+  opacity:.26;
+  pointer-events:none;
+  animation: twinkle 9s linear infinite;
+}
+
+/* =========================================================
+   UTILITÁRIOS
+   ========================================================= */
+.hidden{ display:none !important; }
+
+.container{
+  width: min(1120px, 100%);
+  margin: 0 auto;
+}
+
+.text-muted{ color: var(--muted); }
+
+.card-glass{
+  background: linear-gradient(180deg, var(--card), rgba(255,255,255,.06));
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow2);
+  backdrop-filter: blur(14px);
+  border-radius: 20px;
+}
+
+.kbd{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.18);
+}
+
+.badge{
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #062027;
+  background: linear-gradient(90deg, rgba(16,208,138,.95), rgba(247,201,72,.90));
+  box-shadow: 0 10px 18px rgba(0,0,0,.18);
+}
+
+.badge-muted{
+  color: rgba(255,255,255,.82);
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: none;
+}
+
+/* =========================================================
+   RESPONSIVO BASE (padding do body)
+   ========================================================= */
+@media (max-width: 560px){
+  body{
+    padding:
+      calc(8px + var(--safe-top))
+      calc(8px + var(--safe-right))
+      calc(12px + var(--safe-bottom))
+      calc(8px + var(--safe-left));
+  }
+}
+
+/* =========================================================
+   REDUCE MOTION
+   ========================================================= */
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

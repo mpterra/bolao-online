@@ -173,7 +173,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	<meta charset="UTF-8" />
 	<title>Bolão da Copa - Campeão</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-	<link rel="stylesheet" href="/bolao-da-copa/public/css/style.css">
 	<link rel="stylesheet" href="/bolao-da-copa/public/css/campeao.css">
 </head>
 <body>
@@ -202,7 +201,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		<section class="champ-card">
 			<div class="champ-card-head">
 				<div class="h1">Selecione o campeão</div>
-				<div class="sub">Desktop: 4 colunas • Celular: grid adaptativo e confortável</div>
 			</div>
 
 			<?php if (count($times) === 0): ?>

@@ -1,0 +1,182 @@
+/* =========================================================
+   cadastro.css — COMPLETO
+   - Estende login.css
+   - Select UF customizado
+   - Modal sucesso
+   ========================================================= */
+
+/* =========================================================
+   SELECT (UF)
+   ========================================================= */
+
+.input-group select{
+  width: 100%;
+  padding: 12px 42px 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.10);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: 220ms ease;
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  cursor: pointer;
+
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255,255,255,.85) 50%),
+    linear-gradient(135deg, rgba(255,255,255,.85) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% + 1px),
+    calc(100% - 12px) calc(50% + 1px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.input-group select:focus{
+  border-color: rgba(16,208,138,.55);
+  box-shadow:
+    0 0 0 4px rgba(16,208,138,.14),
+    0 10px 22px rgba(0,0,0,.25);
+  background: rgba(255,255,255,.12);
+}
+
+.input-group select:invalid{
+  color: rgba(255,255,255,.55);
+}
+
+.input-group select:focus + label,
+.input-group select:valid + label{
+  top: -9px;
+  left: 10px;
+  font-size: 11px;
+  color: rgba(255,255,255,.92);
+  background: linear-gradient(90deg, rgba(16,208,138,.32), rgba(247,201,72,.28));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 8px 16px rgba(0,0,0,.20);
+}
+
+/* =========================================================
+   MODAL SUCESSO
+   ========================================================= */
+
+@keyframes modalIn{
+  from{ opacity: 0; transform: translateY(10px) scale(.98); }
+  to{ opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 9999;
+  background: rgba(0,0,0,.60);
+  backdrop-filter: blur(8px);
+}
+
+.modal-overlay.is-open{
+  display: flex;
+}
+
+.modal-card{
+  width: min(560px, 100%);
+  border-radius: 20px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 26px 80px rgba(0,0,0,.55);
+  animation: modalIn 260ms ease-out both;
+}
+
+.modal-head{
+  display:flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.modal-icon{
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: #0c2a20;
+  background: linear-gradient(135deg, rgba(16,208,138,.95), rgba(247,201,72,.90));
+  box-shadow: 0 14px 36px rgba(16,208,138,.14);
+  flex: 0 0 auto;
+}
+
+.modal-titles h2{
+  margin: 2px 0 6px;
+  font-size: 18px;
+  letter-spacing: .2px;
+  font-weight: 900;
+  color: rgba(255,255,255,.96);
+}
+
+.modal-titles p{
+  margin: 0;
+  color: rgba(255,255,255,.80);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.modal-actions{
+  margin-top: 16px;
+  display:flex;
+  justify-content: flex-end;
+}
+
+.btn-modal-ok{
+  border: 0;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 900;
+  font-size: 14px;
+  color: #062027;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 16px 42px rgba(0,0,0,.40);
+  transition: transform 140ms ease, filter 180ms ease;
+}
+
+.btn-modal-ok:hover{
+  filter: saturate(1.06);
+  transform: translateY(-1px);
+}
+
+.btn-modal-ok:active{
+  transform: translateY(0) scale(.99);
+}
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 560px){
+  .modal-card{
+    padding: 16px;
+  }
+
+  .modal-titles h2{
+    font-size: 16px;
+  }
+
+  .modal-titles p{
+    font-size: 13px;
+  }
+
+  .btn-modal-ok{
+    width: 100%;
+  }
+
+  .modal-actions{
+    justify-content: stretch;
+  }
+}

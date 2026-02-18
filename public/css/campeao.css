@@ -1,11 +1,107 @@
 /* =========================================================
-   campeao.css — (mobile-first)
-   - Grid responsivo: 2 col (mobile), 3 (tablet), 4 (desktop)
-   - Tiles com bandeira + sigla + nome (nome pode cortar)
+   campeao.css — COMPLETO (campeao.php)
+   - Standalone (não depende de style.css)
+   - Grid responsivo (desktop 4 colunas, adapta no celular)
+   - Tiles clicáveis com seleção (check), bandeira ou fallback
+   - Toast + estados de botão
+   ========================================================= */
+
+:root{
+  --bg0:#071a1f;
+  --bg1:#0c2a30;
+  --bg2:#0b2330;
+
+  --green:#00c27a;
+  --gold:#f7c948;
+
+  --ice:#cfeff2;
+  --text:#ffffff;
+  --muted: rgba(255,255,255,.75);
+
+  --card: rgba(255,255,255,.08);
+  --card2: rgba(255,255,255,.12);
+  --stroke: rgba(255,255,255,.18);
+
+  --shadow: 0 24px 60px rgba(0,0,0,.55);
+  --shadow2: 0 16px 40px rgba(0,0,0,.28);
+
+  --head-grad: linear-gradient(90deg, rgba(16,208,138,.24), rgba(247,201,72,.18));
+  --foot-grad: linear-gradient(90deg, rgba(70,220,255,.14), rgba(16,208,138,.12));
+  --card-grad: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+
+  --ok: rgba(16,208,138,.92);
+  --warn: rgba(247,201,72,.95);
+  --bad: rgba(255,140,140,.95);
+
+  --safe-top: env(safe-area-inset-top);
+  --safe-right: env(safe-area-inset-right);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+
+  --in-ease: cubic-bezier(.2,.9,.2,1);
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+html, body{
+  height: 100%;
+  height: 100dvh;
+}
+
+body{
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--text);
+
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(16,208,138,.18), transparent 55%),
+    radial-gradient(900px 700px at 80% 20%, rgba(247,201,72,.16), transparent 55%),
+    radial-gradient(900px 700px at 60% 90%, rgba(0,194,122,.12), transparent 55%),
+    linear-gradient(135deg, var(--bg0), var(--bg1), var(--bg2));
+
+  position: relative;
+  overflow-x:hidden;
+
+  padding:
+    calc(10px + var(--safe-top))
+    calc(10px + var(--safe-right))
+    calc(14px + var(--safe-bottom))
+    calc(10px + var(--safe-left));
+}
+
+/* fundo leve */
+@keyframes twinkle{
+  0%{ transform: translate3d(0,0,0); opacity:.20; }
+  50%{ opacity:.28; }
+  100%{ transform: translate3d(-34px,18px,0); opacity:.20; }
+}
+
+body::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.22) 50%, transparent 55%),
+    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,.18) 50%, transparent 55%),
+    radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,.14) 50%, transparent 55%),
+    radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,.16) 50%, transparent 55%);
+  background-size: 260px 260px;
+  opacity:.26;
+  pointer-events:none;
+  animation: twinkle 9s linear infinite;
+}
+
+/* =========================================================
+   WRAP + HEADER
    ========================================================= */
 
 .champ-wrap{
-  width: min(1180px, 100%);
+  width: min(1200px, 100%);
   margin: 0 auto;
   padding: 12px;
   position: relative;
@@ -17,7 +113,7 @@
   align-items:center;
   justify-content:space-between;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .champ-brand{
@@ -31,13 +127,18 @@
   width: 44px;
   height: 44px;
   object-fit: contain;
+  flex: 0 0 auto;
+
+  filter:
+    drop-shadow(0 14px 18px rgba(0,0,0,.45))
+    drop-shadow(0 6px 10px rgba(0,0,0,.30));
 }
 
 .champ-title{
   display:flex;
   flex-direction:column;
-  min-width: 0;
   line-height: 1.1;
+  min-width: 0;
 }
 
 .champ-title strong{
@@ -45,17 +146,24 @@
   font-weight: 900;
   letter-spacing: .2px;
   color: rgba(255,255,255,.96);
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
 }
 
 .champ-title span{
   font-size: 12px;
   color: rgba(255,255,255,.72);
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
 }
 
 .champ-actions{
   display:flex;
   align-items:center;
   gap: 10px;
+  flex: 0 0 auto;
 }
 
 .champ-user{
@@ -67,7 +175,7 @@
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.06);
   box-shadow: 0 12px 22px rgba(0,0,0,.18);
-  max-width: 42vw;
+  max-width: 320px;
 }
 
 .champ-user .dot{
@@ -98,6 +206,9 @@
   font-weight: 900;
   transition: 180ms ease;
   text-decoration: none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   white-space: nowrap;
 }
 
@@ -107,164 +218,211 @@
   box-shadow: 0 12px 22px rgba(0,0,0,.22);
 }
 
+.btn-back:active{
+  transform: translateY(0) scale(.99);
+}
+
+/* =========================================================
+   MAIN + CARD
+   ========================================================= */
+
 .champ-main{
-  padding-top: 4px;
+  display:block;
 }
 
 .champ-card{
-  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: 0 16px 44px rgba(0,0,0,.30);
-  backdrop-filter: blur(14px);
   border-radius: 22px;
-  padding: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background:
+    radial-gradient(900px 320px at 18% 10%, rgba(16,208,138,.12), transparent 58%),
+    radial-gradient(760px 300px at 82% 18%, rgba(247,201,72,.10), transparent 58%),
+    radial-gradient(720px 300px at 50% 120%, rgba(70,220,255,.10), transparent 62%),
+    var(--card-grad);
+  box-shadow: 0 18px 44px rgba(0,0,0,.28);
+  overflow:hidden;
 }
 
 .champ-card-head{
+  padding: 14px 16px;
+  background: var(--head-grad);
+  border-bottom: 1px solid rgba(255,255,255,.10);
   display:flex;
-  flex-direction:column;
-  gap: 4px;
-  margin-bottom: 12px;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .champ-card-head .h1{
+  font-size: 14px;
   font-weight: 900;
-  font-size: 15px;
   color: rgba(255,255,255,.96);
+  letter-spacing: .2px;
 }
 
 .champ-card-head .sub{
+  font-size: 12px;
   font-weight: 900;
-  font-size: 11px;
-  color: rgba(255,255,255,.70);
+  color: rgba(255,255,255,.78);
 }
 
 .champ-empty{
-  border-radius: 18px;
-  border: 1px dashed rgba(255,255,255,.18);
-  background: rgba(0,0,0,.14);
   padding: 16px;
-  color: rgba(255,255,255,.78);
-  line-height: 1.45;
+  color: rgba(255,255,255,.82);
   font-weight: 900;
+  font-size: 13px;
 }
 
+/* =========================================================
+   GRID DE TIMES
+   ========================================================= */
+
 .champ-grid{
+  padding: 14px;
   display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .team-tile{
   width: 100%;
-  border: 1px solid rgba(255,255,255,.14);
-  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
   background:
-    radial-gradient(260px 90px at 25% 20%, rgba(70,220,255,.10), transparent 62%),
-    radial-gradient(260px 90px at 80% 30%, rgba(247,201,72,.10), transparent 65%),
-    rgba(0,0,0,.12);
-  box-shadow: 0 14px 34px rgba(0,0,0,.22);
+    radial-gradient(220px 90px at 20% 15%, rgba(70,220,255,.10), transparent 62%),
+    rgba(255,255,255,.06);
+
+  border-radius: 18px;
   padding: 12px;
   cursor: pointer;
+  color: rgba(255,255,255,.92);
+  text-align: left;
+
   display:flex;
   align-items:center;
-  gap: 10px;
-  text-align:left;
-  position: relative;
+  gap: 12px;
+
+  box-shadow: 0 14px 28px rgba(0,0,0,.18);
   transition: 180ms ease;
-  color: rgba(255,255,255,.92);
+  position: relative;
+
+  -webkit-tap-highlight-color: transparent;
+  user-select:none;
 }
 
 .team-tile:hover{
-  transform: translateY(-1px);
   background:
-    radial-gradient(260px 90px at 25% 20%, rgba(70,220,255,.12), transparent 62%),
-    radial-gradient(260px 90px at 80% 30%, rgba(247,201,72,.12), transparent 65%),
-    rgba(0,0,0,.14);
+    radial-gradient(220px 90px at 20% 15%, rgba(70,220,255,.14), transparent 62%),
+    rgba(255,255,255,.09);
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(0,0,0,.22);
 }
 
 .team-tile:active{
-  transform: translateY(0) scale(.995);
+  transform: translateY(0) scale(.99);
 }
 
-.team-tile .flag{
+.team-tile:focus{
+  outline: none;
+  border-color: rgba(16,208,138,.55);
+  box-shadow:
+    0 0 0 4px rgba(16,208,138,.14),
+    0 18px 36px rgba(0,0,0,.22);
+}
+
+/* Bandeira / fallback */
+.flag{
   width: 44px;
   height: 44px;
-  border-radius: 16px;
+  border-radius: 14px;
   object-fit: cover;
-  border: 1px solid rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
   box-shadow: 0 10px 18px rgba(0,0,0,.22);
   flex: 0 0 auto;
 }
 
-.team-tile .flag-fallback{
+.flag-fallback{
   display:grid;
   place-items:center;
   font-weight: 900;
   font-size: 12px;
-  background: rgba(255,255,255,.10);
+  letter-spacing: .6px;
   color: rgba(255,255,255,.92);
+  background:
+    radial-gradient(140px 60px at 30% 30%, rgba(16,208,138,.14), transparent 60%),
+    radial-gradient(140px 60px at 70% 30%, rgba(247,201,72,.12), transparent 60%),
+    rgba(0,0,0,.14);
 }
 
-.team-tile .meta{
+/* Meta */
+.meta{
   min-width: 0;
   display:flex;
   flex-direction:column;
   gap: 2px;
 }
 
-.team-tile .sigla{
-  font-weight: 900;
-  font-size: 13px;
-  letter-spacing: .2px;
-}
-
-.team-tile .nome{
+.meta .sigla{
   font-weight: 900;
   font-size: 11px;
-  color: rgba(255,255,255,.74);
+  letter-spacing: .35px;
+  color: rgba(255,255,255,.78);
+}
+
+.meta .nome{
+  font-weight: 900;
+  font-size: 13px;
+  color: rgba(255,255,255,.92);
   overflow:hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.team-tile .check{
+/* Check */
+.check{
   position:absolute;
-  right: 10px;
   top: 10px;
-  width: 26px;
-  height: 26px;
+  right: 10px;
+
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
   display:grid;
   place-items:center;
-  font-weight: 900;
-  color: rgba(255,255,255,.92);
-  background: rgba(0,0,0,.22);
+
+  color: rgba(0,0,0,.70);
+  background: rgba(255,255,255,.10);
   border: 1px solid rgba(255,255,255,.14);
-  opacity: .0;
-  transform: scale(.95);
-  transition: 160ms ease;
+  opacity: 0;
+  transform: scale(.88);
+  transition: 180ms ease;
 }
 
+/* estado selecionado */
 .team-tile.is-selected{
-  border-color: rgba(16,208,138,.38);
-  box-shadow: 0 18px 44px rgba(0,0,0,.28);
+  border-color: rgba(16,208,138,.40);
   background:
-    radial-gradient(320px 110px at 25% 20%, rgba(16,208,138,.18), transparent 62%),
-    radial-gradient(320px 110px at 80% 30%, rgba(247,201,72,.14), transparent 65%),
-    rgba(0,0,0,.10);
+    radial-gradient(220px 90px at 20% 15%, rgba(16,208,138,.16), transparent 62%),
+    radial-gradient(220px 90px at 85% 25%, rgba(247,201,72,.12), transparent 62%),
+    rgba(255,255,255,.08);
 }
 
 .team-tile.is-selected .check{
   opacity: 1;
   transform: scale(1);
-  background: linear-gradient(90deg, rgba(16,208,138,.92), rgba(247,201,72,.92));
-  color: #062027;
+  background: linear-gradient(90deg, rgba(16,208,138,.95), rgba(247,201,72,.92));
   border-color: rgba(255,255,255,.10);
+  box-shadow: 0 12px 24px rgba(0,0,0,.22);
 }
 
+/* =========================================================
+   FOOTER (botão salvar + hint)
+   ========================================================= */
+
 .champ-footer{
-  margin-top: 12px;
+  padding: 14px 16px;
+  background: var(--foot-grad);
+  border-top: 1px solid rgba(255,255,255,.10);
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -282,40 +440,81 @@
   color: #062027;
   background: linear-gradient(90deg, var(--green), var(--gold));
   box-shadow: 0 16px 42px rgba(0,0,0,.35);
-  transition: transform 140ms ease, filter 180ms ease;
+  transition: transform 140ms ease, filter 180ms ease, opacity 180ms ease;
   white-space: nowrap;
 }
 
-.btn-save-champ:hover{ filter: saturate(1.06); transform: translateY(-1px); }
-.btn-save-champ:active{ transform: translateY(0) scale(.99); }
+.btn-save-champ:hover{
+  filter: saturate(1.06);
+  transform: translateY(-1px);
+}
+
+.btn-save-champ:active{
+  transform: translateY(0) scale(.99);
+}
+
 .btn-save-champ:disabled{
-  opacity: .65;
+  opacity: .62;
   cursor: not-allowed;
-  transform:none;
-  filter:none;
+  transform: none;
+  filter: none;
 }
 
 .champ-hint{
   font-size: 12px;
   font-weight: 900;
-  color: rgba(255,255,255,.72);
+  color: rgba(255,255,255,.78);
   line-height: 1.35;
-  flex: 1 1 280px;
+  min-width: 220px;
 }
 
-/* Tablets */
-@media (min-width: 720px){
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+@keyframes toastIn{
+  from{ opacity: 0; transform: translate(-50%, 10px) scale(.98); }
+  to{ opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.toast{
+  position: fixed;
+  left: 50%;
+  bottom: calc(14px + var(--safe-bottom));
+  transform: translateX(-50%);
+  z-index: 9999;
+
+  display:none;
+  min-width: min(560px, calc(100% - 24px));
+
+  border-radius: 18px;
+  padding: 12px 14px;
+
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(10px);
+
+  box-shadow: 0 22px 60px rgba(0,0,0,.55);
+  color: rgba(255,255,255,.92);
+
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.toast.is-open{
+  display:block;
+  animation: toastIn 180ms ease-out both;
+}
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 980px){
   .champ-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-/* Desktop: 4 colunas */
-@media (min-width: 980px){
-  .champ-grid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-
-/* Ajustes mobile */
-@media (max-width: 560px){
-  .champ-wrap{ padding: 10px; }
+@media (max-width: 760px){
   .champ-header{
     flex-direction: column;
     align-items: stretch;
@@ -323,6 +522,43 @@
   .champ-actions{
     justify-content: space-between;
   }
-  .champ-user{ max-width: 70vw; }
-  .team-tile .nome{ white-space: normal; }
+  .champ-user{ max-width: 60vw; }
+  .champ-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px){
+  body{
+    padding:
+      calc(8px + var(--safe-top))
+      calc(8px + var(--safe-right))
+      calc(12px + var(--safe-bottom))
+      calc(8px + var(--safe-left));
+  }
+
+  .champ-wrap{ padding: 10px; }
+  .champ-card-head{ padding: 12px 14px; }
+  .champ-grid{ padding: 12px; gap: 10px; grid-template-columns: 1fr; }
+
+  .team-tile{ padding: 12px; }
+  .flag{ width: 46px; height: 46px; border-radius: 16px; }
+  .meta .nome{ white-space: normal; }
+
+  .champ-footer{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-save-champ{
+    width: 100%;
+    justify-content:center;
+  }
+  .champ-hint{ min-width: 0; }
+  .toast{ min-width: calc(100% - 20px); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }

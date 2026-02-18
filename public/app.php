@@ -644,7 +644,7 @@ try {
 	<meta charset="UTF-8" />
 	<title>Bolão da Copa - Palpites</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-	<link rel="stylesheet" href="/bolao-da-copa/public/css/style.css">
+	<link rel="stylesheet" href="/bolao-da-copa/public/css/app.css">
 </head>
 <body>
 

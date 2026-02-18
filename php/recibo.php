@@ -216,6 +216,33 @@ final class SimplePdf {
 		$this->y -= 14;
 	}
 
+	public function sectionTitle(string $title): void {
+		$this->ensureSpace(30);
+
+		$left = $this->marginL;
+		$right = $this->pageW - $this->marginR;
+
+		$this->setGrayFill(0.97);
+		$this->fillRect($left, $this->y - 22, $right - $left, 22);
+
+		$this->setGrayStroke(0.86);
+		$this->rectStroke($left, $this->y - 22, $right - $left, 22);
+
+		$this->setGrayStroke(0);
+		$this->setGrayFill(0);
+
+		$this->textUtf($left + 12, $this->y - 16, "F1", 11, $title);
+
+		$this->y -= 30;
+	}
+
+	public function sectionLine(string $text): void {
+		$this->ensureSpace(16);
+		$left = $this->marginL;
+		$this->textUtf($left + 12, $this->y, "F1", 10, $text);
+		$this->y -= 12;
+	}
+
 	public function groupTitle(string $g, int $count): void {
 		$this->ensureSpace(46);
 
@@ -254,6 +281,14 @@ final class SimplePdf {
 		$this->setGrayStroke(0);
 
 		$this->y -= 10;
+	}
+
+	public function groupClassificationLine(?string $line): void {
+		if ($line === null || trim($line) === "") return;
+		$this->ensureSpace(16);
+		$left = $this->marginL;
+		$this->textUtf($left + 12, $this->y, "F1", 9, $line);
+		$this->y -= 12;
 	}
 
 	public function row(string $when, string $home, string $away, string $score): void {
@@ -335,6 +370,66 @@ try {
 	$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
 	if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
 
+	// =========================================================
+	// 1) Palpite de CAMPEÃO (1 por usuário por edição)
+	// =========================================================
+	$sqlCampeao = "
+		SELECT t.nome
+		FROM palpite_campeao pc
+		INNER JOIN times t ON t.id = pc.time_id
+		WHERE pc.edicao_id = :edicao_id
+		  AND pc.usuario_id = :usuario_id
+		LIMIT 1
+	";
+	$stCampeao = $pdo->prepare($sqlCampeao);
+	$stCampeao->execute([
+		":edicao_id" => $edicaoId,
+		":usuario_id" => $usuarioId,
+	]);
+	$campeaoNome = $stCampeao->fetchColumn();
+	$campeaoNome = ($campeaoNome !== false && $campeaoNome !== null) ? (string)$campeaoNome : "";
+
+	// =========================================================
+	// 2) Palpite de CLASSIFICAÇÃO (1º/2º/3º) por grupo
+	// =========================================================
+	$sqlClassif = "
+		SELECT
+			g.codigo AS grupo_codigo,
+			t1.nome AS primeiro_nome,
+			t2.nome AS segundo_nome,
+			t3.nome AS terceiro_nome
+		FROM palpite_grupo_classificacao pgc
+		INNER JOIN grupos g
+			ON g.id = pgc.grupo_id
+		   AND g.edicao_id = :edicao_id1
+		INNER JOIN times t1 ON t1.id = pgc.primeiro_time_id
+		INNER JOIN times t2 ON t2.id = pgc.segundo_time_id
+		INNER JOIN times t3 ON t3.id = pgc.terceiro_time_id
+		WHERE pgc.edicao_id = :edicao_id2
+		  AND pgc.usuario_id = :usuario_id
+	";
+	$stClassif = $pdo->prepare($sqlClassif);
+	$stClassif->execute([
+		":edicao_id1" => $edicaoId,
+		":edicao_id2" => $edicaoId,
+		":usuario_id" => $usuarioId,
+	]);
+	$classRows = $stClassif->fetchAll(PDO::FETCH_ASSOC);
+
+	$mapClassif = [];
+	foreach ($classRows as $r) {
+		$gc = (string)($r["grupo_codigo"] ?? "");
+		if ($gc === "") continue;
+		$mapClassif[$gc] = [
+			"primeiro" => (string)($r["primeiro_nome"] ?? ""),
+			"segundo"  => (string)($r["segundo_nome"] ?? ""),
+			"terceiro" => (string)($r["terceiro_nome"] ?? ""),
+		];
+	}
+
+	// =========================================================
+	// 3) Jogos + palpites (fase de grupos)
+	// =========================================================
 	$sql = "
 		SELECT
 			g.codigo AS grupo_codigo,
@@ -382,8 +477,27 @@ try {
 	$pdf = new SimplePdf("Recibo - Bolão da Copa");
 	$pdf->header($mainTitle, $subLeft, $subRight);
 
+	// =========================================================
+	// 4) Seção: Campeão (✅ com "enter" extra após o título)
+	// =========================================================
+	$pdf->sectionTitle("Palpite de Campeão");
+	$pdf->footerNote(" "); // ✅ 1 linha em branco para não colar no topo do bloco
+
+	if ($campeaoNome !== "") {
+		$pdf->sectionLine("Campeão escolhido: " . $campeaoNome);
+	} else {
+		$pdf->sectionLine("Campeão escolhido: — (não preenchido)");
+	}
+
+	$pdf->footerNote(" ");
+
+	// =========================================================
+	// 5) Seção: Jogos por grupo + classificação (✅ abaixo dos placares)
+	// =========================================================
 	foreach ($map as $g => $list) {
 		$pdf->groupTitle($g, count($list));
+
+		// linhas dos jogos (placares)
 		foreach ($list as $r) {
 			$when = fmt_dt_br((string)$r["data_hora"]);
 			$home = (string)$r["casa_nome"];
@@ -395,6 +509,20 @@ try {
 
 			$pdf->row($when, $home, $away, $score);
 		}
+
+		// ✅ 1 linha em branco e depois a classificação (agora fica abaixo dos placares)
+		$pdf->footerNote(" ");
+
+		$cls = $mapClassif[$g] ?? null;
+		if (is_array($cls)) {
+			$line = "Classificação escolhida: 1º " . ($cls["primeiro"] ?? "—") .
+				"  |  2º " . ($cls["segundo"] ?? "—") .
+				"  |  3º " . ($cls["terceiro"] ?? "—");
+			$pdf->groupClassificationLine($line);
+		} else {
+			$pdf->groupClassificationLine("Classificação escolhida: — (não preenchido)");
+		}
+
 		$pdf->footerNote(" ");
 	}
 
