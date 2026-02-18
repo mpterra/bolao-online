@@ -1,0 +1,328 @@
+/* =========================================================
+   campeao.css — (mobile-first)
+   - Grid responsivo: 2 col (mobile), 3 (tablet), 4 (desktop)
+   - Tiles com bandeira + sigla + nome (nome pode cortar)
+   ========================================================= */
+
+.champ-wrap{
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.champ-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.champ-brand{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.champ-brand img{
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.champ-title{
+  display:flex;
+  flex-direction:column;
+  min-width: 0;
+  line-height: 1.1;
+}
+
+.champ-title strong{
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  color: rgba(255,255,255,.96);
+}
+
+.champ-title span{
+  font-size: 12px;
+  color: rgba(255,255,255,.72);
+}
+
+.champ-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.champ-user{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  box-shadow: 0 12px 22px rgba(0,0,0,.18);
+  max-width: 42vw;
+}
+
+.champ-user .dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--green), var(--gold));
+  box-shadow: 0 0 0 4px rgba(16,208,138,.10);
+  flex: 0 0 auto;
+}
+
+.champ-user .name{
+  font-weight: 900;
+  font-size: 13px;
+  color: rgba(255,255,255,.92);
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-back{
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  border-radius: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 900;
+  transition: 180ms ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-back:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(0,0,0,.22);
+}
+
+.champ-main{
+  padding-top: 4px;
+}
+
+.champ-card{
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 16px 44px rgba(0,0,0,.30);
+  backdrop-filter: blur(14px);
+  border-radius: 22px;
+  padding: 14px;
+}
+
+.champ-card-head{
+  display:flex;
+  flex-direction:column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.champ-card-head .h1{
+  font-weight: 900;
+  font-size: 15px;
+  color: rgba(255,255,255,.96);
+}
+
+.champ-card-head .sub{
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(255,255,255,.70);
+}
+
+.champ-empty{
+  border-radius: 18px;
+  border: 1px dashed rgba(255,255,255,.18);
+  background: rgba(0,0,0,.14);
+  padding: 16px;
+  color: rgba(255,255,255,.78);
+  line-height: 1.45;
+  font-weight: 900;
+}
+
+.champ-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.team-tile{
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px;
+  background:
+    radial-gradient(260px 90px at 25% 20%, rgba(70,220,255,.10), transparent 62%),
+    radial-gradient(260px 90px at 80% 30%, rgba(247,201,72,.10), transparent 65%),
+    rgba(0,0,0,.12);
+  box-shadow: 0 14px 34px rgba(0,0,0,.22);
+  padding: 12px;
+  cursor: pointer;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  text-align:left;
+  position: relative;
+  transition: 180ms ease;
+  color: rgba(255,255,255,.92);
+}
+
+.team-tile:hover{
+  transform: translateY(-1px);
+  background:
+    radial-gradient(260px 90px at 25% 20%, rgba(70,220,255,.12), transparent 62%),
+    radial-gradient(260px 90px at 80% 30%, rgba(247,201,72,.12), transparent 65%),
+    rgba(0,0,0,.14);
+}
+
+.team-tile:active{
+  transform: translateY(0) scale(.995);
+}
+
+.team-tile .flag{
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 10px 18px rgba(0,0,0,.22);
+  flex: 0 0 auto;
+}
+
+.team-tile .flag-fallback{
+  display:grid;
+  place-items:center;
+  font-weight: 900;
+  font-size: 12px;
+  background: rgba(255,255,255,.10);
+  color: rgba(255,255,255,.92);
+}
+
+.team-tile .meta{
+  min-width: 0;
+  display:flex;
+  flex-direction:column;
+  gap: 2px;
+}
+
+.team-tile .sigla{
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: .2px;
+}
+
+.team-tile .nome{
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(255,255,255,.74);
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-tile .check{
+  position:absolute;
+  right: 10px;
+  top: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display:grid;
+  place-items:center;
+  font-weight: 900;
+  color: rgba(255,255,255,.92);
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(255,255,255,.14);
+  opacity: .0;
+  transform: scale(.95);
+  transition: 160ms ease;
+}
+
+.team-tile.is-selected{
+  border-color: rgba(16,208,138,.38);
+  box-shadow: 0 18px 44px rgba(0,0,0,.28);
+  background:
+    radial-gradient(320px 110px at 25% 20%, rgba(16,208,138,.18), transparent 62%),
+    radial-gradient(320px 110px at 80% 30%, rgba(247,201,72,.14), transparent 65%),
+    rgba(0,0,0,.10);
+}
+
+.team-tile.is-selected .check{
+  opacity: 1;
+  transform: scale(1);
+  background: linear-gradient(90deg, rgba(16,208,138,.92), rgba(247,201,72,.92));
+  color: #062027;
+  border-color: rgba(255,255,255,.10);
+}
+
+.champ-footer{
+  margin-top: 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-save-champ{
+  border: 0;
+  cursor: pointer;
+  border-radius: 16px;
+  padding: 12px 14px;
+  font-weight: 900;
+  font-size: 14px;
+  color: #062027;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 16px 42px rgba(0,0,0,.35);
+  transition: transform 140ms ease, filter 180ms ease;
+  white-space: nowrap;
+}
+
+.btn-save-champ:hover{ filter: saturate(1.06); transform: translateY(-1px); }
+.btn-save-champ:active{ transform: translateY(0) scale(.99); }
+.btn-save-champ:disabled{
+  opacity: .65;
+  cursor: not-allowed;
+  transform:none;
+  filter:none;
+}
+
+.champ-hint{
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255,255,255,.72);
+  line-height: 1.35;
+  flex: 1 1 280px;
+}
+
+/* Tablets */
+@media (min-width: 720px){
+  .champ-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Desktop: 4 colunas */
+@media (min-width: 980px){
+  .champ-grid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Ajustes mobile */
+@media (max-width: 560px){
+  .champ-wrap{ padding: 10px; }
+  .champ-header{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .champ-actions{
+    justify-content: space-between;
+  }
+  .champ-user{ max-width: 70vw; }
+  .team-tile .nome{ white-space: normal; }
+}

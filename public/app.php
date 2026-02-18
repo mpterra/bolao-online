@@ -16,9 +16,8 @@ require_once __DIR__ . "/../php/conexao.php";
 | - Menu de grupos FILTRA (não rola a página)
 | - Persistência em `palpites` (UPSERT por usuario_id + jogo_id)
 | - Endpoint JSON no próprio arquivo (action=save)
-| - Botão "Próximo (Grupo X)" ao final do último jogo do grupo
-| - Botão "Anterior (Grupo X)" ao final do grupo (NOVO)
-| - Botão "Recibo" imprime todas as apostas do apostador (por grupo)
+| - Seleção livre de 1º/2º/3º de cada grupo (palpite_grupo_classificacao)
+| - Botão "Quem será o campeão" no fim do menu
 |--------------------------------------------------------------------------
 |
 | ✅ REGRA DE BLOQUEIO (ATUALIZADA — DIA LÓGICO)
@@ -76,21 +75,14 @@ function flag_slug(string $nome): string {
 	$s = trim($nome);
 	if ($s === "") return "";
 
-	// se tiver opções "A ou B ou C", fica com a primeira
 	$s = preg_replace('/\s+ou\s+.*/iu', '', $s) ?? $s;
-
-	// remove conteúdo entre parênteses (se existir)
 	$s = preg_replace('/\s*\(.*?\)\s*/u', ' ', $s) ?? $s;
-
 	$s = mb_strtolower($s, 'UTF-8');
 
-	// translitera acentos -> ASCII
 	$t = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
 	if ($t !== false && $t !== "") $s = $t;
 
-	// remove tudo que não é alfanumérico
 	$s = preg_replace('/[^a-z0-9]+/', '', $s) ?? $s;
-
 	return $s;
 }
 
@@ -117,11 +109,9 @@ function dt_from_mysql(?string $dt): ?DateTimeImmutable {
 	if (!$dt) return null;
 	try {
 		$tz = new DateTimeZone('America/Sao_Paulo');
-		// formato típico MySQL: Y-m-d H:i:s
 		$parsed = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dt, $tz);
 		if ($parsed instanceof DateTimeImmutable) return $parsed;
 
-		// fallback mais permissivo
 		$parsed2 = new DateTimeImmutable($dt, $tz);
 		return $parsed2;
 	} catch (Throwable $e) {
@@ -207,12 +197,10 @@ function lock_reason_for_game(
 		return "Data/hora inválida do jogo.";
 	}
 
-	// (1) Jogo passado / já iniciado
 	if ($gameDt <= $now) {
 		return "Jogo já iniciado/encerrado.";
 	}
 
-	// (2) Regra do dia lógico: 1h antes do primeiro jogo do dia lógico, trava TODOS daquele dia lógico
 	$logicalDay = logical_bet_day($gameDt);
 	$lockAt = get_lock_for_logical_day($pdo, $lockCache, $logicalDay);
 
@@ -222,12 +210,12 @@ function lock_reason_for_game(
 		}
 	}
 
-	return null; // liberado
+	return null;
 }
 
 require_login();
 
-$usuarioId   = (int)$_SESSION["usuario_id"];
+$usuarioId   = (int)($_SESSION["usuario_id"] ?? 0);
 $usuarioNome = isset($_SESSION["usuario_nome"]) ? (string)$_SESSION["usuario_nome"] : "Apostador";
 
 $tipoUsuario = isset($_SESSION["tipo_usuario"]) ? (string)$_SESSION["tipo_usuario"] : "";
@@ -241,7 +229,7 @@ $nowLogicalDay = logical_bet_day($now);
 $lockCache = [];
 
 /* ---------------------------
-   Logout (opcional)
+   Logout
 --------------------------- */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 	session_destroy();
@@ -250,7 +238,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 }
 
 /* ---------------------------
-   API: salvar palpites (JSON)
+   API: salvar palpites jogos (JSON)
 --------------------------- */
 if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
@@ -293,7 +281,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	try {
 		$pdo->beginTransaction();
 
-		// ✅ traz data_hora para validar bloqueio
 		$sqlCheck = "
             SELECT j.id, j.data_hora
             FROM jogos j
@@ -350,7 +337,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 			$saved++;
 		}
 
-		// Se tentou salvar qualquer jogo bloqueado, falha o request (regra rígida)
 		if (count($blocked) > 0) {
 			if ($pdo->inTransaction()) $pdo->rollBack();
 
@@ -377,7 +363,113 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 }
 
 /* ---------------------------
-   HTML: carregar grupos + jogos
+   API: salvar classificação do grupo (1º/2º/3º) (JSON)
+   - tabela real: palpite_grupo_classificacao (1 linha por usuario_id+grupo_id)
+   - colunas: primeiro_time_id, segundo_time_id, terceiro_time_id
+--------------------------- */
+if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
+	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+		json_response(["ok" => false, "message" => "Método inválido."], 405);
+	}
+
+	$raw = file_get_contents("php://input");
+	$payload = json_decode($raw ?: "{}", true);
+	if (!is_array($payload)) {
+		json_response(["ok" => false, "message" => "JSON inválido."], 400);
+	}
+
+	$grupoId = isset($payload["grupo_id"]) ? (int)$payload["grupo_id"] : 0;
+	$picks   = $payload["picks"] ?? null;
+
+	if ($grupoId <= 0 || !is_array($picks)) {
+		json_response(["ok" => false, "message" => "Payload inválido."], 422);
+	}
+
+	$pos1 = isset($picks["1"]) ? (int)$picks["1"] : 0;
+	$pos2 = isset($picks["2"]) ? (int)$picks["2"] : 0;
+	$pos3 = isset($picks["3"]) ? (int)$picks["3"] : 0;
+
+	// Seu banco exige NOT NULL e FK -> não aceita 0
+	if ($pos1 <= 0 || $pos2 <= 0 || $pos3 <= 0) {
+		json_response([
+			"ok" => false,
+			"message" => "Você precisa escolher 1º, 2º e 3º antes de salvar."
+		], 422);
+	}
+
+	if ($pos1 === $pos2 || $pos1 === $pos3 || $pos2 === $pos3) {
+		json_response(["ok" => false, "message" => "Não pode repetir o mesmo time em 1º/2º/3º."], 422);
+	}
+
+	try {
+		$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
+
+		$stGrupo = $pdo->prepare("SELECT id FROM grupos WHERE id = :gid AND edicao_id = :eid LIMIT 1");
+		$stGrupo->execute([":gid" => $grupoId, ":eid" => $edicaoId]);
+		$gidOk = (int)$stGrupo->fetchColumn();
+		if ($gidOk <= 0) {
+			json_response(["ok" => false, "message" => "Grupo inválido."], 422);
+		}
+
+		// valida times pertencem ao grupo
+		$ids = [$pos1, $pos2, $pos3];
+		$in = implode(',', array_fill(0, count($ids), '?'));
+
+		$sqlVal = "
+			SELECT COUNT(*)
+			FROM grupo_time gt
+			WHERE gt.grupo_id = ?
+			  AND gt.time_id IN ($in)
+		";
+		$params = array_merge([$grupoId], $ids);
+
+		$stVal = $pdo->prepare($sqlVal);
+		$stVal->execute($params);
+		$cnt = (int)$stVal->fetchColumn();
+
+		if ($cnt !== count($ids)) {
+			json_response(["ok" => false, "message" => "Um ou mais times não pertencem a este grupo."], 422);
+		}
+
+		$pdo->beginTransaction();
+
+		$sqlUp = "
+			INSERT INTO palpite_grupo_classificacao
+				(edicao_id, grupo_id, usuario_id, primeiro_time_id, segundo_time_id, terceiro_time_id)
+			VALUES
+				(:eid, :gid, :uid, :t1, :t2, :t3)
+			ON DUPLICATE KEY UPDATE
+				edicao_id = VALUES(edicao_id),
+				primeiro_time_id = VALUES(primeiro_time_id),
+				segundo_time_id  = VALUES(segundo_time_id),
+				terceiro_time_id = VALUES(terceiro_time_id),
+				atualizado_em = CURRENT_TIMESTAMP
+		";
+		$stUp = $pdo->prepare($sqlUp);
+		$stUp->execute([
+			":eid" => $edicaoId,
+			":gid" => $grupoId,
+			":uid" => $usuarioId,
+			":t1"  => $pos1,
+			":t2"  => $pos2,
+			":t3"  => $pos3,
+		]);
+
+		$pdo->commit();
+
+		json_response([
+			"ok" => true,
+			"message" => "Classificação do grupo salva.",
+		]);
+	} catch (Throwable $e) {
+		if ($pdo->inTransaction()) $pdo->rollBack();
+		json_response(["ok" => false, "message" => "Falha ao salvar classificação do grupo."], 500);
+	}
+}
+
+/* ---------------------------
+   HTML: carregar grupos + jogos + times por grupo + picks salvos
 --------------------------- */
 try {
 	$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
@@ -385,7 +477,6 @@ try {
 		throw new RuntimeException("Nenhuma edição ativa.");
 	}
 
-	// lock do “dia lógico atual” (para exibir no hint)
 	$lockNowLogicalDayAt = get_lock_for_logical_day($pdo, $lockCache, $nowLogicalDay);
 	$lockNowLogicalDayActive = ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? ($now >= $lockNowLogicalDayAt) : false;
 
@@ -467,7 +558,7 @@ try {
 				break;
 			}
 		}
-		$nextGrupo[$c] = $next; // pode ser null
+		$nextGrupo[$c] = $next;
 
 		$prev = null;
 		for ($j = $i - 1; $j >= 0; $j--) {
@@ -477,14 +568,75 @@ try {
 				break;
 			}
 		}
-		$prevGrupo[$c] = $prev; // pode ser null
+		$prevGrupo[$c] = $prev;
+	}
+
+	// Times por grupo (para os combobox 1º/2º/3º)
+	$timesPorGrupoId = [];
+	if (count($grupos) > 0) {
+		$grupoIds = array_map(static fn($g) => (int)$g["id"], $grupos);
+		$in = implode(',', array_fill(0, count($grupoIds), '?'));
+
+		$sqlTimes = "
+			SELECT gt.grupo_id, t.id AS time_id, t.nome AS time_nome, t.sigla AS time_sigla
+			FROM grupo_time gt
+			INNER JOIN times t ON t.id = gt.time_id
+			WHERE gt.grupo_id IN ($in)
+			ORDER BY gt.grupo_id, t.nome
+		";
+		$stTimes = $pdo->prepare($sqlTimes);
+		$stTimes->execute($grupoIds);
+		$rowsTimes = $stTimes->fetchAll(PDO::FETCH_ASSOC);
+
+		foreach ($rowsTimes as $r) {
+			$gid = (int)$r["grupo_id"];
+			if (!isset($timesPorGrupoId[$gid])) $timesPorGrupoId[$gid] = [];
+			$timesPorGrupoId[$gid][] = [
+				"time_id" => (int)$r["time_id"],
+				"time_nome" => (string)$r["time_nome"],
+				"time_sigla" => (string)$r["time_sigla"],
+			];
+		}
+	}
+
+	// Picks salvos (palpite_grupo_classificacao)
+	$picksPorGrupoId = []; // [grupo_id => [1=>time_id,2=>time_id,3=>time_id]]
+	if (count($grupos) > 0) {
+		$grupoIds = array_map(static fn($g) => (int)$g["id"], $grupos);
+		$in = implode(',', array_fill(0, count($grupoIds), '?'));
+
+		$sqlPicks = "
+			SELECT grupo_id, primeiro_time_id, segundo_time_id, terceiro_time_id
+			FROM palpite_grupo_classificacao
+			WHERE usuario_id = ?
+			  AND grupo_id IN ($in)
+		";
+		$params = array_merge([$usuarioId], $grupoIds);
+
+		$stPicks = $pdo->prepare($sqlPicks);
+		$stPicks->execute($params);
+		$rowsPicks = $stPicks->fetchAll(PDO::FETCH_ASSOC);
+
+		foreach ($rowsPicks as $r) {
+			$gid = (int)$r["grupo_id"];
+			if (!isset($picksPorGrupoId[$gid])) $picksPorGrupoId[$gid] = [];
+			$picksPorGrupoId[$gid][1] = (int)$r["primeiro_time_id"];
+			$picksPorGrupoId[$gid][2] = (int)$r["segundo_time_id"];
+			$picksPorGrupoId[$gid][3] = (int)$r["terceiro_time_id"];
+		}
 	}
 
 } catch (Throwable $e) {
 	http_response_code(500);
-	echo "Erro ao carregar jogos.";
+	echo "<pre style='white-space:pre-wrap;font:14px/1.4 monospace'>";
+	echo "Erro ao carregar jogos:\n\n";
+	echo $e->getMessage() . "\n\n";
+	echo $e->getFile() . ":" . $e->getLine() . "\n\n";
+	echo $e->getTraceAsString();
+	echo "</pre>";
 	exit;
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -538,6 +690,14 @@ try {
 						<?php endif; ?>
 					</a>
 				<?php endforeach; ?>
+
+				<!-- botão campeão no fim do menu -->
+				<a class="menu-link menu-link-champion"
+				   href="/bolao-da-copa/public/campeao.php"
+				   title="Escolher o campeão">
+					<span class="menu-link-text">Quem será o campeão</span>
+					<span class="badge badge-champion">★</span>
+				</a>
 			</div>
 
 			<div class="menu-actions">
@@ -546,7 +706,6 @@ try {
 					<span class="kbd">Ctrl</span><span class="kbd">↵</span>
 				</button>
 
-				<!-- FIX: garante que o Recibo NÃO navega na aba atual (mesmo que o script.js tente). -->
 				<button class="btn-receipt" id="btnRecibo" type="button" data-receipt-url="/bolao-da-copa/php/recibo.php">
 					Recibo
 				</button>
@@ -571,7 +730,7 @@ try {
 		<main class="app-content">
 			<div class="content-head">
 				<h1 class="content-h1">Seus palpites</h1>
-				<p class="content-sub">Preencha o placar de cada jogo. Tudo é salvo no banco em <strong>palpites</strong>.</p>
+				<p class="content-sub">Preencha o placar de cada jogo. E no fim do grupo, escolha livremente 1º/2º/3º.</p>
 			</div>
 
 			<?php if (count($grupos) === 0): ?>
@@ -580,6 +739,7 @@ try {
 
 				<?php foreach ($grupos as $g): ?>
 					<?php
+					$grupoId = (int)$g["id"];
 					$codigo = (string)$g["codigo"];
 					$nome = (string)$g["nome"];
 					$lista = $jogosPorGrupo[$codigo] ?? [];
@@ -593,8 +753,14 @@ try {
 
 					$hasNext = ($prox !== null);
 					$hasPrev = ($ant  !== null);
+
+					$timesGrupo = $timesPorGrupoId[$grupoId] ?? [];
+					$picks = $picksPorGrupoId[$grupoId] ?? [];
+					$pick1 = isset($picks[1]) ? (int)$picks[1] : 0;
+					$pick2 = isset($picks[2]) ? (int)$picks[2] : 0;
+					$pick3 = isset($picks[3]) ? (int)$picks[3] : 0;
 					?>
-					<section class="group-block" data-grupo="<?php echo strh($codigo); ?>">
+					<section class="group-block" data-grupo="<?php echo strh($codigo); ?>" data-grupo-id="<?php echo (int)$grupoId; ?>">
 						<div class="group-head">
 							<div class="group-title">
 								<div class="group-line">
@@ -724,6 +890,73 @@ try {
 								<?php endforeach; ?>
 							</div>
 
+							<!-- classificação (1º/2º/3º) -->
+							<div class="group-rank-card" data-grupo-rank="<?php echo (int)$grupoId; ?>">
+								<div class="group-rank-head">
+									<div class="group-rank-title">Classificação do grupo</div>
+									<div class="group-rank-sub">Escolha livremente (independe dos placares).</div>
+								</div>
+
+								<?php if (count($timesGrupo) === 0): ?>
+									<div class="group-rank-empty">Sem times vinculados a este grupo (grupo_time).</div>
+								<?php else: ?>
+									<div class="group-rank-grid">
+										<div class="rank-field">
+											<label>1º</label>
+											<select class="rank-select" data-rank-pos="1">
+												<option value="0"><?php echo strh("—"); ?></option>
+												<?php foreach ($timesGrupo as $t): ?>
+													<?php
+													$tid = (int)$t["time_id"];
+													$tname = (string)$t["time_nome"];
+													?>
+													<option value="<?php echo (int)$tid; ?>" <?php echo ($tid === $pick1) ? "selected" : ""; ?>>
+														<?php echo strh($tname); ?>
+													</option>
+												<?php endforeach; ?>
+											</select>
+										</div>
+
+										<div class="rank-field">
+											<label>2º</label>
+											<select class="rank-select" data-rank-pos="2">
+												<option value="0"><?php echo strh("—"); ?></option>
+												<?php foreach ($timesGrupo as $t): ?>
+													<?php
+													$tid = (int)$t["time_id"];
+													$tname = (string)$t["time_nome"];
+													?>
+													<option value="<?php echo (int)$tid; ?>" <?php echo ($tid === $pick2) ? "selected" : ""; ?>>
+														<?php echo strh($tname); ?>
+													</option>
+												<?php endforeach; ?>
+											</select>
+										</div>
+
+										<div class="rank-field">
+											<label>3º</label>
+											<select class="rank-select" data-rank-pos="3">
+												<option value="0"><?php echo strh("—"); ?></option>
+												<?php foreach ($timesGrupo as $t): ?>
+													<?php
+													$tid = (int)$t["time_id"];
+													$tname = (string)$t["time_nome"];
+													?>
+													<option value="<?php echo (int)$tid; ?>" <?php echo ($tid === $pick3) ? "selected" : ""; ?>>
+														<?php echo strh($tname); ?>
+													</option>
+												<?php endforeach; ?>
+											</select>
+										</div>
+									</div>
+
+									<div class="group-rank-actions">
+										<button class="btn-rank-save" type="button">Salvar classificação</button>
+										<div class="rank-state" aria-live="polite"></div>
+									</div>
+								<?php endif; ?>
+							</div>
+
 							<?php if ($hasPrev || $hasNext): ?>
 								<div class="group-nav">
 									<?php if ($hasPrev): ?>
@@ -737,6 +970,11 @@ try {
 									<?php if ($hasNext): ?>
 										<button class="btn-next-group" type="button" data-next-grupo="<?php echo strh((string)$prox); ?>">
 											Próximo <span class="muted">(Grupo <?php echo strh((string)$prox); ?>)</span>
+										</button>
+									<?php else: ?>
+										<!-- ✅ ÚLTIMO GRUPO: no lugar de "Próximo", vai para campeão salvando antes -->
+										<button class="btn-next-group btn-go-champion" type="button" data-champion-url="/bolao-da-copa/public/campeao.php">
+											Quem será o campeão <span class="muted">(salva antes)</span>
 										</button>
 									<?php endif; ?>
 								</div>
@@ -753,36 +991,25 @@ try {
 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<script>
-  window.__APP_USER__ = <?php echo json_encode([
-      "nome" => $usuarioNome,
-      "id"   => $usuarioId,
-  ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-
-  // Info útil pro front (dia lógico + trava do dia lógico atual)
-  window.__LOCK_INFO__ = <?php echo json_encode([
-      "now_logical_day" => $nowLogicalDay,
-      "lock_logical_day_at" => ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? $lockNowLogicalDayAt->format('Y-m-d H:i:s') : null,
-      "lock_logical_day_active" => (bool)$lockNowLogicalDayActive,
-      "logical_day_rule" => "00:00-04:59 pertence ao dia anterior",
-  ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-</script>
-
-<script>
-  // FIX Recibo: abre em nova aba e impede qualquer navegação/alteração na aba atual,
-  // mesmo que exista handler no script.js que faça window.location.
-  (function () {
-    document.addEventListener('click', function (e) {
-      var btn = e.target && e.target.closest ? e.target.closest('#btnRecibo') : null;
-      if (!btn) return;
-
-      e.preventDefault();
-      e.stopImmediatePropagation(); // mata handlers do script.js no mesmo clique
-
-      var url = btn.getAttribute('data-receipt-url') || '/bolao-da-copa/public/recibo.php';
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }, true); // capture: roda antes de handlers normais
-  })();
+<!-- Config SEM JS inline -->
+<script type="application/json" id="app-config">
+<?php echo json_encode([
+	"user" => [
+		"nome" => $usuarioNome,
+		"id"   => $usuarioId,
+	],
+	"lock" => [
+		"now_logical_day" => $nowLogicalDay,
+		"lock_logical_day_at" => ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? $lockNowLogicalDayAt->format('Y-m-d H:i:s') : null,
+		"lock_logical_day_active" => (bool)$lockNowLogicalDayActive,
+		"logical_day_rule" => "00:00-04:59 pertence ao dia anterior",
+	],
+	"endpoints" => [
+		"save_games" => "/bolao-da-copa/public/app.php?action=save",
+		"save_group_rank" => "/bolao-da-copa/public/app.php?action=save_group_rank",
+		"receipt_url" => "/bolao-da-copa/php/recibo.php?action=pdf",
+	],
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
 </script>
 
 <script src="/bolao-da-copa/public/js/script.js"></script>

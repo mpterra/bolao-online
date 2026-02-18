@@ -209,6 +209,82 @@ ADD KEY idx_jogos_codigo_fifa (codigo_fifa);
 
 
 -- =========================================================
+-- NOVO: PALPITE DE CLASSIFICAÇÃO DO GRUPO (1º/2º/3º)
+-- 1 registro por (usuario_id, grupo_id)
+-- =========================================================
+CREATE TABLE IF NOT EXISTS palpite_grupo_classificacao (
+  id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+
+  edicao_id          SMALLINT UNSIGNED NOT NULL,
+  grupo_id           SMALLINT UNSIGNED NOT NULL,
+  usuario_id         BIGINT  UNSIGNED NOT NULL,
+
+  primeiro_time_id   SMALLINT UNSIGNED NOT NULL,
+  segundo_time_id    SMALLINT UNSIGNED NOT NULL,
+  terceiro_time_id   SMALLINT UNSIGNED NOT NULL,
+
+  criado_em          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+
+  CONSTRAINT fk_pgc_edicao   FOREIGN KEY (edicao_id)  REFERENCES edicoes(id)  ON DELETE CASCADE,
+  CONSTRAINT fk_pgc_grupo    FOREIGN KEY (grupo_id)   REFERENCES grupos(id)   ON DELETE CASCADE,
+  CONSTRAINT fk_pgc_usuario  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+
+  CONSTRAINT fk_pgc_time1    FOREIGN KEY (primeiro_time_id) REFERENCES times(id),
+  CONSTRAINT fk_pgc_time2    FOREIGN KEY (segundo_time_id)  REFERENCES times(id),
+  CONSTRAINT fk_pgc_time3    FOREIGN KEY (terceiro_time_id) REFERENCES times(id),
+
+  -- garante 1 palpite por usuário por grupo
+  UNIQUE KEY uk_pgc_unico (usuario_id, grupo_id),
+
+  KEY idx_pgc_edicao (edicao_id),
+  KEY idx_pgc_grupo (grupo_id),
+  KEY idx_pgc_usuario (usuario_id),
+
+  -- garante que 1º/2º/3º não sejam iguais
+  CONSTRAINT chk_pgc_times_distintos CHECK (
+    primeiro_time_id <> segundo_time_id
+    AND primeiro_time_id <> terceiro_time_id
+    AND segundo_time_id <> terceiro_time_id
+  )
+) ENGINE=InnoDB;
+
+-- Índice de apoio (para validar na aplicação se o time pertence ao grupo/edição)
+CREATE INDEX idx_grupo_time_edicao_grupo_time
+ON grupo_time (edicao_id, grupo_id, time_id);
+
+-- =========================================================
+-- NOVO: PALPITE DE CAMPEÃO (1 por usuário por edição)
+-- =========================================================
+CREATE TABLE IF NOT EXISTS palpite_campeao (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+
+  edicao_id      SMALLINT UNSIGNED NOT NULL,
+  usuario_id     BIGINT  UNSIGNED NOT NULL,
+  time_id        SMALLINT UNSIGNED NOT NULL,
+
+  criado_em      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+
+  CONSTRAINT fk_pc_edicao   FOREIGN KEY (edicao_id)  REFERENCES edicoes(id)  ON DELETE CASCADE,
+  CONSTRAINT fk_pc_usuario  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  CONSTRAINT fk_pc_time     FOREIGN KEY (time_id)    REFERENCES times(id),
+
+  UNIQUE KEY uk_pc_unico (usuario_id, edicao_id),
+
+  KEY idx_pc_edicao (edicao_id),
+  KEY idx_pc_usuario (usuario_id),
+  KEY idx_pc_time (time_id)
+) ENGINE=InnoDB;
+
+
+
+
+-- =========================================================
 -- SEED: cria a edição 2026
 -- =========================================================
 INSERT INTO edicoes (nome, ano, ativo)
@@ -232,3 +308,4 @@ VALUES
  '2026-02-15 10:56:27');
 
 
+select * from palpite_campeao;

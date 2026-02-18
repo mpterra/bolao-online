@@ -83,7 +83,6 @@ body{
   position: relative;
   overflow-x:hidden;
 
-  /* mobile-first: body SEMPRE block */
   display:block;
 
   padding:
@@ -125,14 +124,12 @@ body::before{
   50%      { transform: translateY(-6px); }
 }
 
-/* LOGO: zoom out REAL */
 @keyframes logoZoomOut{
   0%   { opacity: 0; transform: translateY(10px) scale(1.22); filter: blur(2px); }
   60%  { opacity: 1; transform: translateY(0) scale(0.985); filter: blur(0); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* CARD: "kikando" */
 @keyframes cardKick{
   0%   { opacity: 0; transform: translateY(18px) scale(.96); }
   60%  { opacity: 1; transform: translateY(-6px) scale(1.01); }
@@ -157,7 +154,7 @@ body::before{
 }
 
 /* =========================================================
-   LOGIN / CADASTRO (index.php / cadastro.php)
+   LOGIN / CADASTRO
    ========================================================= */
 
 .page{
@@ -187,11 +184,7 @@ body::before{
 
 .logo-wrapper img{
   width: auto;
-
-  /* ✅ 25% MAIOR (420->525 / 220->275) */
   max-width: min(92vw, 525px);
-
-  /* ✅ 25% MAIOR, mas SEM ESTOURAR (vh também +25%: 30vh -> 37.5vh) */
   max-height: min(37.5vh, 275px);
 
   object-fit: contain;
@@ -203,7 +196,6 @@ body::before{
 
   transform-origin: 50% 60%;
 
-  /* Entrada: zoom out, depois flutua */
   animation:
     logoZoomOut 620ms var(--in-ease) both,
     logoFloat 6.5s ease-in-out infinite;
@@ -245,8 +237,7 @@ body::before{
 }
 
 /* =========================================================
-   INPUTS + SELECT (UF) — unificado
-   - inclui <select> e mantém label flutuante sem :has()
+   INPUTS + SELECT (UF)
    ========================================================= */
 .input-group input,
 .input-group select{
@@ -260,15 +251,13 @@ body::before{
   outline: none;
   transition: 220ms ease;
 
-  /* evita estilo nativo "esquisito" em iOS/Android */
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
 }
 
-/* seta do select (UF) */
 .input-group select{
-  padding-right: 42px; /* espaço para a seta */
+  padding-right: 42px;
   cursor: pointer;
   background-image:
     linear-gradient(45deg, transparent 50%, rgba(255,255,255,.80) 50%),
@@ -285,7 +274,6 @@ body::before{
   background-repeat: no-repeat;
 }
 
-/* placeholder "vazio" do select (primeiro option) fica mais apagado */
 .input-group select:invalid{
   color: rgba(255,255,255,.55);
 }
@@ -311,7 +299,6 @@ body::before{
   border-radius: 8px;
 }
 
-/* input: mantém seu comportamento original */
 .input-group.has-value label,
 .input-group input:focus + label{
   top: -9px;
@@ -323,7 +310,6 @@ body::before{
   box-shadow: 0 8px 16px rgba(0,0,0,.20);
 }
 
-/* select: label flutua quando focado OU quando tem valor válido */
 .input-group select:focus + label,
 .input-group select:valid + label{
   top: -9px;
@@ -406,11 +392,9 @@ body::before{
   transform: translateY(-1px);
 }
 
-/* telas muito baixas: reduz logo e padding */
 @media (max-height: 740px){
   .page{ padding-top: 10px; padding-bottom: 10px; }
   .logo-wrapper img{
-    /* continua +25% no teto (275px), mas trava em vh (37.5vh) */
     max-height: min(34vh, 275px);
   }
   .login-card{ padding: 16px 14px; }
@@ -765,7 +749,7 @@ body::before{
 }
 
 /* =========================================================
-   GRUPOS (mostra 1 por vez quando JS aplica is-active-group)
+   GRUPOS
    ========================================================= */
 .group-block{
   display:none;
@@ -818,7 +802,7 @@ body::before{
 }
 
 /* =========================================================
-   JOGOS (cards)
+   JOGOS
    ========================================================= */
 .matches{
   display:flex;
@@ -915,7 +899,7 @@ body::before{
 }
 
 .team-home{ justify-content:flex-end; text-align:right; }
-.team-away{ justify-content:flex-start; text-align:left; } /* ✅ CORRIGIDO */
+.team-away{ justify-content:flex-start; text-align:left; }
 
 .team-badge{
   width: 36px;
@@ -965,7 +949,6 @@ body::before{
   border: 1px solid rgba(255,255,255,.12);
 }
 
-/* GOLS: CENTRALIZAÇÃO REAL (H + V) */
 .score{
   width: 50px;
   height: 38px;
@@ -978,7 +961,7 @@ body::before{
 
   text-align:center;
   padding: 0;
-  line-height: 38px; /* vertical */
+  line-height: 38px;
 
   font-variant-numeric: tabular-nums;
   letter-spacing: .2px;
@@ -1003,7 +986,6 @@ body::before{
   box-shadow: 0 0 0 4px rgba(255,140,140,.12);
 }
 
-/* remove setinhas que quebram o layout no mobile */
 .score::-webkit-outer-spin-button,
 .score::-webkit-inner-spin-button{
   -webkit-appearance: none;
@@ -1083,10 +1065,8 @@ body::before{
 }
 
 /* =========================================================
-   RESPONSIVO — APP (tablet/celular)
+   RESPONSIVO
    ========================================================= */
-
-/* <= 860px: menu empilha acima do conteúdo */
 @media (max-width: 860px){
   .app-shell{ grid-template-columns: 1fr; }
 
@@ -1101,7 +1081,6 @@ body::before{
   .user-chip-name{ max-width: 55vw; }
 }
 
-/* <= 560px: smartphone: tudo confortável ao toque */
 @media (max-width: 560px){
   body{
     padding:
@@ -1116,7 +1095,6 @@ body::before{
     padding: 12px 10px;
   }
 
-  /* ✅ Logo continua +25% no teto, mas a trava em vh evita scroll */
   .logo-wrapper img{
     max-width: min(94vw, 525px);
     max-height: min(35vh, 275px);
@@ -1171,7 +1149,6 @@ body::before{
   .toast{ min-width: calc(100% - 20px); }
 }
 
-/* <= 380px: celulares bem pequenos */
 @media (max-width: 380px){
   .app-wrap{ padding: 8px; }
   .app-content{ padding: 12px; }
@@ -1183,9 +1160,6 @@ body::before{
   }
 }
 
-/* =========================================================
-   REDUZIR ANIMAÇÕES
-   ========================================================= */
 @media (prefers-reduced-motion: reduce){
   *{
     animation: none !important;
@@ -1195,8 +1169,7 @@ body::before{
 }
 
 /* =========================================================
-   EXTRA — Botões "Recibo" e "Próximo/Anterior (Grupo X)"
-   (mobile-first)
+   EXTRA — Botões "Recibo" e "Próximo/Anterior"
    ========================================================= */
 
 .btn-receipt{
@@ -1224,7 +1197,6 @@ body::before{
   transform: translateY(0) scale(.99);
 }
 
-/* NOVO: container dos dois botões */
 .group-nav{
   margin-top: 12px;
   display:flex;
@@ -1232,14 +1204,12 @@ body::before{
   gap: 10px;
 }
 
-/* mantém compat: caso algum lugar ainda use .group-next */
 .group-next{
   margin-top: 12px;
   display:flex;
   justify-content:flex-end;
 }
 
-/* Próximo */
 .btn-next-group{
   border: 0;
   cursor: pointer;
@@ -1265,7 +1235,6 @@ body::before{
 .btn-next-group:hover{ filter: saturate(1.06); transform: translateY(-1px); }
 .btn-next-group:active{ transform: translateY(0) scale(.99); }
 
-/* Anterior */
 .btn-prev-group{
   border: 0;
   cursor: pointer;
@@ -1301,7 +1270,7 @@ body::before{
 }
 
 /* =========================================================
-   ADMIN (admin.php) — exportar apostas (somente ADMIN)
+   ADMIN (admin.php)
    ========================================================= */
 
 .btn-admin{
@@ -1335,359 +1304,186 @@ body::before{
   transform: translateY(0) scale(.99);
 }
 
-.admin-card{
-  border-radius: 22px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.10);
-  padding: 14px;
-}
-
-.admin-card h2{
-  font-size: 16px;
-  font-weight: 900;
-  margin-bottom: 6px;
-}
-
-.admin-card p{
-  font-size: 12px;
-  color: rgba(255,255,255,.74);
-  line-height: 1.45;
-  margin-bottom: 12px;
-}
-
-.admin-grid{
-  display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.admin-user-btn{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 10px;
-
-  padding: 12px 12px;
-  border-radius: 16px;
-  text-decoration:none;
-
-  color: rgba(255,255,255,.94);
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
-
-  font-weight: 900;
-  font-size: 13px;
-
-  box-shadow: 0 12px 22px rgba(0,0,0,.18);
-  transition: 180ms ease;
-}
-
-.admin-user-btn:hover{
-  background: rgba(255,255,255,.10);
-  transform: translateY(-1px);
-  box-shadow: 0 14px 26px rgba(0,0,0,.22);
-}
-
-.admin-user-btn:active{
-  transform: translateY(0) scale(.99);
-}
-
-.admin-user-btn .small{
-  font-size: 11px;
-  font-weight: 900;
-  opacity: .80;
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.18);
-}
-
-@media (max-width: 860px){
-  .admin-grid{ grid-template-columns: 1fr; }
-}
-
-/* =========================================================
-   ADMIN — Exportar apostas (layout) — REFACTOR
-   ========================================================= */
-
-:root{
-  --admin-radius-lg: 18px;
-  --admin-radius-md: 16px;
-  --admin-pill: 999px;
-
-  --admin-bd-weak: rgba(255,255,255,.10);
-  --admin-bd: rgba(255,255,255,.12);
-  --admin-bd-strong: rgba(255,255,255,.14);
-
-  --admin-bg-soft: rgba(255,255,255,.06);
-  --admin-bg-soft2: rgba(255,255,255,.09);
-  --admin-bg-card: rgba(0,0,0,.10);
-
-  --admin-txt: rgba(255,255,255,.92);
-  --admin-txt2: rgba(255,255,255,.78);
-  --admin-muted: rgba(255,255,255,.70);
-
-  --admin-shadow: 0 12px 26px rgba(0,0,0,.22);
-  --admin-shadow2: 0 14px 30px rgba(0,0,0,.22);
-  --admin-shadow3: 0 16px 34px rgba(0,0,0,.28);
-
-  --admin-tr: 180ms ease;
-  --admin-focus: 0 0 0 4px rgba(16,208,138,.20);
-}
-
-/* ---------- Base layout ---------- */
-.admin-wrap{ padding-top: 8px; }
-
-.admin-shell{
-  grid-template-columns: 240px 1fr;
-}
-
-.admin-menu{ padding: 14px; }
-
-.admin-actions{
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
-}
-
-/* ---------- Shared primitives ---------- */
-.admin-surface{
-  border-radius: var(--admin-radius-lg);
-  border: 1px solid var(--admin-bd);
-  background: var(--admin-bg-card);
-}
-
-.admin-title{
-  font-weight: 900;
-  font-size: 13px;
-  color: var(--admin-txt);
-}
-
-.admin-text{
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--admin-txt2);
-}
-
-.admin-ellip{
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.admin-click{
-  transition: var(--admin-tr);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.admin-click:focus-visible{
-  outline: none;
-  box-shadow: var(--admin-focus);
-}
-
-/* ---------- Botão “voltar” / ações laterais ---------- */
-.btn-admin-back{
-  width: 100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap: 10px;
-  text-decoration:none;
-
-  border-radius: var(--admin-radius-md);
-  padding: 12px 14px;
-
-  font-weight: 900;
-  font-size: 14px;
-
-  color: rgba(255,255,255,.92);
-  background: var(--admin-bg-soft);
-  border: 1px solid var(--admin-bd-strong);
-  box-shadow: var(--admin-shadow2);
-  transition: var(--admin-tr);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.btn-admin-back:hover{
-  background: rgba(255,255,255,.10);
-  transform: translateY(-1px);
-  box-shadow: var(--admin-shadow3);
-}
-
-.btn-admin-back:active{ transform: translateY(0) scale(.99); }
-
-.btn-admin-back:focus-visible{
-  outline: none;
-  box-shadow: var(--admin-shadow2), var(--admin-focus);
-}
-
-/* ---------- Card informativo ---------- */
-.admin-info{
-  border-radius: var(--admin-radius-lg);
-  border: 1px solid var(--admin-bd);
-  background:
-    radial-gradient(700px 240px at 15% 10%, rgba(70,220,255,.12), transparent 58%),
-    radial-gradient(760px 260px at 85% 20%, rgba(16,208,138,.10), transparent 58%),
-    rgba(0,0,0,.10);
-  padding: 14px;
-  margin-bottom: 12px;
-}
-
-.admin-info-title{
-  font-weight: 900;
-  font-size: 13px;
-  margin-bottom: 6px;
-  color: rgba(255,255,255,.94);
-}
-
-.admin-info-text{
-  font-size: 12px;
-  line-height: 1.45;
-  color: rgba(255,255,255,.78);
-}
-
-.admin-info-note{
-  display:inline-block;
-  margin-top: 6px;
-  padding: 6px 10px;
-  border-radius: var(--admin-pill);
-  border: 1px solid rgba(247,201,72,.22);
-  background: rgba(247,201,72,.10);
-  color: rgba(255,245,210,.95);
-  font-weight: 900;
-  font-size: 11px;
-}
-
-/* ---------- Card principal ---------- */
-.admin-card{
-  border-radius: var(--admin-radius-lg);
-  border: 1px solid var(--admin-bd);
-  background: var(--admin-bg-card);
-  padding: 14px;
-}
-
-.admin-card-title{
-  font-weight: 900;
-  font-size: 13px;
-  margin-bottom: 10px;
-  color: var(--admin-txt);
-}
-
-.admin-user-list{
-  display:flex;
-  flex-direction:column;
-  gap: 10px;
-}
-
-/* ---------- Linha do usuário ---------- */
-.admin-user-row{
-  text-decoration:none;
-  border-radius: var(--admin-radius-md);
-  border: 1px solid var(--admin-bd-weak);
-  background: var(--admin-bg-soft);
-  padding: 12px;
-
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 10px;
-
-  transition: var(--admin-tr);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.admin-user-row:hover{
-  background: var(--admin-bg-soft2);
-  transform: translateY(-1px);
-  box-shadow: var(--admin-shadow);
-}
-
-.admin-user-row:active{ transform: translateY(0) scale(.995); }
-
-.admin-user-row:focus-visible{
-  outline: none;
-  box-shadow: var(--admin-shadow), var(--admin-focus);
-}
-
-.admin-user-main{ min-width: 0; }
-
-.admin-user-name{
-  font-weight: 900;
-  font-size: 13px;
-  color: var(--admin-txt);
-  overflow:hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.admin-user-sub{
-  margin-top: 3px;
-  font-size: 11px;
-  color: var(--admin-muted);
-  overflow:hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.admin-user-right{
-  display:flex;
-  align-items:center;
-  gap: 8px;
-  flex: 0 0 auto;
-}
-
-/* ---------- Tags ---------- */
-.admin-tag{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding: 6px 10px;
-  border-radius: var(--admin-pill);
-  font-weight: 900;
-  font-size: 11px;
-  border: 1px solid var(--admin-bd-strong);
-}
-
-.admin-tag-admin{
-  color: rgba(210,255,240,.98);
-  background: rgba(16,208,138,.12);
-  border-color: rgba(16,208,138,.26);
-}
-
-.admin-tag-download{
-  color: #062027;
-  background: linear-gradient(90deg, rgba(16,208,138,.95), rgba(247,201,72,.92));
-  border-color: rgba(255,255,255,.10);
-}
-
-/* ---------- Mobile ---------- */
-@media (max-width: 860px){
-  .admin-shell{ grid-template-columns: 1fr; }
-  .admin-menu{ padding: 12px; }
-  .admin-card{ padding: 12px; }
-  .admin-info{ padding: 12px; }
-}
-
-/* Ajuste “toque” em mobile */
-@media (hover: none){
-  .admin-user-row:hover{
-    transform: none;
-    box-shadow: none;
-  }
-  .btn-admin-back:hover{
-    transform: none;
-    box-shadow: var(--admin-shadow2);
-  }
-}
-
 /* =========================================================
    LOGO +20% APENAS NO PC (desktop)
    ========================================================= */
 @media (min-width: 861px){
   .logo-wrapper img{
-    /* +20% em cima do que já estava (+25%) */
-    max-width: min(92vw, 630px);      /* 525 * 1.20 = 630 */
-    max-height: min(45vh, 330px);     /* 275 * 1.20 = 330 */
+    max-width: min(92vw, 630px);
+    max-height: min(45vh, 330px);
   }
+}
+
+/* =========================================================
+   ✅ NOVO — BOTÃO "Quem será o campeão" NO MENU
+   ========================================================= */
+.menu-link.menu-link-champion{
+  background:
+    radial-gradient(240px 80px at 20% 20%, rgba(247,201,72,.16), transparent 62%),
+    radial-gradient(260px 80px at 80% 40%, rgba(140,120,255,.12), transparent 65%),
+    rgba(255,255,255,.06);
+  border-color: rgba(247,201,72,.18);
+}
+
+.menu-link.menu-link-champion:hover{
+  background:
+    radial-gradient(240px 80px at 20% 20%, rgba(247,201,72,.20), transparent 62%),
+    radial-gradient(260px 80px at 80% 40%, rgba(140,120,255,.16), transparent 65%),
+    rgba(255,255,255,.09);
+}
+
+.badge.badge-champion{
+  color: #062027;
+  background: linear-gradient(90deg, rgba(247,201,72,.95), rgba(70,220,255,.70));
+}
+
+/* =========================================================
+   ✅ NOVO — CLASSIFICAÇÃO DO GRUPO (1º/2º/3º)
+   ========================================================= */
+.group-rank-card{
+  margin-top: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background:
+    radial-gradient(760px 260px at 20% 10%, rgba(140,120,255,.12), transparent 60%),
+    radial-gradient(760px 260px at 85% 30%, rgba(247,201,72,.10), transparent 62%),
+    rgba(0,0,0,.10);
+  box-shadow: 0 14px 34px rgba(0,0,0,.22);
+  padding: 12px;
+}
+
+.group-rank-head{
+  display:flex;
+  flex-direction:column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.group-rank-title{
+  font-weight: 900;
+  font-size: 13px;
+  color: rgba(255,255,255,.94);
+}
+
+.group-rank-sub{
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(255,255,255,.74);
+}
+
+.group-rank-empty{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255,255,255,.16);
+  background: rgba(0,0,0,.12);
+  color: rgba(255,255,255,.78);
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.group-rank-grid{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rank-field{
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rank-field label{
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(255,255,255,.78);
+  letter-spacing: .2px;
+}
+
+.rank-select{
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.94);
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 12px;
+  outline: none;
+  transition: 180ms ease;
+  min-width: 0;
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255,255,255,.85) 50%),
+    linear-gradient(135deg, rgba(255,255,255,.85) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% + 1px),
+    calc(100% - 12px) calc(50% + 1px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 40px;
+}
+
+.rank-select:focus{
+  border-color: rgba(70,220,255,.40);
+  box-shadow: 0 0 0 4px rgba(70,220,255,.12);
+  background: rgba(255,255,255,.10);
+}
+
+.rank-select.is-invalid{
+  border-color: rgba(255,140,140,.45);
+  box-shadow: 0 0 0 4px rgba(255,140,140,.10);
+}
+
+.group-rank-actions{
+  margin-top: 10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.btn-rank-save{
+  border: 0;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 13px;
+  color: #062027;
+  background: linear-gradient(90deg, rgba(140,120,255,.75), rgba(70,220,255,.80));
+  box-shadow: 0 16px 34px rgba(0,0,0,.24);
+  transition: transform 140ms ease, filter 180ms ease;
+  white-space: nowrap;
+}
+
+.btn-rank-save:hover{ filter: saturate(1.06); transform: translateY(-1px); }
+.btn-rank-save:active{ transform: translateY(0) scale(.99); }
+.btn-rank-save:disabled{ opacity:.65; cursor:not-allowed; transform:none; }
+
+.rank-state{
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(255,255,255,.72);
+  text-align:right;
+}
+.rank-state.ok{ color: var(--ok); }
+.rank-state.err{ color: var(--bad); }
+
+@media (max-width: 560px){
+  .group-rank-grid{ grid-template-columns: 1fr; }
+  .group-rank-actions{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-rank-save{
+    width: 100%;
+    justify-content:center;
+  }
+  .rank-state{ text-align:left; }
 }
