@@ -79,8 +79,10 @@
   border-radius: 8px;
 }
 
+/* FIX: manter label “flutuante” após preenchido (sem depender de JS) */
 .input-group.has-value label,
-.input-group input:focus + label{
+.input-group input:focus + label,
+.input-group input:valid + label{
   top: -9px;
   left: 10px;
   font-size: 11px;

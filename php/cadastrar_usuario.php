@@ -10,14 +10,53 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit;
 }
 
-$nome     = trim($_POST["nome"] ?? "");
-$email    = trim($_POST["email"] ?? "");
-$telefone = trim($_POST["telefone"] ?? "");
-$cidade   = trim($_POST["cidade"] ?? "");
-$estado   = strtoupper(trim($_POST["estado"] ?? ""));
+/**
+ * Normaliza string:
+ * - remove acentos/ç (Transliterator se disponível; fallback iconv)
+ * - remove caracteres especiais (mantém apenas letras, números e espaços)
+ * - normaliza espaços
+ */
+function normalize_nome(string $s): string {
+    $s = trim($s);
+    if ($s === "") return "";
+
+    // Remove acentos/cedilha
+    if (class_exists('Transliterator')) {
+        // Any-Latin -> ASCII (remove diacríticos)
+        $s = transliterator_transliterate('Any-Latin; Latin-ASCII; [^\u0000-\u007F] remove', $s);
+    } else {
+        $tmp = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
+        if ($tmp !== false && $tmp !== null) {
+            $s = $tmp;
+        }
+    }
+
+    // Remove tudo que não for letra/número/espaço
+    $s = preg_replace('/[^A-Za-z0-9 ]+/', ' ', $s) ?? $s;
+
+    // Colapsa múltiplos espaços
+    $s = preg_replace('/\s+/', ' ', $s) ?? $s;
+
+    return trim($s);
+}
+
+$nomeRaw      = (string)($_POST["nome"] ?? "");
+$sobrenomeRaw = (string)($_POST["sobrenome"] ?? "");
+
+$nome      = normalize_nome($nomeRaw);
+$sobrenome = normalize_nome($sobrenomeRaw);
+
+$email    = trim((string)($_POST["email"] ?? ""));
+$telefone = trim((string)($_POST["telefone"] ?? ""));
+$cidade   = trim((string)($_POST["cidade"] ?? ""));
+$estado   = strtoupper(trim((string)($_POST["estado"] ?? "")));
 $senha    = (string)($_POST["senha"] ?? "");
 
-if ($nome === "" || $email === "" || $telefone === "" || $cidade === "" || $estado === "" || $senha === "") {
+// Campo atual do banco: "nome" deve receber Nome + Sobrenome
+$nomeCompleto = trim($nome . " " . $sobrenome);
+$nomeCompleto = preg_replace('/\s+/', ' ', $nomeCompleto) ?? $nomeCompleto;
+
+if ($nome === "" || $sobrenome === "" || $email === "" || $telefone === "" || $cidade === "" || $estado === "" || $senha === "") {
     exit("Preencha todos os campos.");
 }
 
@@ -45,7 +84,7 @@ try {
             VALUES (?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
 
     $ins = $pdo->prepare($sql);
-    $ins->execute([$nome, $email, $telefone, $cidade, $estado, $senhaHash]);
+    $ins->execute([$nomeCompleto, $email, $telefone, $cidade, $estado, $senhaHash]);
 
     // volta pra tela de cadastro para abrir o modal e, ao OK, retornar ao login
     header("Location: /bolao-da-copa/public/cadastro.php?sucesso=1");

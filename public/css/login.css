@@ -244,8 +244,10 @@ body::before{
   border-radius: 8px;
 }
 
+/* FIX: manter label flutuante quando input já tem valor */
 .input-group.has-value label,
-.input-group input:focus + label{
+.input-group input:focus + label,
+.input-group input:valid + label{
   top: -9px;
   left: 10px;
   font-size: 11px;
@@ -435,7 +437,7 @@ body::before{
   border-radius: 12px;
 
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 
   flex: 0 0 38px;
@@ -534,4 +536,3 @@ body::before{
 @media (prefers-reduced-motion: reduce){
   .toast, .toast.show{ transition: none !important; }
 }
-
