@@ -199,12 +199,23 @@ try {
         $html .= "<html><head><meta charset='UTF-8'></head><body>";
 
         // ---------- Cabeçalho ----------
+        // Mantém a mesma quantidade de LINHAS do cabeçalho.
+        // Só transforma a linha "Usuário" em 4 colunas: Usuário | Nome | ID | Número
         $html .= "<table border='1' cellspacing='0' cellpadding='6'>";
         $html .= "<tbody>";
-        $html .= "<tr><th colspan='2'>Exportação de Apostas</th></tr>";
-        $html .= "<tr><td><b>Usuário</b></td><td>" . strh($usuarioNome) . "</td></tr>";
-        $html .= "<tr><td><b>Edição ID</b></td><td>" . strh((string)$edicaoId) . "</td></tr>";
-        $html .= "<tr><td><b>Campeão</b></td><td>" . strh($campeaoNome) . "</td></tr>";
+        $html .= "<tr><th colspan='4'>Exportação de Apostas</th></tr>";
+
+        // >>> ALTERADO: ID ao lado do nome, em células separadas
+        $html .= "<tr>";
+        $html .= "<td><b>Usuário</b></td>";
+        $html .= "<td>" . strh($usuarioNome) . "</td>";
+        $html .= "<td><b>ID</b></td>";
+        $html .= "<td>" . strh((string)$usuarioId) . "</td>";
+        $html .= "</tr>";
+
+        // >>> ALTERADO: para manter consistência de 4 colunas sem criar novas linhas
+        $html .= "<tr><td><b>Edição ID</b></td><td colspan='3'>" . strh((string)$edicaoId) . "</td></tr>";
+        $html .= "<tr><td><b>Campeão</b></td><td colspan='3'>" . strh($campeaoNome) . "</td></tr>";
         $html .= "</tbody>";
         $html .= "</table>";
 

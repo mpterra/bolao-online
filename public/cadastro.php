@@ -1,21 +1,26 @@
 <?php
+declare(strict_types=1);
+
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
-session_start();
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
 $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <title>Cadastro - Bolão da Copa</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <link rel="stylesheet" href="/bolao-da-copa/public/css/base.css">
     <link rel="stylesheet" href="/bolao-da-copa/public/css/login.css">
     <link rel="stylesheet" href="/bolao-da-copa/public/css/cadastro.css">
-
 </head>
 
 <body data-reg-success="<?php echo $sucesso ? '1' : '0'; ?>">
@@ -31,13 +36,11 @@ $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
 
             <form method="POST" action="/bolao-da-copa/php/cadastrar_usuario.php" class="login-form" autocomplete="on">
 
-                <!-- NOME -->
                 <div class="input-group">
                     <input type="text" name="nome" required autocomplete="given-name">
                     <label>Nome</label>
                 </div>
 
-                <!-- SOBRENOME -->
                 <div class="input-group">
                     <input type="text" name="sobrenome" required autocomplete="family-name">
                     <label>Sobrenome</label>
@@ -58,7 +61,6 @@ $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
                     <label>Cidade</label>
                 </div>
 
-                <!-- ESTADO COMO COMBO -->
                 <div class="input-group">
                     <select name="estado" required>
                         <option value="" disabled selected hidden></option>
@@ -116,8 +118,7 @@ $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
             <div class="modal-head">
                 <div class="modal-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"
-                            stroke-linejoin="round" />
+                        <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
                 <div class="modal-titles">
@@ -134,93 +135,4 @@ $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
 
     <script src="/bolao-da-copa/public/js/cadastro.js"></script>
 </body>
-
 </html>
-
-
-<?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-session_start();
-
-require_once __DIR__ . "/conexao.php";
-
-if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    header("Location: /bolao-da-copa/public/cadastro.php");
-    exit;
-}
-
-/**
- * Normaliza string:
- * - remove acentos/ç (via iconv)
- * - remove caracteres especiais (mantém letras, números e espaços)
- * - normaliza espaços
- */
-function normalize_nome(string $s): string {
-    $s = trim($s);
-    if ($s === "") return "";
-
-    // UTF-8 -> ASCII removendo acentos/cedilha
-    $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
-    if ($ascii !== false && $ascii !== null) {
-        $s = $ascii;
-    }
-
-    // remove tudo que não for letra/número/espaço
-    $s = preg_replace('/[^A-Za-z0-9 ]+/', ' ', $s) ?? $s;
-
-    // colapsa múltiplos espaços
-    $s = preg_replace('/\s+/', ' ', $s) ?? $s;
-
-    return trim($s);
-}
-
-$nome       = normalize_nome((string)($_POST["nome"] ?? ""));
-$sobrenome  = normalize_nome((string)($_POST["sobrenome"] ?? ""));
-$email      = trim((string)($_POST["email"] ?? ""));
-$telefone   = trim((string)($_POST["telefone"] ?? ""));
-$cidade     = trim((string)($_POST["cidade"] ?? ""));
-$estado     = strtoupper(trim((string)($_POST["estado"] ?? "")));
-$senha      = (string)($_POST["senha"] ?? "");
-
-// monta nome completo no campo atual "nome"
-$nomeCompleto = trim($nome . " " . $sobrenome);
-$nomeCompleto = preg_replace('/\s+/', ' ', $nomeCompleto) ?? $nomeCompleto;
-
-if ($nomeCompleto === "" || $email === "" || $telefone === "" || $cidade === "" || $estado === "" || $senha === "") {
-    exit("Preencha todos os campos.");
-}
-
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    exit("Email inválido.");
-}
-
-if (strlen($estado) !== 2) {
-    exit("UF inválida. Use 2 letras.");
-}
-
-$senhaHash = password_hash($senha, PASSWORD_DEFAULT);
-
-try {
-    // email é UNIQUE no schema (uk_usuarios_email)
-    $check = $pdo->prepare("SELECT id FROM usuarios WHERE email = ? LIMIT 1");
-    $check->execute([$email]);
-
-    if ($check->fetch()) {
-        exit("Já existe uma conta com esse email.");
-    }
-
-    // Schema real: senha_hash
-    $sql = "INSERT INTO usuarios (nome, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo)
-            VALUES (?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
-
-    $ins = $pdo->prepare($sql);
-    $ins->execute([$nomeCompleto, $email, $telefone, $cidade, $estado, $senhaHash]);
-
-    // volta pra tela de cadastro para abrir o modal e, ao OK, retornar ao login
-    header("Location: /bolao-da-copa/public/cadastro.php?sucesso=1");
-    exit;
-
-} catch (Exception $e) {
-    exit("Erro ao cadastrar: " . $e->getMessage());
-}

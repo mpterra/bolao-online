@@ -281,6 +281,45 @@ CREATE TABLE IF NOT EXISTS palpite_campeao (
   KEY idx_pc_time (time_id)
 ) ENGINE=InnoDB;
 
+use bolao_copa;
+
+create table if not exists ranking (
+  id                      bigint unsigned not null auto_increment,
+
+  edicao_id               smallint unsigned not null,
+  usuario_id              bigint unsigned not null,
+
+  posicao                 int not null default 0,
+  pontos                  int not null default 0,
+  placares_acertados      int not null default 0,
+  resultados_acertados    int not null default 0,
+  pontos_primeira_fase    int not null default 0,
+  pontos_mata_mata        int not null default 0,
+
+  acertou_campeao         tinyint(1) not null default 0,
+  acertou_vice            tinyint(1) not null default 0,
+  acertou_terceiro        tinyint(1) not null default 0,
+  acertou_quarto          tinyint(1) not null default 0,
+
+  selecoes_classificadas  int not null default 0,
+  pontos_com_brasil       int not null default 0,
+  pontos_com_campeao      int not null default 0,
+
+  campeao_no_inicio       varchar(80) not null default '',
+  placar_na_final         varchar(20) not null default '',
+
+  primary key (id),
+
+  constraint fk_ranking_edicao
+    foreign key (edicao_id) references edicoes(id) on delete cascade,
+
+  constraint fk_ranking_usuario
+    foreign key (usuario_id) references usuarios(id) on delete cascade,
+
+  unique key uk_ranking_unico (edicao_id, usuario_id)
+
+) engine=innodb;
+
 
 
 
@@ -308,4 +347,4 @@ VALUES
  '2026-02-15 10:56:27');
 
 
-select * from palpite_campeao;
+select * from usuarios;

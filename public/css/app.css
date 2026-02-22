@@ -1,9 +1,8 @@
 /* =========================================================
-   app.css — COMPLETO (APP.PHP) — STANDALONE
-   - NÃO depende de outro css
-   - App + jogos + menu + toast
-   - Botões extras (Recibo / Próximo / Anterior / Campeão / Admin)
-   - Classificação do grupo (1º/2º/3º) COMPLETA
+   app.css — COMPLETO (APP.PHP) — STANDALONE (REFATORADO)
+   - 1 arquitetura de topo (header global sticky)
+   - remove duplicações/“topbar dentro do conteúdo”
+   - mobile-first (nav rolável + user/sair)
    ========================================================= */
 
 :root{
@@ -25,18 +24,15 @@
   --shadow: 0 24px 60px rgba(0,0,0,.55);
   --shadow2: 0 12px 30px rgba(0,0,0,.45);
 
-  /* safe-area (notch) */
   --safe-top: env(safe-area-inset-top);
   --safe-right: env(safe-area-inset-right);
   --safe-bottom: env(safe-area-inset-bottom);
   --safe-left: env(safe-area-inset-left);
 
-  /* app glass */
   --app-glass: rgba(255,255,255,.06);
   --app-glass2: rgba(255,255,255,.10);
   --app-stroke: rgba(255,255,255,.12);
 
-  /* gradientes */
   --head-grad: linear-gradient(90deg, rgba(16,208,138,.24), rgba(247,201,72,.18));
   --foot-grad: linear-gradient(90deg, rgba(70,220,255,.14), rgba(16,208,138,.12));
   --card-grad: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
@@ -84,7 +80,6 @@ body{
     calc(10px + var(--safe-left));
 }
 
-/* fundo leve */
 @keyframes twinkle{
   0%{ transform: translate3d(0,0,0); opacity:.20; }
   50%{ opacity:.28; }
@@ -118,11 +113,31 @@ body::before{
   z-index: 2;
 }
 
+/* =========================================================
+   ✅ HEADER GLOBAL (NAV PRINCIPAL) — 1 única arquitetura
+   ========================================================= */
+
 .app-header{
+  position: sticky;
+  top: calc(10px + var(--safe-top));
+  z-index: 9998;
+
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap: 12px;
+
+  padding: 10px 10px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.12);
+  background:
+    radial-gradient(900px 260px at 12% 10%, rgba(70,220,255,.10), transparent 62%),
+    radial-gradient(760px 240px at 82% 20%, rgba(16,208,138,.10), transparent 60%),
+    rgba(0,0,0,.16);
+
+  backdrop-filter: blur(14px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.28);
+
   margin-bottom: 10px;
 }
 
@@ -131,6 +146,7 @@ body::before{
   align-items:center;
   gap: 12px;
   min-width: 0;
+  flex: 0 1 auto;
 }
 
 .app-brand img{
@@ -165,6 +181,61 @@ body::before{
   text-overflow: ellipsis;
 }
 
+.app-topnav{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+
+  overflow-x:auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.app-topnav::-webkit-scrollbar{ display:none; }
+
+.topnav-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  text-decoration:none;
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+
+  transition: 180ms ease;
+  box-shadow: 0 12px 22px rgba(0,0,0,.16);
+}
+
+.topnav-link:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+}
+
+.topnav-link.is-active{
+  color: #062027;
+  border-color: rgba(255,255,255,.10);
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 16px 34px rgba(0,0,0,.22);
+}
+
+.topnav-link.is-admin{
+  border-color: rgba(140,120,255,.22);
+  background: linear-gradient(90deg, rgba(140,120,255,.32), rgba(70,220,255,.18));
+}
+
+.topnav-link.is-admin:hover{
+  background: linear-gradient(90deg, rgba(140,120,255,.42), rgba(70,220,255,.24));
+}
+
 .app-actions{
   display:flex;
   align-items:center;
@@ -181,6 +252,7 @@ body::before{
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.06);
   box-shadow: 0 12px 22px rgba(0,0,0,.18);
+  min-width: 0;
 }
 
 .user-chip .dot{
@@ -189,6 +261,7 @@ body::before{
   border-radius: 999px;
   background: linear-gradient(135deg, var(--green), var(--gold));
   box-shadow: 0 0 0 4px rgba(16,208,138,.10);
+  flex: 0 0 auto;
 }
 
 .user-chip-name{
@@ -199,6 +272,7 @@ body::before{
   overflow:hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .btn-logout{
@@ -214,6 +288,7 @@ body::before{
   display:inline-flex;
   align-items:center;
   justify-content:center;
+  white-space: nowrap;
 }
 
 .btn-logout:hover{
@@ -221,6 +296,10 @@ body::before{
   transform: translateY(-1px);
   box-shadow: 0 12px 22px rgba(0,0,0,.22);
 }
+
+/* =========================================================
+   SHELL
+   ========================================================= */
 
 .app-shell{
   display:grid;
@@ -256,7 +335,7 @@ body::before{
 }
 
 /* =========================================================
-   MENU
+   MENU (GRUPOS)
    ========================================================= */
 
 .menu-title{
@@ -355,7 +434,6 @@ body::before{
   box-shadow: none;
 }
 
-/* campeão (menu) */
 .menu-link.menu-link-champion{
   background:
     radial-gradient(240px 80px at 20% 20%, rgba(247,201,72,.16), transparent 62%),
@@ -375,7 +453,7 @@ body::before{
 }
 
 /* =========================================================
-   BOTÕES EXTRAS (Salvar tudo / Recibo / Admin / Campeão)
+   BOTÕES (MENU)
    ========================================================= */
 
 .btn-save-all{
@@ -425,36 +503,6 @@ body::before{
 }
 .btn-receipt:active{ transform: translateY(0) scale(.99); }
 
-/* ✅ ADMIN (no menu, estilo roxo/azul) */
-.btn-admin{
-  width: 100%;
-  margin-top: 10px;
-  display:block;
-  text-align:center;
-  text-decoration:none;
-
-  border: 1px solid rgba(255,255,255,.14);
-  background: linear-gradient(90deg, rgba(140,120,255,.35), rgba(70,220,255,.22));
-  color: rgba(255,255,255,.94);
-
-  border-radius: 16px;
-  padding: 12px 14px;
-  cursor: pointer;
-
-  font-weight: 900;
-  font-size: 14px;
-  transition: 180ms ease;
-  box-shadow: 0 14px 30px rgba(0,0,0,.22);
-}
-
-.btn-admin:hover{
-  background: linear-gradient(90deg, rgba(140,120,255,.45), rgba(70,220,255,.28));
-  transform: translateY(-1px);
-  box-shadow: 0 16px 34px rgba(0,0,0,.28);
-}
-.btn-admin:active{ transform: translateY(0) scale(.99); }
-
-/* (opcional) botão “ir para campeão” caso exista na sua tela */
 .btn-go-champion{
   width: 100%;
   margin-top: 10px;
@@ -768,7 +816,7 @@ body::before{
 .save-state.err{ color: var(--bad); }
 
 /* =========================================================
-   CLASSIFICAÇÃO DO GRUPO (1º/2º/3º) — ✅ COMPLETA
+   CLASSIFICAÇÃO DO GRUPO (1º/2º/3º)
    ========================================================= */
 
 .group-rank-card{
@@ -907,7 +955,7 @@ body::before{
 .rank-state.err{ color: var(--bad); }
 
 /* =========================================================
-   NAV DO GRUPO (Anterior / Próximo) — ✅ COMPLETA
+   NAV DO GRUPO (Anterior / Próximo)
    ========================================================= */
 
 .group-nav{
@@ -923,9 +971,6 @@ body::before{
   justify-content:flex-end;
 }
 
-/* ✅ AJUSTE APENAS DO BOTÃO "QUEM SERÁ O CAMPEÃO"
-   - Ele foi definido como width:100% (classe .btn-go-champion), então ao usar na navegação vira "gigante".
-   - Aqui a gente só neutraliza o width quando estiver na barra de navegação do grupo. */
 .group-nav .btn-go-champion,
 .group-next .btn-go-champion{
   width: auto;
@@ -1031,8 +1076,19 @@ body::before{
   .app-header{
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
+
+  .app-brand{
+    justify-content:flex-start;
+  }
+
+  .app-topnav{
+    width: 100%;
+  }
+
   .app-actions{
+    width: 100%;
     justify-content: space-between;
   }
 
@@ -1049,10 +1105,33 @@ body::before{
   }
 
   .app-wrap{ padding: 10px; }
+  .app-header{ padding: 10px; border-radius: 18px; }
+
   .app-menu{ padding: 12px; }
   .app-content{ padding: 14px; }
 
   .menu-link{ padding: 11px 12px; }
+
+  .topnav-link{
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .user-chip{
+    padding: 9px 10px;
+    border-radius: 14px;
+    flex: 1 1 auto;
+  }
+
+  .user-chip-name{
+    max-width: 50vw;
+  }
+
+  .btn-logout{
+    padding: 10px 12px;
+    border-radius: 14px;
+    flex: 0 0 auto;
+  }
 
   .match-body{
     grid-template-columns: 1fr 150px 1fr;
@@ -1096,7 +1175,6 @@ body::before{
     justify-content: center;
   }
 
-  /* no mobile, como a navegação empilha, o botão do campeão pode ser 100% sem ficar "gigante" horizontalmente */
   .group-nav .btn-go-champion,
   .group-next .btn-go-champion{
     width: 100%;
@@ -1120,6 +1198,9 @@ body::before{
   .app-content{ padding: 12px; }
   .match-top{ padding: 9px 10px; }
   .match-body{ padding: 10px; }
+
+  .topnav-link{ padding: 10px 11px; }
+  .user-chip-name{ max-width: 48vw; }
 }
 
 @media (prefers-reduced-motion: reduce){

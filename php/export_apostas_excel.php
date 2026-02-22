@@ -57,6 +57,11 @@ try {
         exit("Usuário não encontrado.");
     }
 
+    $usuarioDbId = (int)($u["id"] ?? 0);
+    if ($usuarioDbId <= 0) {
+        throw new RuntimeException("ID do usuário inválido no banco.");
+    }
+
     $usuarioNome = (string)$u["nome"];
 
     $edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
@@ -97,7 +102,7 @@ try {
     $stJogos->execute([
         ":edicao_id1" => $edicaoId,
         ":edicao_id2" => $edicaoId,
-        ":usuario_id" => $usuarioId,
+        ":usuario_id" => $usuarioDbId,
     ]);
     $rowsJogos = $stJogos->fetchAll(PDO::FETCH_ASSOC);
 
@@ -123,7 +128,7 @@ try {
     ";
     $stClass = $pdo->prepare($sqlClass);
     $stClass->execute([
-        ":usuario_id" => $usuarioId,
+        ":usuario_id" => $usuarioDbId,
         ":edicao_id1" => $edicaoId,
         ":edicao_id2" => $edicaoId,
     ]);
@@ -142,7 +147,7 @@ try {
     ";
     $stCamp = $pdo->prepare($sqlCamp);
     $stCamp->execute([
-        ":usuario_id" => $usuarioId,
+        ":usuario_id" => $usuarioDbId,
         ":edicao_id"  => $edicaoId,
     ]);
     $campeaoNome = $stCamp->fetchColumn();
@@ -167,12 +172,24 @@ try {
     echo "<html><head><meta charset='UTF-8'></head><body>";
 
     // ---------- Cabeçalho rápido ----------
+    // Mantém as MESMAS 4 linhas do cabeçalho, sem inserir linha nova.
+    // Só muda a PRIMEIRA linha (Usuário) para ter 4 colunas:
+    // [Usuário] [NOME] [ID] [NUMERO]
     echo "<table border='1' cellspacing='0' cellpadding='6'>";
     echo "<tbody>";
-    echo "<tr><th colspan='2'>Exportação de Apostas</th></tr>";
-    echo "<tr><td><b>Usuário</b></td><td>" . strh($usuarioNome) . "</td></tr>";
-    echo "<tr><td><b>Edição ID</b></td><td>" . strh((string)$edicaoId) . "</td></tr>";
-    echo "<tr><td><b>Campeão</b></td><td>" . strh($campeaoNome) . "</td></tr>";
+    echo "<tr><th colspan='4'>Exportação de Apostas</th></tr>";
+
+    // >>> ALTERADO: ID em célula separada ao lado do nome
+    echo "<tr>";
+    echo "<td><b>Usuário</b></td>";
+    echo "<td>" . strh($usuarioNome) . "</td>";
+    echo "<td><b>ID</b></td>";
+    echo "<td>" . strh((string)$usuarioDbId) . "</td>";
+    echo "</tr>";
+
+    // >>> ALTERADO: para não "quebrar" a tabela com 4 colunas, usa colspan=3 no valor
+    echo "<tr><td><b>Edição ID</b></td><td colspan='3'>" . strh((string)$edicaoId) . "</td></tr>";
+    echo "<tr><td><b>Campeão</b></td><td colspan='3'>" . strh($campeaoNome) . "</td></tr>";
     echo "</tbody>";
     echo "</table>";
 

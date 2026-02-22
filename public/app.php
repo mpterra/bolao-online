@@ -658,12 +658,19 @@ try {
 			</div>
 		</div>
 
+		<nav class="app-topnav" aria-label="Menu principal">
+			<a class="topnav-link is-active" href="/bolao-da-copa/public/app.php">Apostas</a>
+			<a class="topnav-link" href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
+			<?php if ($isAdmin): ?>
+				<a class="topnav-link is-admin" href="/bolao-da-copa/public/admin.php">Admin</a>
+			<?php endif; ?>
+		</nav>
+
 		<div class="app-actions">
 			<div class="user-chip" title="<?php echo strh($usuarioNome); ?>">
 				<span class="dot"></span>
 				<span class="user-chip-name"><?php echo strh($usuarioNome); ?></span>
 			</div>
-
 			<a class="btn-logout" href="/bolao-da-copa/public/app.php?action=logout">Sair</a>
 		</div>
 	</header>
@@ -691,7 +698,6 @@ try {
 					</a>
 				<?php endforeach; ?>
 
-				<!-- botão campeão no fim do menu -->
 				<a class="menu-link menu-link-champion"
 				   href="/bolao-da-copa/public/campeao.php"
 				   title="Escolher o campeão">
@@ -709,10 +715,6 @@ try {
 				<button class="btn-receipt" id="btnRecibo" type="button" data-receipt-url="/bolao-da-copa/php/recibo.php">
 					Recibo
 				</button>
-
-				<?php if ($isAdmin): ?>
-					<a class="btn-admin" href="/bolao-da-copa/public/admin.php">Admin</a>
-				<?php endif; ?>
 
 				<div class="hint">
 					Dica: preencha os placares e salve. Você também pode salvar jogo a jogo.
@@ -890,7 +892,6 @@ try {
 								<?php endforeach; ?>
 							</div>
 
-							<!-- classificação (1º/2º/3º) -->
 							<div class="group-rank-card" data-grupo-rank="<?php echo (int)$grupoId; ?>">
 								<div class="group-rank-head">
 									<div class="group-rank-title">Classificação do grupo</div>
@@ -972,7 +973,6 @@ try {
 											Próximo <span class="muted">(Grupo <?php echo strh((string)$prox); ?>)</span>
 										</button>
 									<?php else: ?>
-										<!-- ✅ ÚLTIMO GRUPO: no lugar de "Próximo", vai para campeão salvando antes -->
 										<button class="btn-next-group btn-go-champion" type="button" data-champion-url="/bolao-da-copa/public/campeao.php">
 											Quem será o campeão <span class="muted">(salva antes)</span>
 										</button>
@@ -991,7 +991,6 @@ try {
 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<!-- Config SEM JS inline -->
 <script type="application/json" id="app-config">
 <?php echo json_encode([
 	"user" => [

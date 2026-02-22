@@ -1,8 +1,9 @@
 /* =========================================================
    admin.css — COMPLETO (ADMIN.PHP)
-   - Standalone (não depende de style.css)
-   - Reusa a mesma “linguagem visual” do app (glass + cards)
-   - Grid de usuários com botões bonitos, responsivo
+   - Standalone
+   - Menu superior independente (sticky)
+   - ✅ Remove "Voltar para Palpites"
+   - ✅ Admin fica de OUTRA COR quando ativo na página admin
    ========================================================= */
 
 :root{
@@ -28,8 +29,9 @@
   --head-grad: linear-gradient(90deg, rgba(16,208,138,.24), rgba(247,201,72,.18));
   --card-grad: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
 
-  --ok: rgba(16,208,138,.92);
-  --warn: rgba(247,201,72,.95);
+  /* admin accent */
+  --adminA: rgba(140,120,255,.92);
+  --adminB: rgba(70,220,255,.90);
 
   /* safe-area */
   --safe-top: env(safe-area-inset-top);
@@ -94,7 +96,7 @@ body::before{
 }
 
 /* =========================================================
-   LAYOUT BASE (mesmas classes do HTML do admin.php)
+   APP WRAP
    ========================================================= */
 
 .app-wrap{
@@ -105,11 +107,31 @@ body::before{
   z-index: 2;
 }
 
+/* =========================================================
+   ✅ HEADER / TOP NAV (STICKY)
+   ========================================================= */
+
 .app-header{
+  position: sticky;
+  top: calc(10px + var(--safe-top));
+  z-index: 9998;
+
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap: 12px;
+
+  padding: 10px 10px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.12);
+  background:
+    radial-gradient(900px 260px at 12% 10%, rgba(70,220,255,.10), transparent 62%),
+    radial-gradient(760px 240px at 82% 20%, rgba(16,208,138,.10), transparent 60%),
+    rgba(0,0,0,.16);
+
+  backdrop-filter: blur(14px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.28);
+
   margin-bottom: 10px;
 }
 
@@ -118,6 +140,7 @@ body::before{
   align-items:center;
   gap: 12px;
   min-width: 0;
+  flex: 0 1 auto;
 }
 
 .app-brand img{
@@ -140,7 +163,7 @@ body::before{
   letter-spacing: .2px;
   color: rgba(255,255,255,.96);
   white-space: nowrap;
-  overflow:hidden;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -148,8 +171,71 @@ body::before{
   font-size: 12px;
   color: rgba(255,255,255,.72);
   white-space: nowrap;
-  overflow:hidden;
+  overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.app-topnav{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+
+  overflow-x:auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.app-topnav::-webkit-scrollbar{ display:none; }
+
+.topnav-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  text-decoration:none;
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+
+  transition: 180ms ease;
+  box-shadow: 0 12px 22px rgba(0,0,0,.16);
+}
+
+.topnav-link:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+}
+
+.topnav-link.is-active{
+  color: #062027;
+  border-color: rgba(255,255,255,.10);
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 16px 34px rgba(0,0,0,.22);
+}
+
+.topnav-link.is-admin{
+  border-color: rgba(140,120,255,.22);
+  background: linear-gradient(90deg, rgba(140,120,255,.32), rgba(70,220,255,.18));
+}
+
+.topnav-link.is-admin:hover{
+  background: linear-gradient(90deg, rgba(140,120,255,.42), rgba(70,220,255,.24));
+}
+
+/* ✅ ADMIN ATIVO: outra cor (não verde/dourado) */
+.topnav-link.is-admin.is-active{
+  color: #062027;
+  border-color: rgba(255,255,255,.10);
+  background: linear-gradient(90deg, var(--adminA), var(--adminB));
+  box-shadow: 0 16px 34px rgba(0,0,0,.22);
 }
 
 .app-actions{
@@ -168,6 +254,7 @@ body::before{
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.06);
   box-shadow: 0 12px 22px rgba(0,0,0,.18);
+  min-width: 0;
 }
 
 .user-chip .dot{
@@ -176,6 +263,7 @@ body::before{
   border-radius: 999px;
   background: linear-gradient(135deg, var(--green), var(--gold));
   box-shadow: 0 0 0 4px rgba(16,208,138,.10);
+  flex: 0 0 auto;
 }
 
 .user-chip-name{
@@ -186,6 +274,7 @@ body::before{
   overflow:hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .btn-logout{
@@ -201,6 +290,7 @@ body::before{
   display:inline-flex;
   align-items:center;
   justify-content:center;
+  white-space: nowrap;
 }
 
 .btn-logout:hover{
@@ -208,6 +298,10 @@ body::before{
   transform: translateY(-1px);
   box-shadow: 0 12px 22px rgba(0,0,0,.22);
 }
+
+/* =========================================================
+   SHELL / CONTENT
+   ========================================================= */
 
 .app-shell{
   display:grid;
@@ -236,6 +330,9 @@ body::before{
   text-transform: uppercase;
 }
 
+.menu-actions{ margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.10); }
+.menu-actions-tight{ margin-top: 0; padding-top: 0; border-top: 0; }
+
 .content-head{ margin-bottom: 12px; }
 
 .content-h1{
@@ -251,7 +348,7 @@ body::before{
 }
 
 /* =========================================================
-   BOTÕES (reuso do HTML: btn-receipt)
+   BOTÕES (AÇÕES)
    ========================================================= */
 
 .btn-receipt{
@@ -274,11 +371,8 @@ body::before{
   box-shadow: 0 16px 34px rgba(0,0,0,.28);
 }
 
-.btn-receipt:active{
-  transform: translateY(0) scale(.99);
-}
+.btn-receipt:active{ transform: translateY(0) scale(.99); }
 
-/* remove os inline styles (se existirem, ok — isso aqui garante consistência) */
 a.btn-receipt{
   display:block;
   text-align:center;
@@ -316,9 +410,7 @@ a.btn-receipt{
   margin-bottom: 12px;
 }
 
-.admin-card strong{
-  color: rgba(255,255,255,.92);
-}
+.admin-card strong{ color: rgba(255,255,255,.92); }
 
 /* =========================================================
    GRID DE USUÁRIOS
@@ -361,11 +453,8 @@ a.btn-receipt{
   box-shadow: 0 18px 36px rgba(0,0,0,.22);
 }
 
-.admin-user-btn:active{
-  transform: translateY(0) scale(.99);
-}
+.admin-user-btn:active{ transform: translateY(0) scale(.99); }
 
-/* Nome (primeiro span) */
 .admin-user-btn > span:first-child{
   font-weight: 900;
   font-size: 13px;
@@ -375,7 +464,6 @@ a.btn-receipt{
   white-space: nowrap;
 }
 
-/* Tipo (span.small) */
 .admin-user-btn .small{
   font-weight: 900;
   font-size: 11px;
@@ -387,10 +475,6 @@ a.btn-receipt{
   box-shadow: 0 10px 18px rgba(0,0,0,.18);
 
   flex: 0 0 auto;
-}
-
-/* Se quiser diferenciar ADMIN visualmente (opcional, sem mudar HTML) */
-.admin-user-btn .small{
   letter-spacing: .2px;
 }
 
@@ -404,8 +488,13 @@ a.btn-receipt{
   .app-header{
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
+
+  .app-topnav{ width: 100%; }
+
   .app-actions{
+    width: 100%;
     justify-content: space-between;
   }
 
@@ -427,13 +516,7 @@ a.btn-receipt{
 
   .admin-card{ padding: 12px; }
 
-  .admin-grid{
-    grid-template-columns: 1fr;
-  }
-
-  .admin-user-btn{
-    padding: 12px;
-  }
+  .admin-grid{ grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce){

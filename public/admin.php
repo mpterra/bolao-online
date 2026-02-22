@@ -32,8 +32,9 @@ require_login();
 require_admin();
 
 $usuarioNome = isset($_SESSION["usuario_nome"]) ? (string)$_SESSION["usuario_nome"] : "Admin";
+$isAdmin = true;
 
-/* Logout (opcional) */
+/* Logout */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
     session_destroy();
     header("Location: /bolao-da-copa/public/index.php");
@@ -65,6 +66,8 @@ try {
 <body>
 
 <div class="app-wrap">
+
+    <!-- ✅ MENU SUPERIOR INDEPENDENTE -->
     <header class="app-header">
         <div class="app-brand">
             <img src="/bolao-da-copa/public/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
@@ -73,6 +76,14 @@ try {
                 <span>Admin • Exportar apostas</span>
             </div>
         </div>
+
+        <nav class="app-topnav" aria-label="Menu principal">
+            <a class="topnav-link" href="/bolao-da-copa/public/app.php">Apostas</a>
+            <a class="topnav-link" href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
+            <?php if ($isAdmin): ?>
+                <a class="topnav-link is-admin is-active" href="/bolao-da-copa/public/admin.php">Admin</a>
+            <?php endif; ?>
+        </nav>
 
         <div class="app-actions">
             <div class="user-chip" title="<?php echo strh($usuarioNome); ?>">
@@ -88,20 +99,10 @@ try {
         <aside class="app-menu">
             <div class="menu-title">Ações</div>
 
-            <div class="menu-actions" style="margin-top:0;border-top:0;padding-top:0;">
-                
-                <a class="btn-receipt"
-                   href="/bolao-da-copa/public/app.php"
-                   style="display:block;text-align:center;text-decoration:none;">
-                    Voltar para Palpites
-                </a>
-
-                <a class="btn-receipt"
-                   href="/bolao-da-copa/php/export_apostas_todas_zip.php"
-                   style="display:block;text-align:center;text-decoration:none;margin-top:10px;">
+            <div class="menu-actions menu-actions-tight">
+                <a class="btn-receipt" href="/bolao-da-copa/php/export_apostas_todas_zip.php">
                     Baixar TODAS as apostas (ZIP)
                 </a>
-
             </div>
         </aside>
 
@@ -113,12 +114,12 @@ try {
 
             <div class="admin-card">
                 <h2>Usuários ativos</h2>
-                <p>Colunas no Excel: 
-                    <strong>Grupo</strong>, 
-                    <strong>Data/Hora</strong>, 
-                    <strong>Time casa</strong>, 
-                    <strong>Placar casa</strong>, 
-                    <strong>Time visitante</strong>, 
+                <p>Colunas no Excel:
+                    <strong>Grupo</strong>,
+                    <strong>Data/Hora</strong>,
+                    <strong>Time casa</strong>,
+                    <strong>Placar casa</strong>,
+                    <strong>Time visitante</strong>,
                     <strong>Placar visitante</strong>.
                 </p>
 
