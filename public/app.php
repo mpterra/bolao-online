@@ -637,6 +637,7 @@ try {
 	exit;
 }
 
+require_once __DIR__ . "/partials/app_header.php";
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -649,31 +650,16 @@ try {
 <body>
 
 <div class="app-wrap">
-	<header class="app-header">
-		<div class="app-brand">
-			<img src="/bolao-da-copa/public/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
-			<div class="app-title">
-				<strong>Bolão da Copa</strong>
-				<span>Fase de Grupos • Palpites</span>
-			</div>
-		</div>
 
-		<nav class="app-topnav" aria-label="Menu principal">
-			<a class="topnav-link is-active" href="/bolao-da-copa/public/app.php">Apostas</a>
-			<a class="topnav-link" href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
-			<?php if ($isAdmin): ?>
-				<a class="topnav-link is-admin" href="/bolao-da-copa/public/admin.php">Admin</a>
-			<?php endif; ?>
-		</nav>
-
-		<div class="app-actions">
-			<div class="user-chip" title="<?php echo strh($usuarioNome); ?>">
-				<span class="dot"></span>
-				<span class="user-chip-name"><?php echo strh($usuarioNome); ?></span>
-			</div>
-			<a class="btn-logout" href="/bolao-da-copa/public/app.php?action=logout">Sair</a>
-		</div>
-	</header>
+	<?php
+		render_app_header(
+			$usuarioNome,
+			$isAdmin,
+			"apostas",
+			"Fase de Grupos • Palpites",
+			"/bolao-da-copa/public/app.php?action=logout"
+		);
+	?>
 
 	<div class="app-shell">
 		<aside class="app-menu">

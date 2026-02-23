@@ -8,6 +8,12 @@ ini_set('display_startup_errors', '1');
 session_start();
 require_once __DIR__ . "/../php/conexao.php";
 
+/**
+ * ✅ Header padrão (função render_app_header)
+ * Ajuste o caminho se você colocou o arquivo em outro lugar.
+ */
+require_once __DIR__ . "/../public/partials/app_header.php";
+
 /* =========================================================
    Helpers
    ========================================================= */
@@ -19,8 +25,10 @@ function require_login(): void {
     }
 }
 
-function strh(?string $s): string {
-    return htmlspecialchars((string)($s ?? ""), ENT_QUOTES, "UTF-8");
+if (!function_exists("strh")) {
+    function strh(?string $s): string {
+        return htmlspecialchars((string)($s ?? ""), ENT_QUOTES, "UTF-8");
+    }
 }
 
 function session_int(string $key, int $default = 0): int {
@@ -60,12 +68,6 @@ function lower_utf8(string $s): string {
 
 require_login();
 
-/**
- * ✅ Menu/topbar deve ser IDÊNTICO ao app.php:
- * - usa $_SESSION["usuario_nome"] (não "nome")
- * - logout via /public/app.php?action=logout
- * - links: Apostas / Ranking do Bolão / Admin (se ADMIN)
- */
 $usuarioId   = session_int("usuario_id", 0);
 $usuarioNome = session_str("usuario_nome", "Apostador");
 $tipoUsuario = session_str("tipo_usuario", "");
@@ -80,7 +82,7 @@ $edicaoId = get_int_param("edicao_id"); // null = escolher default
 try {
     // 1) Edições
     $stmtEd = $pdo->query("SELECT id, nome FROM edicoes ORDER BY id DESC");
-    $edicoes = $stmtEd->fetchAll();
+    $edicoes = $stmtEd->fetchAll(PDO::FETCH_ASSOC);
 
     // Default: maior id
     if ($edicaoId === null) {
@@ -96,7 +98,7 @@ try {
         }
     }
 
-    // 2) Ranking (ordem ipsis litteris do banco)
+    // 2) Ranking (ordem do banco)
     $sql = "
         SELECT
             r.posicao,
@@ -124,7 +126,7 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([":edicao_id" => (int)$edicaoId]);
-    $rows = $stmt->fetchAll();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (Throwable $e) {
     http_response_code(500);
@@ -166,42 +168,23 @@ function build_row_class(int $uid, int $meId, int $pos): string {
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Ranking — Bolão da Copa</title>
 
-  <!-- Base global do projeto -->
   <link rel="stylesheet" href="/bolao-da-copa/public/css/base.css?v=1">
-
-  <!-- Página ranking -->
   <link rel="stylesheet" href="/bolao-da-copa/public/css/ranking.css?v=1">
 </head>
 <body>
 
 <div class="app-wrap">
 
-  <!-- ✅ HEADER: MESMÍSSIMO DO app.php -->
-  <header class="app-header">
-    <div class="app-brand">
-      <img src="/bolao-da-copa/public/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
-      <div class="app-title">
-        <strong>Bolão da Copa</strong>
-        <span>Ranking<?= ($edicaoNome !== "" ? " • " . strh($edicaoNome) : "") ?></span>
-      </div>
-    </div>
-
-    <nav class="app-topnav" aria-label="Menu principal">
-      <a class="topnav-link" href="/bolao-da-copa/public/app.php">Apostas</a>
-      <a class="topnav-link is-active" href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
-      <?php if ($isAdmin): ?>
-        <a class="topnav-link is-admin" href="/bolao-da-copa/public/admin.php">Admin</a>
-      <?php endif; ?>
-    </nav>
-
-    <div class="app-actions">
-      <div class="user-chip" title="<?= strh($usuarioNome); ?>">
-        <span class="dot"></span>
-        <span class="user-chip-name"><?= strh($usuarioNome); ?></span>
-      </div>
-      <a class="btn-logout" href="/bolao-da-copa/public/app.php?action=logout">Sair</a>
-    </div>
-  </header>
+  <?php
+    $subtitle = "Ranking" . (($edicaoNome !== "") ? (" • " . $edicaoNome) : "");
+    render_app_header(
+        $usuarioNome,
+        $isAdmin,
+        "ranking",
+        $subtitle,
+        "/bolao-da-copa/public/app.php?action=logout"
+    );
+  ?>
 
   <!-- CONTEÚDO -->
   <section class="app-shell rk-shell-onecol">
@@ -221,8 +204,8 @@ function build_row_class(int $uid, int $meId, int $pos): string {
                   $idEd = (int)$e["id"];
                   $nmEd = (string)($e["nome"] ?? ("Edição " . (string)$idEd));
                 ?>
-                <option value="<?= $idEd ?>" <?= ($idEd === (int)$edicaoId ? "selected" : "") ?>>
-                  <?= strh($nmEd) ?>
+                <option value="<?php echo $idEd; ?>" <?php echo ($idEd === (int)$edicaoId ? "selected" : ""); ?>>
+                  <?php echo strh($nmEd); ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -240,10 +223,10 @@ function build_row_class(int $uid, int $meId, int $pos): string {
 
         <div class="rk-stats">
           <span class="badge badge-muted">
-            Participantes: <span id="rkCount"><?= (int)count($rows) ?></span>
+            Participantes: <span id="rkCount"><?php echo (int)count($rows); ?></span>
           </span>
           <span class="badge badge-muted">
-            Edição: <?= strh($edicaoNome !== "" ? $edicaoNome : ("#" . (string)$edicaoId)) ?>
+            Edição: <?php echo strh($edicaoNome !== "" ? $edicaoNome : ("#" . (string)$edicaoId)); ?>
           </span>
         </div>
       </div>
@@ -283,31 +266,31 @@ function build_row_class(int $uid, int $meId, int $pos): string {
               $rowClass = build_row_class($uid, $usuarioId, $pos);
               $dataName = lower_utf8($nome);
             ?>
-            <tr class="<?= strh($rowClass) ?>"
-                data-name="<?= strh($dataName) ?>"
-                data-user-id="<?= $uid ?>"
-                <?= ($title !== "" ? 'title="'.strh($title).'"' : "") ?>>
-              <td data-label="#" class="c-pos"><span class="rk-rank"><?= $pos ?></span></td>
+            <tr class="<?php echo strh($rowClass); ?>"
+                data-name="<?php echo strh($dataName); ?>"
+                data-user-id="<?php echo $uid; ?>"
+                <?php echo ($title !== "" ? 'title="'.strh($title).'"' : ""); ?>>
+              <td data-label="#" class="c-pos"><span class="rk-rank"><?php echo $pos; ?></span></td>
 
               <td data-label="Usuário" class="c-user">
                 <div class="rk-user">
-                  <span class="rk-user-name"><?= strh($nome) ?></span>
+                  <span class="rk-user-name"><?php echo strh($nome); ?></span>
                   <?php if ($uid === $usuarioId): ?>
                     <span class="badge rk-badge-me">você</span>
                   <?php endif; ?>
                 </div>
               </td>
 
-              <td data-label="Pontos" class="c-pts"><span class="rk-points"><?= $pontos ?></span></td>
-              <td data-label="Placares" class="c-small"><?= $plac ?></td>
-              <td data-label="Resultados" class="c-small"><?= $resu ?></td>
-              <td data-label="1ª fase" class="c-small"><?= $pf ?></td>
-              <td data-label="Mata-mata" class="c-small"><?= $mm ?></td>
+              <td data-label="Pontos" class="c-pts"><span class="rk-points"><?php echo $pontos; ?></span></td>
+              <td data-label="Placares" class="c-small"><?php echo $plac; ?></td>
+              <td data-label="Resultados" class="c-small"><?php echo $resu; ?></td>
+              <td data-label="1ª fase" class="c-small"><?php echo $pf; ?></td>
+              <td data-label="Mata-mata" class="c-small"><?php echo $mm; ?></td>
 
-              <td data-label="🏆" class="c-small"><?= ((int)($r["acertou_campeao"] ?? 0) ? "✔" : "") ?></td>
-              <td data-label="🥈" class="c-small"><?= ((int)($r["acertou_vice"] ?? 0) ? "✔" : "") ?></td>
-              <td data-label="🥉" class="c-small"><?= ((int)($r["acertou_terceiro"] ?? 0) ? "✔" : "") ?></td>
-              <td data-label="4º" class="c-small"><?= ((int)($r["acertou_quarto"] ?? 0) ? "✔" : "") ?></td>
+              <td data-label="🏆" class="c-small"><?php echo ((int)($r["acertou_campeao"] ?? 0) ? "✔" : ""); ?></td>
+              <td data-label="🥈" class="c-small"><?php echo ((int)($r["acertou_vice"] ?? 0) ? "✔" : ""); ?></td>
+              <td data-label="🥉" class="c-small"><?php echo ((int)($r["acertou_terceiro"] ?? 0) ? "✔" : ""); ?></td>
+              <td data-label="4º" class="c-small"><?php echo ((int)($r["acertou_quarto"] ?? 0) ? "✔" : ""); ?></td>
             </tr>
           <?php endforeach; ?>
           </tbody>
@@ -329,7 +312,7 @@ function build_row_class(int $uid, int $meId, int $pos): string {
 
 </div>
 
-<script type="application/json" id="app-config"><?= json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+<script type="application/json" id="app-config"><?php echo json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
 <script src="/bolao-da-copa/public/js/ranking.js?v=1"></script>
 </body>
 </html>

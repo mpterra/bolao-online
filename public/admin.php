@@ -32,7 +32,8 @@ require_login();
 require_admin();
 
 $usuarioNome = isset($_SESSION["usuario_nome"]) ? (string)$_SESSION["usuario_nome"] : "Admin";
-$isAdmin = true;
+$tipoSessao = isset($_SESSION["tipo_usuario"]) ? (string)$_SESSION["tipo_usuario"] : "";
+$isAdmin = (mb_strtoupper($tipoSessao, "UTF-8") === "ADMIN");
 
 /* Logout */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
@@ -54,6 +55,8 @@ try {
     echo "Erro ao carregar usuários.";
     exit;
 }
+
+require_once __DIR__ . "/partials/app_header.php";
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -67,33 +70,15 @@ try {
 
 <div class="app-wrap">
 
-    <!-- ✅ MENU SUPERIOR INDEPENDENTE -->
-    <header class="app-header">
-        <div class="app-brand">
-            <img src="/bolao-da-copa/public/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
-            <div class="app-title">
-                <strong>Bolão da Copa</strong>
-                <span>Admin • Exportar apostas</span>
-            </div>
-        </div>
-
-        <nav class="app-topnav" aria-label="Menu principal">
-            <a class="topnav-link" href="/bolao-da-copa/public/app.php">Apostas</a>
-            <a class="topnav-link" href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
-            <?php if ($isAdmin): ?>
-                <a class="topnav-link is-admin is-active" href="/bolao-da-copa/public/admin.php">Admin</a>
-            <?php endif; ?>
-        </nav>
-
-        <div class="app-actions">
-            <div class="user-chip" title="<?php echo strh($usuarioNome); ?>">
-                <span class="dot"></span>
-                <span class="user-chip-name"><?php echo strh($usuarioNome); ?></span>
-            </div>
-
-            <a class="btn-logout" href="/bolao-da-copa/public/admin.php?action=logout">Sair</a>
-        </div>
-    </header>
+    <?php
+        render_app_header(
+            $usuarioNome,
+            $isAdmin,
+            "admin",
+            "Admin • Exportar apostas",
+            "/bolao-da-copa/public/admin.php?action=logout"
+        );
+    ?>
 
     <div class="app-shell">
         <aside class="app-menu">
@@ -102,6 +87,10 @@ try {
             <div class="menu-actions menu-actions-tight">
                 <a class="btn-receipt" href="/bolao-da-copa/php/export_apostas_todas_zip.php">
                     Baixar TODAS as apostas (ZIP)
+                </a>
+
+                <a class="btn-receipt" href="/bolao-da-copa/public/admin_resultados.php">
+                    Resultados (placar real)
                 </a>
             </div>
         </aside>

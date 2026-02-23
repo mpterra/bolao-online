@@ -1,0 +1,59 @@
+<?php
+declare(strict_types=1);
+
+if (!function_exists("strh")) {
+    function strh(?string $s): string {
+        return htmlspecialchars($s ?? "", ENT_QUOTES, "UTF-8");
+    }
+}
+
+/**
+ * Renderiza o header padrão do sistema (mesmo menu em todas as telas).
+ *
+ * Requer:
+ *  - $usuarioNome (string)
+ *  - $isAdmin (bool)
+ *
+ * Parâmetros:
+ *  - $active: string ('apostas'|'ranking'|'admin'|'resultados'|etc)
+ *  - $subtitle: string (texto pequeno abaixo do título)
+ *  - $logoutHref: string (link de logout da tela atual)
+ */
+function render_app_header(string $usuarioNome, bool $isAdmin, string $active, string $subtitle, string $logoutHref): void {
+    ?>
+    <header class="app-header">
+        <div class="app-brand">
+            <img src="/bolao-da-copa/public/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
+            <div class="app-title">
+                <strong>Bolão da Copa</strong>
+                <span><?php echo strh($subtitle); ?></span>
+            </div>
+        </div>
+
+        <nav class="app-topnav" aria-label="Menu principal">
+            <a class="topnav-link<?php echo $active === "apostas" ? " is-active" : ""; ?>"
+               href="/bolao-da-copa/public/app.php">Apostas</a>
+
+            <a class="topnav-link<?php echo $active === "ranking" ? " is-active" : ""; ?>"
+               href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
+
+            <?php if ($isAdmin): ?>
+                <a class="topnav-link is-admin<?php echo $active === "admin" ? " is-active" : ""; ?>"
+                   href="/bolao-da-copa/public/admin.php">Admin</a>
+
+                <a class="topnav-link is-admin<?php echo $active === "resultados" ? " is-active" : ""; ?>"
+                   href="/bolao-da-copa/public/admin_resultados.php">Resultados</a>
+            <?php endif; ?>
+        </nav>
+
+        <div class="app-actions">
+            <div class="user-chip" title="<?php echo strh($usuarioNome); ?>">
+                <span class="dot"></span>
+                <span class="user-chip-name"><?php echo strh($usuarioNome); ?></span>
+            </div>
+
+            <a class="btn-logout" href="<?php echo strh($logoutHref); ?>">Sair</a>
+        </div>
+    </header>
+    <?php
+}

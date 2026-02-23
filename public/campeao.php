@@ -67,6 +67,16 @@ require_login();
 $usuarioId   = (int)($_SESSION["usuario_id"] ?? 0);
 $usuarioNome = isset($_SESSION["usuario_nome"]) ? (string)$_SESSION["usuario_nome"] : "Apostador";
 
+$tipoUsuario = isset($_SESSION["tipo_usuario"]) ? (string)$_SESSION["tipo_usuario"] : "";
+$isAdmin = (mb_strtoupper($tipoUsuario, "UTF-8") === "ADMIN");
+
+/* Logout */
+if (isset($_GET["action"]) && $_GET["action"] === "logout") {
+	session_destroy();
+	header("Location: /bolao-da-copa/public/index.php");
+	exit;
+}
+
 try {
 	$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
 	if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
@@ -82,7 +92,6 @@ try {
 	$st = $pdo->prepare($sqlTimes);
 	$st->execute([":eid" => $edicaoId]);
 	$times = $st->fetchAll(PDO::FETCH_ASSOC);
-
 	if (!is_array($times)) $times = [];
 
 	// Campeão atual do usuário (se houver)
@@ -127,8 +136,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		json_response(["ok" => false, "message" => "Selecione um time."], 422);
 	}
 
-	// Valida se o time participa da edição ativa
 	try {
+		// Valida se o time participa da edição ativa
 		$sqlVal = "
 			SELECT COUNT(*)
 			FROM grupo_time gt
@@ -177,81 +186,103 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 </head>
 <body>
 
-<div class="champ-wrap">
-	<header class="champ-header">
-		<div class="champ-brand">
+<div class="app-wrap">
+
+	<header class="app-header">
+		<div class="app-brand">
 			<img src="/bolao-da-copa/public/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
-			<div class="champ-title">
-				<strong>Quem será o campeão?</strong>
-				<span>Toque no time e salve seu palpite</span>
+			<div class="app-title">
+				<strong>Bolão da Copa</strong>
+				<span>Quem será o campeão?</span>
 			</div>
 		</div>
 
-		<div class="champ-actions">
-			<div class="champ-user" title="<?php echo strh($usuarioNome); ?>">
-				<span class="dot"></span>
-				<span class="name"><?php echo strh($usuarioNome); ?></span>
-			</div>
+		<nav class="app-topnav" aria-label="Menu principal">
+			<a class="topnav-link" href="/bolao-da-copa/public/app.php">Apostas</a>
+			<a class="topnav-link" href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
+			<?php if ($isAdmin): ?>
+				<a class="topnav-link is-admin" href="/bolao-da-copa/public/admin.php">Admin</a>
+				<a class="topnav-link is-admin" href="/bolao-da-copa/public/admin_resultados.php">Resultados</a>
+			<?php endif; ?>
+		</nav>
 
-			<a class="btn-back" href="/bolao-da-copa/public/app.php">Voltar</a>
+		<div class="app-actions">
+			<div class="user-chip" title="<?php echo strh($usuarioNome); ?>">
+				<span class="dot"></span>
+				<span class="user-chip-name"><?php echo strh($usuarioNome); ?></span>
+			</div>
+			<a class="btn-logout" href="/bolao-da-copa/public/campeao.php?action=logout">Sair</a>
 		</div>
 	</header>
 
-	<main class="champ-main">
-		<section class="champ-card">
-			<div class="champ-card-head">
-				<div class="h1">Selecione o campeão</div>
+	<div class="app-shell">
+		<main class="app-content">
+
+			<div class="content-head">
+				<h1 class="content-h1">Quem será o campeão?</h1>
+				<p class="content-sub">Toque no time e salve seu palpite.</p>
 			</div>
 
-			<?php if (count($times) === 0): ?>
-				<div class="champ-empty">Nenhum time encontrado na edição ativa (grupo_time).</div>
-			<?php else: ?>
-				<div class="champ-grid" id="champGrid">
-					<?php foreach ($times as $t): ?>
-						<?php
-						$tid = (int)$t["id"];
-						$nome = (string)$t["nome"];
-						$sigla = (string)$t["sigla"];
-						$flag = flag_url($nome);
-						$isSel = ($tid === $selectedTimeId);
-						?>
-						<button
-							type="button"
-							class="team-tile <?php echo $isSel ? "is-selected" : ""; ?>"
-							data-time-id="<?php echo (int)$tid; ?>"
-							data-time-name="<?php echo strh($nome); ?>"
-							aria-pressed="<?php echo $isSel ? "true" : "false"; ?>"
-						>
-							<?php if ($flag !== null): ?>
-								<img class="flag" src="<?php echo strh($flag); ?>" alt="Bandeira <?php echo strh($nome); ?>" loading="lazy" decoding="async">
-							<?php else: ?>
-								<div class="flag flag-fallback"><?php echo strh($sigla); ?></div>
-							<?php endif; ?>
-
-							<div class="meta">
-								<div class="sigla"><?php echo strh($sigla); ?></div>
-								<div class="nome"><?php echo strh($nome); ?></div>
-							</div>
-
-							<div class="check" aria-hidden="true">✓</div>
-						</button>
-					<?php endforeach; ?>
+			<section class="champ-card">
+				<div class="champ-card-head">
+					<div class="h1">Selecione o campeão</div>
 				</div>
 
-				<div class="champ-footer">
-					<button class="btn-save-champ" id="btnSaveChamp" type="button" disabled>Salvar campeão</button>
-					<div class="champ-hint" id="champHint">
-						<?php if ($selectedTimeId > 0): ?>
-							Seu campeão já está selecionado. Você pode trocar e salvar novamente.
-						<?php else: ?>
-							Selecione um time para habilitar o botão.
-						<?php endif; ?>
+				<?php if (count($times) === 0): ?>
+					<div class="champ-empty">Nenhum time encontrado na edição ativa (grupo_time).</div>
+				<?php else: ?>
+					<div class="champ-grid" id="champGrid">
+						<?php foreach ($times as $t): ?>
+							<?php
+							$tid = (int)$t["id"];
+							$nome = (string)$t["nome"];
+							$sigla = (string)$t["sigla"];
+							$flag = flag_url($nome);
+							$isSel = ($tid === $selectedTimeId);
+							?>
+							<button
+								type="button"
+								class="team-tile <?php echo $isSel ? "is-selected" : ""; ?>"
+								data-time-id="<?php echo (int)$tid; ?>"
+								data-time-name="<?php echo strh($nome); ?>"
+								aria-pressed="<?php echo $isSel ? "true" : "false"; ?>"
+							>
+								<?php if ($flag !== null): ?>
+									<img class="flag" src="<?php echo strh($flag); ?>" alt="Bandeira <?php echo strh($nome); ?>" loading="lazy" decoding="async">
+								<?php else: ?>
+									<div class="flag flag-fallback"><?php echo strh($sigla); ?></div>
+								<?php endif; ?>
+
+								<div class="meta">
+									<div class="sigla"><?php echo strh($sigla); ?></div>
+									<div class="nome"><?php echo strh($nome); ?></div>
+								</div>
+
+								<div class="check" aria-hidden="true">✓</div>
+							</button>
+						<?php endforeach; ?>
 					</div>
-				</div>
 
-			<?php endif; ?>
-		</section>
-	</main>
+					<div class="champ-footer">
+						<button class="btn-save-champ" id="btnSaveChamp" type="button" disabled>Salvar campeão</button>
+						<div class="champ-hint" id="champHint">
+							<?php if ($selectedTimeId > 0): ?>
+								Seu campeão já está selecionado. Você pode trocar e salvar novamente.
+							<?php else: ?>
+								Selecione um time para habilitar o botão.
+							<?php endif; ?>
+						</div>
+
+						<div style="margin-top:10px;">
+							<a class="btn-back" href="/bolao-da-copa/public/app.php">Voltar para Apostas</a>
+						</div>
+					</div>
+
+				<?php endif; ?>
+			</section>
+
+		</main>
+	</div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>

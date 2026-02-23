@@ -1,8 +1,7 @@
 /* =========================================================
-   campeao.css — COMPLETO (campeao.php) — STANDALONE
-   - Mesma arquitetura/estilo do app.css (header global sticky)
-   - Layout compatível com o HTML do campeao.php (app-wrap/app-header/app-shell/app-content)
-   - Grid responsivo de times + seleção + toast
+   admin_resultados.css — COMPLETO (ADMIN_RESULTADOS.PHP)
+   - Layout igual app.php (grupos + cards + bandeiras)
+   - Admin-only (só muda o conteúdo, visual é o mesmo)
    ========================================================= */
 
 :root{
@@ -18,10 +17,8 @@
   --muted: rgba(255,255,255,.75);
 
   --card: rgba(255,255,255,.08);
-  --card2: rgba(255,255,255,.12);
   --stroke: rgba(255,255,255,.18);
 
-  --shadow: 0 24px 60px rgba(0,0,0,.55);
   --shadow2: 0 12px 30px rgba(0,0,0,.45);
 
   --safe-top: env(safe-area-inset-top);
@@ -37,19 +34,10 @@
   --foot-grad: linear-gradient(90deg, rgba(70,220,255,.14), rgba(16,208,138,.12));
   --card-grad: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
 
-  --violet: rgba(140,120,255,.22);
-  --aqua: rgba(70,220,255,.18);
-
   --ok: rgba(16,208,138,.92);
-  --warn: rgba(247,201,72,.95);
   --bad: rgba(255,140,140,.95);
-
-  --in-ease: cubic-bezier(.2,.9,.2,1);
 }
 
-/* =========================================================
-   RESET / BASE
-   ========================================================= */
 *{
   margin:0;
   padding:0;
@@ -57,10 +45,7 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-html, body{
-  height: 100%;
-  height: 100dvh;
-}
+html, body{ height: 100%; height: 100dvh; }
 
 body{
   min-height: 100vh;
@@ -83,19 +68,10 @@ body{
     calc(10px + var(--safe-left));
 }
 
-img{
-  max-width: 100%;
-  height: auto;
-  display:block;
-}
-
 a{ color: inherit; }
-
 button, input, select, textarea{ font: inherit; }
+img{ max-width:100%; height:auto; display:block; }
 
-::selection{ background: rgba(247,201,72,.30); }
-
-/* fundo leve */
 @keyframes twinkle{
   0%{ transform: translate3d(0,0,0); opacity:.20; }
   50%{ opacity:.28; }
@@ -118,7 +94,7 @@ body::before{
 }
 
 /* =========================================================
-   WRAP
+   APP (layout geral)
    ========================================================= */
 .app-wrap{
   width: min(1120px, 100%);
@@ -129,7 +105,7 @@ body::before{
 }
 
 /* =========================================================
-   HEADER GLOBAL (IGUAL APP)
+   HEADER GLOBAL
    ========================================================= */
 .app-header{
   position: sticky;
@@ -246,10 +222,6 @@ body::before{
   background: linear-gradient(90deg, rgba(140,120,255,.32), rgba(70,220,255,.18));
 }
 
-.topnav-link.is-admin:hover{
-  background: linear-gradient(90deg, rgba(140,120,255,.42), rgba(70,220,255,.24));
-}
-
 .app-actions{
   display:flex;
   align-items:center;
@@ -305,31 +277,27 @@ body::before{
   white-space: nowrap;
 }
 
-.btn-logout:hover{
-  background: rgba(255,255,255,.10);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgba(0,0,0,.22);
-}
-
 /* =========================================================
-   SHELL (campeao.php não tem menu lateral)
+   SHELL
    ========================================================= */
 .app-shell{
   display:grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 220px 1fr;
   gap: 12px;
   align-items:start;
 }
 
+.app-menu,
 .app-content{
   background: linear-gradient(180deg, var(--app-glass2), var(--app-glass));
   border: 1px solid var(--app-stroke);
   box-shadow: 0 16px 40px rgba(0,0,0,.28);
   backdrop-filter: blur(14px);
   border-radius: 22px;
-  padding: 16px;
-  min-height: 360px;
 }
+
+.app-menu{ padding: 14px; }
+.app-content{ padding: 16px; min-height: 360px; }
 
 .content-head{ margin-bottom: 12px; }
 
@@ -346,141 +314,246 @@ body::before{
 }
 
 /* =========================================================
-   CARD DO CAMPEÃO
+   MENU (GRUPOS)
    ========================================================= */
-.champ-card{
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.12);
-  background:
-    radial-gradient(760px 260px at 20% 10%, rgba(140,120,255,.12), transparent 60%),
-    radial-gradient(760px 260px at 85% 30%, rgba(247,201,72,.10), transparent 62%),
-    rgba(0,0,0,.10);
-  box-shadow: 0 14px 34px rgba(0,0,0,.22);
-  overflow:hidden;
+.menu-title{
+  font-size: 12px;
+  color: rgba(255,255,255,.70);
+  margin-bottom: 10px;
+  letter-spacing: .35px;
+  text-transform: uppercase;
 }
 
-.champ-card-head{
-  padding: 12px 14px;
-  background: var(--head-grad);
-  border-bottom: 1px solid rgba(255,255,255,.10);
+.menu-list{
   display:flex;
-  align-items:flex-end;
+  flex-direction:column;
+  gap: 10px;
+}
+
+.menu-link{
+  padding: 12px;
+  border-radius: 16px;
+  text-decoration:none;
+  color: rgba(255,255,255,.92);
+  background:
+    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.10), transparent 60%),
+    rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  font-weight: 900;
+  transition: 180ms ease;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.menu-link:hover{
+  background:
+    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.12), transparent 60%),
+    rgba(255,255,255,.09);
+  transform: translateY(-1px);
+}
+
+.menu-link.is-active{
+  color: #062027;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  border-color: rgba(255,255,255,.10);
+  box-shadow: 0 16px 34px rgba(0,0,0,.22);
+}
+
+.badge{
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255,255,255,.86);
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* Botões (menu) */
+.menu-actions{
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.10);
+}
+
+.btn-receipt{
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  border-radius: 16px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 14px;
+  transition: 180ms ease;
+  box-shadow: 0 14px 30px rgba(0,0,0,.22);
+  display:block;
+  text-align:center;
+  text-decoration:none;
+}
+
+.btn-receipt:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(0,0,0,.28);
+}
+
+/* =========================================================
+   GRUPOS
+   ========================================================= */
+.group-block{
+  display:none;
+  padding: 12px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.10);
+  margin-bottom: 12px;
+}
+.group-block.is-active-group{ display:block; }
+
+.group-head{ margin-bottom: 10px; }
+
+.group-line{
+  display:flex;
+  align-items:center;
   justify-content:space-between;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.champ-card-head .h1{
-  font-size: 13px;
+.group-pill{
+  display:inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(16,208,138,.12);
+  border: 1px solid rgba(16,208,138,.28);
+  color: rgba(210,255,240,.98);
   font-weight: 900;
-  color: rgba(255,255,255,.96);
-  letter-spacing: .2px;
+  font-size: 12px;
 }
 
-.champ-empty{
-  padding: 14px;
-  color: rgba(255,255,255,.82);
+.group-count{
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(247,201,72,.26);
+  background: rgba(247,201,72,.12);
+  color: rgba(255,245,210,.98);
   font-weight: 900;
-  font-size: 13px;
+  font-size: 12px;
+}
+
+.group-name{
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 900;
+  color: rgba(255,255,255,.92);
 }
 
 /* =========================================================
-   GRID DE TIMES
+   JOGOS
    ========================================================= */
-.champ-grid{
-  padding: 12px;
-  display:grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.matches{
+  display:flex;
+  flex-direction:column;
   gap: 10px;
 }
 
-.team-tile{
-  width: 100%;
+.match-card{
+  border-radius: 18px;
   border: 1px solid rgba(255,255,255,.12);
   background:
-    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.10), transparent 60%),
-    rgba(255,255,255,.06);
+    radial-gradient(900px 320px at 18% 10%, rgba(16,208,138,.12), transparent 58%),
+    radial-gradient(760px 300px at 82% 18%, rgba(247,201,72,.10), transparent 58%),
+    radial-gradient(720px 300px at 50% 120%, rgba(70,220,255,.10), transparent 62%),
+    var(--card-grad);
+  box-shadow: 0 14px 34px rgba(0,0,0,.26);
+  overflow:hidden;
+}
 
-  border-radius: 16px;
+.match-top{
+  padding: 10px 12px;
+  background: var(--head-grad);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.match-when{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.match-when .when{
+  font-weight: 900;
+  font-size: 12px;
+  color: rgba(255,255,255,.96);
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.match-when .round{
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(245,242,255,.96);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(140,120,255,.34);
+  background: rgba(140,120,255,.18);
+}
+
+.match-status{
+  font-weight: 900;
+  font-size: 10px;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(140,120,255,.28);
+  background: rgba(140,120,255,.16);
+  color: rgba(245,242,255,.96);
+}
+.match-status.status-EM_ANDAMENTO{
+  border-color: rgba(16,208,138,.30);
+  background: rgba(16,208,138,.14);
+  color: rgba(210,255,240,.98);
+}
+.match-status.status-ENCERRADO{
+  border-color: rgba(247,201,72,.34);
+  background: rgba(247,201,72,.14);
+  color: rgba(255,245,210,.98);
+}
+
+.match-body{
   padding: 12px;
-  cursor: pointer;
-  color: rgba(255,255,255,.92);
-  text-align: left;
+  display:grid;
+  grid-template-columns: 1fr 170px 1fr;
+  align-items:center;
+  gap: 10px;
+}
 
+.team{
   display:flex;
   align-items:center;
   gap: 10px;
-
-  box-shadow: 0 14px 28px rgba(0,0,0,.18);
-  transition: 180ms ease;
-  position: relative;
-
-  -webkit-tap-highlight-color: transparent;
-  user-select:none;
-}
-
-.team-tile:hover{
-  background:
-    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.12), transparent 60%),
-    rgba(255,255,255,.09);
-  transform: translateY(-1px);
-  box-shadow: 0 16px 34px rgba(0,0,0,.22);
-}
-
-.team-tile:active{ transform: translateY(0) scale(.99); }
-
-.team-tile:focus{
-  outline: none;
-  border-color: rgba(16,208,138,.55);
-  box-shadow:
-    0 0 0 4px rgba(16,208,138,.14),
-    0 16px 34px rgba(0,0,0,.22);
-  background:
-    radial-gradient(220px 70px at 20% 20%, rgba(16,208,138,.12), transparent 60%),
-    rgba(255,255,255,.08);
-}
-
-/* Bandeira / fallback */
-.flag{
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  object-fit: cover;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.18);
-  box-shadow: 0 10px 18px rgba(0,0,0,.22);
-  flex: 0 0 auto;
-}
-
-.flag-fallback{
-  display:grid;
-  place-items:center;
-  font-weight: 900;
-  font-size: 12px;
-  letter-spacing: .6px;
-  color: rgba(255,255,255,.92);
-  background:
-    radial-gradient(140px 60px at 30% 30%, rgba(16,208,138,.14), transparent 60%),
-    radial-gradient(140px 60px at 70% 30%, rgba(247,201,72,.12), transparent 60%),
-    rgba(0,0,0,.14);
-}
-
-/* Meta */
-.meta{
   min-width: 0;
-  display:flex;
-  flex-direction:column;
-  gap: 2px;
 }
+.team-home{ justify-content:flex-end; text-align:right; }
+.team-away{ justify-content:flex-start; text-align:left; }
 
-.meta .sigla{
-  font-weight: 900;
-  font-size: 11px;
-  letter-spacing: .35px;
-  color: rgba(255,255,255,.78);
-}
-
-.meta .nome{
+.team-name{
   font-weight: 900;
   font-size: 13px;
   color: rgba(255,255,255,.92);
@@ -490,51 +563,92 @@ body::before{
   min-width: 0;
 }
 
-/* Check */
-.check{
-  position:absolute;
-  top: 10px;
-  right: 10px;
-
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
+/* bandeira + fallback sigla */
+.team-flag{
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.14);
+  box-shadow: 0 10px 18px rgba(0,0,0,.22);
   display:grid;
   place-items:center;
-
-  color: rgba(0,0,0,.70);
-  background: rgba(255,255,255,.10);
-  border: 1px solid rgba(255,255,255,.14);
-  opacity: 0;
-  transform: scale(.90);
-  transition: 180ms ease;
+  overflow:hidden;
+  flex: 0 0 auto;
 }
 
-/* estado selecionado */
-.team-tile.is-selected{
-  border-color: rgba(16,208,138,.40);
+.team-flag img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-badge{
+  display:none;
+  font-weight: 900;
+  font-size: 12px;
+  color: rgba(255,255,255,.96);
+}
+.team-flag.no-flag .team-badge{ display:block; }
+.team-flag.no-flag{ background: rgba(255,255,255,.10); }
+
+.scorebox{
+  width: 170px;
+  margin: 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 16px;
   background:
-    radial-gradient(220px 70px at 20% 20%, rgba(16,208,138,.14), transparent 60%),
-    radial-gradient(220px 70px at 85% 35%, rgba(247,201,72,.10), transparent 62%),
-    rgba(255,255,255,.08);
+    radial-gradient(180px 60px at 30% 30%, rgba(16,208,138,.12), transparent 65%),
+    radial-gradient(180px 60px at 70% 30%, rgba(247,201,72,.10), transparent 65%),
+    rgba(0,0,0,.14);
+  border: 1px solid rgba(255,255,255,.12);
 }
 
-.team-tile.is-selected .check{
-  opacity: 1;
-  transform: scale(1);
-  background: linear-gradient(90deg, rgba(16,208,138,.95), rgba(247,201,72,.92));
-  border-color: rgba(255,255,255,.10);
-  box-shadow: 0 12px 24px rgba(0,0,0,.22);
+.score{
+  width: 56px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.10);
+  color: rgba(255,255,255,.96);
+  font-weight: 900;
+  font-size: 16px;
+  text-align:center;
+  padding: 0;
+  line-height: 42px;
+  outline: none;
+  transition: 180ms ease;
+  font-variant-numeric: tabular-nums;
 }
 
-/* =========================================================
-   FOOTER (salvar + hint + voltar)
-   ========================================================= */
-.champ-footer{
-  padding: 12px 14px;
+.score:focus{
+  border-color: rgba(16,208,138,.55);
+  box-shadow: 0 0 0 4px rgba(16,208,138,.12);
+  background: rgba(255,255,255,.12);
+}
+
+.score::-webkit-outer-spin-button,
+.score::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+.score[type="number"]{ -moz-appearance: textfield; }
+
+.x{
+  font-weight: 900;
+  font-size: 14px;
+  color: rgba(255,255,255,.88);
+  text-shadow: 0 8px 18px rgba(0,0,0,.25);
+}
+
+.match-actions{
+  padding: 10px 12px;
   background: var(--foot-grad);
   border-top: 1px solid rgba(255,255,255,.10);
-
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -542,63 +656,31 @@ body::before{
   flex-wrap: wrap;
 }
 
-.btn-save-champ{
+.btn-save-one{
   border: 0;
   cursor: pointer;
-  border-radius: 16px;
-  padding: 12px 14px;
+  border-radius: 13px;
+  padding: 9px 12px;
   font-weight: 900;
-  font-size: 14px;
+  font-size: 13px;
   color: #062027;
-  background: linear-gradient(90deg, var(--green), var(--gold));
-  box-shadow: 0 16px 42px rgba(0,0,0,.35);
-  transition: transform 140ms ease, filter 180ms ease, opacity 180ms ease;
-  white-space: nowrap;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
+  background: linear-gradient(90deg, rgba(16,208,138,.95), rgba(247,201,72,.95));
+  box-shadow: 0 16px 34px rgba(0,0,0,.28);
+  transition: transform 140ms ease, filter 180ms ease;
 }
+.btn-save-one:hover{ filter: saturate(1.06); transform: translateY(-1px); }
+.btn-save-one:disabled{ opacity:.65; cursor:not-allowed; transform:none; }
 
-.btn-save-champ:hover{ filter: saturate(1.06); transform: translateY(-1px); }
-.btn-save-champ:active{ transform: translateY(0) scale(.99); }
-.btn-save-champ:disabled{ opacity: .62; cursor: not-allowed; transform: none; filter: none; }
-
-.champ-hint{
-  font-size: 12px;
+.save-state{
+  font-size: 11px;
   font-weight: 900;
-  color: rgba(255,255,255,.78);
-  line-height: 1.35;
-  min-width: 220px;
+  color: rgba(255,255,255,.72);
 }
-
-/* botão voltar (mesma família visual do app) */
-.btn-back{
-  border: 1px solid rgba(255,255,255,.16);
-  background: rgba(255,255,255,.06);
-  color: rgba(255,255,255,.92);
-  border-radius: 14px;
-  padding: 10px 14px;
-  cursor: pointer;
-  font-weight: 900;
-  transition: 180ms ease;
-  text-decoration: none;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  white-space: nowrap;
-  box-shadow: 0 12px 22px rgba(0,0,0,.18);
-}
-
-.btn-back:hover{
-  background: rgba(255,255,255,.10);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgba(0,0,0,.22);
-}
-
-.btn-back:active{ transform: translateY(0) scale(.99); }
+.save-state.ok{ color: var(--ok); }
+.save-state.err{ color: var(--bad); }
 
 /* =========================================================
-   TOAST (igual app)
+   TOAST
    ========================================================= */
 @keyframes toastIn{
   from{ opacity: 0; transform: translate(-50%, 10px) scale(.98); }
@@ -611,37 +693,26 @@ body::before{
   bottom: calc(14px + var(--safe-bottom));
   transform: translateX(-50%);
   z-index: 9999;
-
   display:none;
   min-width: min(560px, calc(100% - 24px));
-
   border-radius: 18px;
   padding: 12px 14px;
-
   border: 1px solid rgba(255,255,255,.16);
   background: rgba(0,0,0,.55);
   backdrop-filter: blur(10px);
-
   box-shadow: 0 22px 60px rgba(0,0,0,.55);
   color: rgba(255,255,255,.92);
-
   font-weight: 900;
   font-size: 13px;
 }
-
-.toast.is-open{
-  display:block;
-  animation: toastIn 180ms ease-out both;
-}
+.toast.is-open{ display:block; animation: toastIn 180ms ease-out both; }
 
 /* =========================================================
    RESPONSIVO
    ========================================================= */
-@media (max-width: 980px){
-  .champ-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
 @media (max-width: 860px){
+  .app-shell{ grid-template-columns: 1fr; }
+
   .app-header{
     flex-direction: column;
     align-items: stretch;
@@ -669,34 +740,16 @@ body::before{
 
   .app-wrap{ padding: 10px; }
   .app-header{ padding: 10px; border-radius: 18px; }
+
+  .app-menu{ padding: 12px; }
   .app-content{ padding: 14px; }
 
-  .topnav-link{
-    padding: 10px 12px;
-    font-size: 13px;
-  }
-
-  .user-chip{
-    padding: 9px 10px;
-    border-radius: 14px;
-    flex: 1 1 auto;
-  }
-
-  .user-chip-name{ max-width: 50vw; }
-
-  .btn-logout{
-    padding: 10px 12px;
-    border-radius: 14px;
-    flex: 0 0 auto;
-  }
-
-  .champ-grid{
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 12px;
+  .match-body{
+    grid-template-columns: 1fr 150px 1fr;
     gap: 10px;
   }
 
-  .meta .nome{
+  .team-name{
     white-space: normal;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -704,34 +757,7 @@ body::before{
     overflow: hidden;
   }
 
-  .champ-footer{
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btn-save-champ{
-    width: 100%;
-    justify-content:center;
-  }
-
-  .champ-hint{ min-width: 0; }
-
-  .btn-back{
-    width: 100%;
-    justify-content: center;
-  }
-
+  .scorebox{ width: 150px; }
+  .score{ width: 56px; height: 42px; line-height: 42px; }
   .toast{ min-width: calc(100% - 20px); }
-}
-
-@media (max-width: 420px){
-  .champ-grid{ grid-template-columns: 1fr; }
-}
-
-@media (prefers-reduced-motion: reduce){
-  *{
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
-  }
 }
