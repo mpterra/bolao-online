@@ -226,11 +226,29 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 			<section class="champ-card">
 				<div class="champ-card-head">
 					<div class="h1">Selecione o campeão</div>
+
+					<!-- ✅ novo: busca -->
+					<div class="champ-search" role="search" aria-label="Buscar time">
+						<input
+							type="search"
+							id="champSearch"
+							placeholder="Buscar time pelo nome (ESC limpa)…"
+							autocomplete="off"
+							spellcheck="false"
+							aria-label="Buscar time pelo nome"
+						/>
+					</div>
 				</div>
 
 				<?php if (count($times) === 0): ?>
 					<div class="champ-empty">Nenhum time encontrado na edição ativa (grupo_time).</div>
 				<?php else: ?>
+
+					<!-- ✅ novo: feedback de “nenhum resultado” -->
+					<div class="champ-no-results" id="champNoResults">
+						Nenhum time encontrado com esse filtro.
+					</div>
+
 					<div class="champ-grid" id="champGrid">
 						<?php foreach ($times as $t): ?>
 							<?php
@@ -245,6 +263,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 								class="team-tile <?php echo $isSel ? "is-selected" : ""; ?>"
 								data-time-id="<?php echo (int)$tid; ?>"
 								data-time-name="<?php echo strh($nome); ?>"
+								data-time-sigla="<?php echo strh($sigla); ?>"
 								aria-pressed="<?php echo $isSel ? "true" : "false"; ?>"
 							>
 								<?php if ($flag !== null): ?>
@@ -293,7 +312,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	"edicao" => ["id" => $edicaoId],
 	"selected_time_id" => $selectedTimeId,
 	"endpoints" => [
-		"save" => "/bolao-da-copa/public/campeao.php?action=save"
+		"save" => "/bolao-da-copa/public/campeao.php?action=save",
+		// opcional (o JS já tem fallback):
+		"recibo" => "/bolao-da-copa/php/recibo.php",
 	],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
 </script>

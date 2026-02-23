@@ -88,10 +88,6 @@ require_once __DIR__ . "/partials/app_header.php";
                 <a class="btn-receipt" href="/bolao-da-copa/php/export_apostas_todas_zip.php">
                     Baixar TODAS as apostas (ZIP)
                 </a>
-
-                <a class="btn-receipt" href="/bolao-da-copa/public/admin_resultados.php">
-                    Resultados (placar real)
-                </a>
             </div>
         </aside>
 

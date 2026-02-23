@@ -37,12 +37,15 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
             <a class="topnav-link<?php echo $active === "ranking" ? " is-active" : ""; ?>"
                href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
 
+            <a class="topnav-link<?php echo $active === "resultados_publico" ? " is-active" : ""; ?>"
+               href="/bolao-da-copa/public/resultados.php">Resultados</a>
+
             <?php if ($isAdmin): ?>
                 <a class="topnav-link is-admin<?php echo $active === "admin" ? " is-active" : ""; ?>"
                    href="/bolao-da-copa/public/admin.php">Admin</a>
 
                 <a class="topnav-link is-admin<?php echo $active === "resultados" ? " is-active" : ""; ?>"
-                   href="/bolao-da-copa/public/admin_resultados.php">Resultados</a>
+                   href="/bolao-da-copa/public/admin_resultados.php">Salvar Resultados</a>
             <?php endif; ?>
         </nav>
 

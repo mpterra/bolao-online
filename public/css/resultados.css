@@ -1,8 +1,10 @@
 /* =========================================================
-   campeao.css — COMPLETO (campeao.php) — STANDALONE
-   - Mesma arquitetura/estilo do app.css (header global sticky)
-   - Layout compatível com o HTML do campeao.php (app-wrap/app-header/app-shell/app-content)
-   - Grid responsivo de times + seleção + toast
+   resultados.css — COMPLETO (RESULTADOS.PHP) — STANDALONE
+   - Mesmo padrão/arquitetura do app.css
+   - Header global sticky
+   - Shell (menu + content) glass
+   - Cards dos jogos com Real x Seu palpite
+   - Mobile-first
    ========================================================= */
 
 :root{
@@ -11,7 +13,9 @@
   --bg2:#0b2330;
 
   --green:#00c27a;
+  --green2:#10d08a;
   --gold:#f7c948;
+  --gold2:#ffd86b;
 
   --ice:#cfeff2;
   --text:#ffffff;
@@ -90,12 +94,13 @@ img{
 }
 
 a{ color: inherit; }
-
 button, input, select, textarea{ font: inherit; }
 
 ::selection{ background: rgba(247,201,72,.30); }
 
-/* fundo leve */
+/* =========================================================
+   FUNDO (leve)
+   ========================================================= */
 @keyframes twinkle{
   0%{ transform: translate3d(0,0,0); opacity:.20; }
   50%{ opacity:.28; }
@@ -118,7 +123,7 @@ body::before{
 }
 
 /* =========================================================
-   WRAP
+   APP WRAP
    ========================================================= */
 .app-wrap{
   width: min(1120px, 100%);
@@ -129,7 +134,7 @@ body::before{
 }
 
 /* =========================================================
-   HEADER GLOBAL (IGUAL APP)
+   ✅ HEADER GLOBAL (igual app.css)
    ========================================================= */
 .app-header{
   position: sticky;
@@ -245,7 +250,6 @@ body::before{
   border-color: rgba(140,120,255,.22);
   background: linear-gradient(90deg, rgba(140,120,255,.32), rgba(70,220,255,.18));
 }
-
 .topnav-link.is-admin:hover{
   background: linear-gradient(90deg, rgba(140,120,255,.42), rgba(70,220,255,.24));
 }
@@ -312,24 +316,26 @@ body::before{
 }
 
 /* =========================================================
-   SHELL (campeao.php não tem menu lateral)
+   SHELL
    ========================================================= */
 .app-shell{
   display:grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 220px 1fr;
   gap: 12px;
   align-items:start;
 }
 
+.app-menu,
 .app-content{
   background: linear-gradient(180deg, var(--app-glass2), var(--app-glass));
   border: 1px solid var(--app-stroke);
   box-shadow: 0 16px 40px rgba(0,0,0,.28);
   backdrop-filter: blur(14px);
   border-radius: 22px;
-  padding: 16px;
-  min-height: 360px;
 }
+
+.app-menu{ padding: 14px; }
+.app-content{ padding: 16px; min-height: 360px; }
 
 .content-head{ margin-bottom: 12px; }
 
@@ -346,181 +352,313 @@ body::before{
 }
 
 /* =========================================================
-   CARD DO CAMPEÃO
+   MENU (GRUPOS) — igual app.css
    ========================================================= */
-.champ-card{
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.12);
-  background:
-    radial-gradient(760px 260px at 20% 10%, rgba(140,120,255,.12), transparent 60%),
-    radial-gradient(760px 260px at 85% 30%, rgba(247,201,72,.10), transparent 62%),
-    rgba(0,0,0,.10);
-  box-shadow: 0 14px 34px rgba(0,0,0,.22);
-  overflow:hidden;
+.menu-title{
+  font-size: 12px;
+  color: rgba(255,255,255,.70);
+  margin-bottom: 10px;
+  letter-spacing: .35px;
+  text-transform: uppercase;
 }
 
-.champ-card-head{
-  padding: 12px 14px;
-  background: var(--head-grad);
-  border-bottom: 1px solid rgba(255,255,255,.10);
+.menu-list{
   display:flex;
-  align-items:flex-end;
+  flex-direction:column;
+  gap: 10px;
+}
+
+.menu-link{
+  padding: 12px;
+  border-radius: 16px;
+  text-decoration:none;
+  color: rgba(255,255,255,.92);
+  background:
+    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.10), transparent 60%),
+    rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  font-weight: 900;
+  transition: 180ms ease;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.menu-link:hover{
+  background:
+    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.12), transparent 60%),
+    rgba(255,255,255,.09);
+  transform: translateY(-1px);
+}
+
+.menu-link.is-active{
+  color: #062027;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  border-color: rgba(255,255,255,.10);
+  box-shadow: 0 16px 34px rgba(0,0,0,.22);
+}
+
+.menu-link.is-disabled{
+  opacity: .55;
+  cursor: not-allowed;
+  transform:none;
+}
+
+.menu-actions{
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.10);
+}
+
+.hint{
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255,255,255,.72);
+}
+
+.kbd{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.18);
+}
+
+.badge{
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #062027;
+  background: linear-gradient(90deg, rgba(16,208,138,.95), rgba(247,201,72,.90));
+  box-shadow: 0 10px 18px rgba(0,0,0,.18);
+}
+
+.badge-muted{
+  color: rgba(255,255,255,.82);
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: none;
+}
+
+/* =========================================================
+   GRUPO (RESULTADOS)
+   ========================================================= */
+.group-block{
+  display:none;
+  padding: 12px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.10);
+  margin-bottom: 12px;
+}
+
+.group-block.is-active-group{ display:block; }
+
+.group-head{ margin-bottom: 10px; }
+
+.group-line{
+  display:flex;
+  align-items:center;
   justify-content:space-between;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.champ-card-head .h1{
-  font-size: 13px;
+.group-pill{
+  display:inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(16,208,138,.12);
+  border: 1px solid rgba(16,208,138,.28);
+  color: rgba(210,255,240,.98);
   font-weight: 900;
-  color: rgba(255,255,255,.96);
+  font-size: 12px;
   letter-spacing: .2px;
 }
 
-/* ✅ novo: barra de busca */
-.champ-search{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-  margin-left: auto;
-  flex: 1 1 320px;
-  min-width: 220px;
-  justify-content: flex-end;
+.group-count{
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(247,201,72,.26);
+  background: rgba(247,201,72,.12);
+  color: rgba(255,245,210,.98);
+  font-weight: 900;
+  font-size: 12px;
 }
 
-.champ-search input{
-  width: min(420px, 100%);
-  border-radius: 14px;
-  padding: 10px 12px;
-  border: 1px solid rgba(255,255,255,.16);
-  background: rgba(255,255,255,.08);
+.group-name{
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 900;
   color: rgba(255,255,255,.92);
-  outline: none;
-  font-weight: 900;
-  box-shadow: 0 10px 22px rgba(0,0,0,.16);
 }
 
-.champ-search input::placeholder{
-  color: rgba(255,255,255,.62);
-  font-weight: 900;
+.matches{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
 }
 
-.champ-search input:focus{
-  border-color: rgba(16,208,138,.55);
-  box-shadow:
-    0 0 0 4px rgba(16,208,138,.14),
-    0 10px 22px rgba(0,0,0,.18);
-}
-
-.champ-empty{
-  padding: 14px;
-  color: rgba(255,255,255,.82);
+.empty{
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px dashed rgba(255,255,255,.14);
+  background: rgba(0,0,0,.12);
+  color: rgba(255,255,255,.78);
   font-weight: 900;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* =========================================================
-   GRID DE TIMES
+   CARD DO JOGO (RESULTADOS)
    ========================================================= */
-.champ-grid{
-  padding: 12px;
-  display:grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-/* ✅ novo: tile oculto pelo filtro */
-.team-tile.is-hidden{
-  display: none !important;
-}
-
-.team-tile{
-  width: 100%;
+.match-card{
+  border-radius: 18px;
   border: 1px solid rgba(255,255,255,.12);
   background:
-    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.10), transparent 60%),
-    rgba(255,255,255,.06);
+    radial-gradient(900px 320px at 18% 10%, rgba(16,208,138,.12), transparent 58%),
+    radial-gradient(760px 300px at 82% 18%, rgba(247,201,72,.10), transparent 58%),
+    radial-gradient(720px 300px at 50% 120%, rgba(70,220,255,.10), transparent 62%),
+    var(--card-grad);
+  box-shadow: 0 14px 34px rgba(0,0,0,.26);
+  overflow:hidden;
+}
 
-  border-radius: 16px;
-  padding: 12px;
-  cursor: pointer;
+.match-top{
+  padding: 10px 12px;
+  background: var(--head-grad);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.match-when{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.match-when .when{
+  font-weight: 900;
+  font-size: 12px;
+  color: rgba(255,255,255,.96);
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.match-when .round{
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(245,242,255,.96);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(140,120,255,.34);
+  background: rgba(140,120,255,.18);
+}
+
+/* badges (top-right) */
+.badges{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge-status,
+.badge-pick{
+  font-weight: 900;
+  font-size: 10px;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.16);
   color: rgba(255,255,255,.92);
-  text-align: left;
+}
 
+/* status */
+.status-AGENDADO{
+  border-color: rgba(247,201,72,.28);
+  background: rgba(247,201,72,.12);
+  color: rgba(255,245,210,.98);
+}
+.status-EM_ANDAMENTO{
+  border-color: rgba(16,208,138,.28);
+  background: rgba(16,208,138,.12);
+  color: rgba(210,255,240,.98);
+}
+.status-ENCERRADO{
+  border-color: rgba(70,220,255,.26);
+  background: rgba(70,220,255,.10);
+  color: rgba(220,250,255,.96);
+}
+
+/* pick class */
+.pick-PENDENTE{
+  border-color: rgba(247,201,72,.26);
+  background: rgba(247,201,72,.10);
+  color: rgba(255,245,210,.98);
+}
+.pick-SEM_PALPITE{
+  border-color: rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.86);
+}
+.pick-PLACAR{
+  border-color: rgba(16,208,138,.34);
+  background: rgba(16,208,138,.14);
+  color: rgba(210,255,240,.98);
+}
+.pick-RESULTADO{
+  border-color: rgba(70,220,255,.30);
+  background: rgba(70,220,255,.12);
+  color: rgba(220,250,255,.96);
+}
+.pick-ERROU{
+  border-color: rgba(255,140,140,.34);
+  background: rgba(255,140,140,.12);
+  color: rgba(255,230,230,.96);
+}
+
+.match-body{
+  padding: 12px;
+  display:grid;
+  grid-template-columns: 1fr 210px 1fr;
+  align-items:center;
+  gap: 12px;
+}
+
+.team{
   display:flex;
   align-items:center;
   gap: 10px;
-
-  box-shadow: 0 14px 28px rgba(0,0,0,.18);
-  transition: 180ms ease;
-  position: relative;
-
-  -webkit-tap-highlight-color: transparent;
-  user-select:none;
-}
-
-.team-tile:hover{
-  background:
-    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.12), transparent 60%),
-    rgba(255,255,255,.09);
-  transform: translateY(-1px);
-  box-shadow: 0 16px 34px rgba(0,0,0,.22);
-}
-
-.team-tile:active{ transform: translateY(0) scale(.99); }
-
-.team-tile:focus{
-  outline: none;
-  border-color: rgba(16,208,138,.55);
-  box-shadow:
-    0 0 0 4px rgba(16,208,138,.14),
-    0 16px 34px rgba(0,0,0,.22);
-  background:
-    radial-gradient(220px 70px at 20% 20%, rgba(16,208,138,.12), transparent 60%),
-    rgba(255,255,255,.08);
-}
-
-/* Bandeira / fallback */
-.flag{
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  object-fit: cover;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.18);
-  box-shadow: 0 10px 18px rgba(0,0,0,.22);
-  flex: 0 0 auto;
-}
-
-.flag-fallback{
-  display:grid;
-  place-items:center;
-  font-weight: 900;
-  font-size: 12px;
-  letter-spacing: .6px;
-  color: rgba(255,255,255,.92);
-  background:
-    radial-gradient(140px 60px at 30% 30%, rgba(16,208,138,.14), transparent 60%),
-    radial-gradient(140px 60px at 70% 30%, rgba(247,201,72,.12), transparent 60%),
-    rgba(0,0,0,.14);
-}
-
-/* Meta */
-.meta{
   min-width: 0;
-  display:flex;
-  flex-direction:column;
-  gap: 2px;
 }
 
-.meta .sigla{
-  font-weight: 900;
-  font-size: 11px;
-  letter-spacing: .35px;
-  color: rgba(255,255,255,.78);
-}
+.team-home{ justify-content:flex-end; text-align:right; }
+.team-away{ justify-content:flex-start; text-align:left; }
 
-.meta .nome{
+.team-name{
   font-weight: 900;
   font-size: 13px;
   color: rgba(255,255,255,.92);
@@ -530,125 +668,95 @@ body::before{
   min-width: 0;
 }
 
-/* Check */
-.check{
-  position:absolute;
-  top: 10px;
-  right: 10px;
+/* bandeira + sigla */
+.team-flag{
+  width: 36px;
+  height: 36px;
+  border-radius: 14px;
+  overflow:hidden;
+  flex: 0 0 auto;
 
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
   display:grid;
   place-items:center;
 
-  color: rgba(0,0,0,.70);
-  background: rgba(255,255,255,.10);
-  border: 1px solid rgba(255,255,255,.14);
-  opacity: 0;
-  transform: scale(.90);
-  transition: 180ms ease;
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 10px 18px rgba(0,0,0,.22);
+  background: rgba(255,255,255,.08);
 }
 
-/* estado selecionado */
-.team-tile.is-selected{
-  border-color: rgba(16,208,138,.40);
-  background:
-    radial-gradient(220px 70px at 20% 20%, rgba(16,208,138,.14), transparent 60%),
-    radial-gradient(220px 70px at 85% 35%, rgba(247,201,72,.10), transparent 62%),
-    rgba(255,255,255,.08);
+.team-flag img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.team-tile.is-selected .check{
-  opacity: 1;
-  transform: scale(1);
-  background: linear-gradient(90deg, rgba(16,208,138,.95), rgba(247,201,72,.92));
-  border-color: rgba(255,255,255,.10);
-  box-shadow: 0 12px 24px rgba(0,0,0,.22);
-}
-
-/* ✅ novo: "nenhum resultado" */
-.champ-no-results{
-  display:none;
-  padding: 10px 14px 2px 14px;
-  color: rgba(255,255,255,.78);
+.team-flag .team-badge{
+  width: 100%;
+  height: 100%;
+  display:grid;
+  place-items:center;
   font-weight: 900;
   font-size: 12px;
+  color: rgba(255,255,255,.96);
 }
-.champ-no-results.is-open{ display:block; }
 
-/* =========================================================
-   FOOTER (salvar + hint + voltar)
-   ========================================================= */
-.champ-footer{
-  padding: 12px 14px;
-  background: var(--foot-grad);
-  border-top: 1px solid rgba(255,255,255,.10);
+/* quando não tem imagem, mostra badge */
+.team-flag.no-flag img{ display:none; }
+.team-flag.no-flag .team-badge{ display:grid; }
 
+.team-home .team-flag{
+  background: rgba(16,208,138,.12);
+  border-color: rgba(16,208,138,.24);
+}
+.team-away .team-flag{
+  background: rgba(247,201,72,.12);
+  border-color: rgba(247,201,72,.24);
+}
+
+/* mid compare (Real x Palpite) */
+.midbox{
   display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.btn-save-champ{
-  border: 0;
-  cursor: pointer;
-  border-radius: 16px;
-  padding: 12px 14px;
-  font-weight: 900;
-  font-size: 14px;
-  color: #062027;
-  background: linear-gradient(90deg, var(--green), var(--gold));
-  box-shadow: 0 16px 42px rgba(0,0,0,.35);
-  transition: transform 140ms ease, filter 180ms ease, opacity 180ms ease;
-  white-space: nowrap;
-  display:inline-flex;
-  align-items:center;
   justify-content:center;
 }
 
-.btn-save-champ:hover{ filter: saturate(1.06); transform: translateY(-1px); }
-.btn-save-champ:active{ transform: translateY(0) scale(.99); }
-.btn-save-champ:disabled{ opacity: .62; cursor: not-allowed; transform: none; filter: none; }
+.score-compare{
+  width: 210px;
+  margin: 0 auto;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background:
+    radial-gradient(220px 70px at 30% 20%, rgba(16,208,138,.10), transparent 65%),
+    radial-gradient(220px 70px at 70% 20%, rgba(247,201,72,.10), transparent 65%),
+    rgba(0,0,0,.14);
+  overflow:hidden;
+  display:grid;
+  grid-template-columns: 1fr 1px 1fr;
+}
 
-.champ-hint{
-  font-size: 12px;
+.score-sep{ background: rgba(255,255,255,.10); }
+
+.score-col{
+  padding: 10px 10px;
+  text-align:center;
+}
+
+.score-label{
+  font-size: 11px;
   font-weight: 900;
-  color: rgba(255,255,255,.78);
-  line-height: 1.35;
-  min-width: 220px;
+  color: rgba(255,255,255,.74);
+  letter-spacing: .2px;
 }
 
-/* botão voltar (mesma família visual do app) */
-.btn-back{
-  border: 1px solid rgba(255,255,255,.16);
-  background: rgba(255,255,255,.06);
-  color: rgba(255,255,255,.92);
-  border-radius: 14px;
-  padding: 10px 14px;
-  cursor: pointer;
+.score-val{
+  margin-top: 4px;
+  font-size: 16px;
   font-weight: 900;
-  transition: 180ms ease;
-  text-decoration: none;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  white-space: nowrap;
-  box-shadow: 0 12px 22px rgba(0,0,0,.18);
+  color: rgba(255,255,255,.95);
+  font-variant-numeric: tabular-nums;
 }
-
-.btn-back:hover{
-  background: rgba(255,255,255,.10);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgba(0,0,0,.22);
-}
-
-.btn-back:active{ transform: translateY(0) scale(.99); }
 
 /* =========================================================
-   TOAST (igual app)
+   TOAST (se usar)
    ========================================================= */
 @keyframes toastIn{
   from{ opacity: 0; transform: translate(-50%, 10px) scale(.98); }
@@ -661,24 +769,18 @@ body::before{
   bottom: calc(14px + var(--safe-bottom));
   transform: translateX(-50%);
   z-index: 9999;
-
   display:none;
   min-width: min(560px, calc(100% - 24px));
-
   border-radius: 18px;
   padding: 12px 14px;
-
   border: 1px solid rgba(255,255,255,.16);
   background: rgba(0,0,0,.55);
   backdrop-filter: blur(10px);
-
   box-shadow: 0 22px 60px rgba(0,0,0,.55);
   color: rgba(255,255,255,.92);
-
   font-weight: 900;
   font-size: 13px;
 }
-
 .toast.is-open{
   display:block;
   animation: toastIn 180ms ease-out both;
@@ -687,17 +789,16 @@ body::before{
 /* =========================================================
    RESPONSIVO
    ========================================================= */
-@media (max-width: 980px){
-  .champ-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
 @media (max-width: 860px){
+  .app-shell{ grid-template-columns: 1fr; }
+
   .app-header{
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
   }
 
+  .app-brand{ justify-content:flex-start; }
   .app-topnav{ width: 100%; }
 
   .app-actions{
@@ -706,17 +807,6 @@ body::before{
   }
 
   .user-chip-name{ max-width: 55vw; }
-
-  .champ-search{
-    width: 100%;
-    justify-content: flex-start;
-    margin-left: 0;
-  }
-
-  .champ-search input{
-    width: 100%;
-    max-width: none;
-  }
 }
 
 @media (max-width: 560px){
@@ -730,7 +820,11 @@ body::before{
 
   .app-wrap{ padding: 10px; }
   .app-header{ padding: 10px; border-radius: 18px; }
+
+  .app-menu{ padding: 12px; }
   .app-content{ padding: 14px; }
+
+  .menu-link{ padding: 11px 12px; }
 
   .topnav-link{
     padding: 10px 12px;
@@ -751,13 +845,15 @@ body::before{
     flex: 0 0 auto;
   }
 
-  .champ-grid{
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 12px;
+  .match-body{
+    grid-template-columns: 1fr;
     gap: 10px;
   }
 
-  .meta .nome{
+  .team-home{ justify-content:flex-start; text-align:left; }
+  .team-away{ justify-content:flex-start; text-align:left; }
+
+  .team-name{
     white-space: normal;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -765,30 +861,30 @@ body::before{
     overflow: hidden;
   }
 
-  .champ-footer{
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btn-save-champ{
+  .midbox{ justify-content: stretch; }
+  .score-compare{
     width: 100%;
-    justify-content:center;
+    grid-template-columns: 1fr;
   }
-
-  .champ-hint{ min-width: 0; }
-
-  .btn-back{
-    width: 100%;
-    justify-content: center;
-  }
+  .score-sep{ display:none; }
 
   .toast{ min-width: calc(100% - 20px); }
 }
 
-@media (max-width: 420px){
-  .champ-grid{ grid-template-columns: 1fr; }
+@media (max-width: 380px){
+  .app-wrap{ padding: 8px; }
+  .app-content{ padding: 12px; }
+
+  .match-top{ padding: 9px 10px; }
+  .match-body{ padding: 10px; }
+
+  .topnav-link{ padding: 10px 11px; }
+  .user-chip-name{ max-width: 48vw; }
 }
 
+/* =========================================================
+   REDUCE MOTION
+   ========================================================= */
 @media (prefers-reduced-motion: reduce){
   *{
     animation: none !important;

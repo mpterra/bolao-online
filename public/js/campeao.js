@@ -5,6 +5,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const hint = document.getElementById("champHint");
   const toast = document.getElementById("toast");
 
+  // ✅ novo: busca
+  const searchInput = document.getElementById("champSearch");
+  const noResults = document.getElementById("champNoResults");
+
   if (!cfgEl || !grid || !btnSave || !toast) return;
 
   let cfg = {};
@@ -12,13 +16,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const endpointSave = cfg?.endpoints?.save || "/bolao-da-copa/public/campeao.php?action=save";
 
-  // ✅ novo: endpoint do recibo (se não vier no config, usa o padrão)
+  // ✅ endpoint do recibo (se não vier no config, usa o padrão)
   const endpointRecibo = cfg?.endpoints?.recibo || "/bolao-da-copa/php/recibo.php";
 
   let selectedId = Number(cfg?.selected_time_id || 0);
   let pendingId = selectedId;
 
-  // ✅ novo: evita corridas quando clica rápido em vários times
+  // ✅ evita corridas quando clica rápido
   let saving = false;
   let lastRequestedId = 0;
 
@@ -42,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
       t.setAttribute("aria-pressed", sel ? "true" : "false");
     });
 
-    // ✅ botão "Salvar" continua existindo, mas agora só serve p/ "Salvar + Recibo"
     btnSave.disabled = !(pendingId > 0);
 
     if (hint) {
@@ -58,18 +61,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ✅ novo: função única de salvar (usada no clique do tile e no botão)
   async function saveChampion(timeId, { generateReceipt = false } = {}) {
     const tid = Number(timeId || 0);
     if (!(tid > 0)) return;
 
-    // evita múltiplos fetch simultâneos
     lastRequestedId = tid;
     if (saving) return;
 
     saving = true;
 
-    // UI: se for botão, mostra "Salvando..."
     const prevText = btnSave.textContent;
     if (generateReceipt) {
       btnSave.disabled = true;
@@ -90,14 +90,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // aplica o último solicitado (se houve cliques rápidos)
       selectedId = Number(data.time_id || tid);
       pendingId = selectedId;
 
       showToast(data.message || "Campeão salvo.", true);
       setSelected(selectedId);
 
-      // ✅ novo: ao clicar no botão salvar => abre recibo
       if (generateReceipt) {
         window.open(endpointRecibo, "_blank", "noopener,noreferrer");
       }
@@ -107,17 +105,14 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       saving = false;
 
-      // se houve outra solicitação enquanto salvava, salva de novo o último
       if (lastRequestedId && lastRequestedId !== selectedId) {
         const next = lastRequestedId;
         lastRequestedId = 0;
-        // salva automaticamente o último clicado (sem recibo)
         await saveChampion(next, { generateReceipt: false });
       } else {
         lastRequestedId = 0;
       }
 
-      // UI do botão volta ao normal
       if (generateReceipt) {
         btnSave.textContent = prevText || "Salvar campeão";
         btnSave.disabled = !(pendingId > 0);
@@ -125,31 +120,90 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ✅ alterado: clicar no tile agora salva automaticamente
+  // ============================
+  // ✅ BUSCA (filtro por nome/sigla)
+  // ============================
+  function norm(s) {
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  function applyFilter(queryRaw) {
+    const q = norm(queryRaw);
+    const tiles = grid.querySelectorAll(".team-tile");
+    let visible = 0;
+
+    tiles.forEach(t => {
+      const name = norm(t.getAttribute("data-time-name"));
+      const sigla = norm(t.getAttribute("data-time-sigla"));
+      const match = (q === "") || name.includes(q) || sigla.includes(q);
+
+      t.classList.toggle("is-hidden", !match);
+      t.setAttribute("aria-hidden", match ? "false" : "true");
+      if (match) visible++;
+    });
+
+    if (noResults) {
+      const show = (tiles.length > 0 && visible === 0);
+      noResults.classList.toggle("is-open", show);
+    }
+  }
+
+  // Debounce simples (sem lixo global)
+  function debounce(fn, ms) {
+    let t = 0;
+    return (...args) => {
+      window.clearTimeout(t);
+      t = window.setTimeout(() => fn(...args), ms);
+    };
+  }
+
+  const onSearch = debounce(() => {
+    applyFilter(searchInput ? searchInput.value : "");
+  }, 120);
+
+  if (searchInput) {
+    searchInput.addEventListener("input", onSearch);
+
+    searchInput.addEventListener("keydown", (e) => {
+      // ESC limpa
+      if (e.key === "Escape") {
+        searchInput.value = "";
+        applyFilter("");
+        searchInput.blur();
+      }
+    });
+  }
+
+  // ============================
+  // Clique no tile: seleciona + salva automático se mudou
+  // ============================
   grid.addEventListener("click", (e) => {
     const tile = e.target.closest(".team-tile");
-    if (!tile) return;
+    if (!tile || tile.classList.contains("is-hidden")) return;
+
     const tid = Number(tile.getAttribute("data-time-id") || 0);
     if (!(tid > 0)) return;
 
     setSelected(tid);
 
-    // salva automático (mesmo que seja o mesmo, não precisa bater no banco)
     if (tid !== selectedId) {
       saveChampion(tid, { generateReceipt: false });
     } else {
-      // se já era o mesmo, só ajusta hint (não salva)
       if (hint) hint.textContent = "Seu campeão já está salvo. Clique em “Salvar campeão” para gerar o recibo.";
     }
   });
 
-  // ✅ alterado: botão agora salva (garante) e abre recibo
+  // Botão: salva (garante) e abre recibo
   btnSave.addEventListener("click", async () => {
     if (!(pendingId > 0)) return;
-
     await saveChampion(pendingId, { generateReceipt: true });
   });
 
   // Estado inicial
   setSelected(selectedId);
+  applyFilter(searchInput ? searchInput.value : "");
 });
