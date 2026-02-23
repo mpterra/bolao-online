@@ -1266,3 +1266,131 @@ body::before{
   }
 }
 
+/* =========================================================
+   FIX DEFINITIVO: JOGOS
+   - Desktop mantém layout 3 colunas (como na sua foto)
+   - Mobile mantém layout vertical (como no celular)
+   Cole NO FINAL do app.css.
+   ========================================================= */
+
+/* DESKTOP / TABLET: garante 3 colunas e alinhamentos originais */
+@media (min-width: 561px){
+  .match-body{
+    padding: 12px;
+    display:grid;
+    grid-template-columns: 1fr 170px 1fr;
+    align-items:center;
+    gap: 10px;
+  }
+
+  .team{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    min-width: 0;
+    width: auto;
+    justify-content: flex-start;
+  }
+
+  .team-home{ justify-content:flex-end; text-align:right; }
+  .team-away{ justify-content:flex-start; text-align:left; }
+
+  .team-name{
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: none;
+  }
+
+  .scorebox{
+    width: 170px;
+    margin: 0 auto;
+    justify-content:center;
+    padding: 9px 10px;
+    border-radius: 16px;
+  }
+
+  .score{
+    width: 50px;
+    height: 38px;
+    line-height: 38px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  .x{ font-size: 14px; }
+}
+
+/* MOBILE: layout vertical igual a foto do celular */
+@media (max-width: 560px){
+  .match-body{
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "home"
+      "score"
+      "away";
+    gap: 12px;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .team{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .team-home{
+    grid-area: home;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .team-away{
+    grid-area: away;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .team-badge{
+    width: 40px;
+    height: 40px;
+    border-radius: 16px;
+    font-size: 12px;
+  }
+
+  .team-name{
+    font-size: 15px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 72vw;
+  }
+
+  .scorebox{
+    grid-area: score;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+    justify-content: center;
+    padding: 12px 12px;
+    border-radius: 18px;
+  }
+
+  .score{
+    width: 64px;
+    height: 46px;
+    line-height: 46px;
+    font-size: 16px;
+    border-radius: 14px;
+  }
+
+  .x{ font-size: 15px; }
+}
