@@ -86,7 +86,13 @@ require_once __DIR__ . "/partials/app_header.php";
 
             <div class="menu-actions menu-actions-tight">
                 <a class="btn-receipt" href="/bolao-da-copa/php/export_apostas_todas_zip.php">
-                    Baixar TODAS as apostas (ZIP)
+                    Baixar todas apostas
+                </a>
+                <a class="btn-atualizar-resultados" href="/bolao-da-copa/public/admin_resultados.php">
+                    Atualizar resultados                
+                </a>
+                <a class="btn-mata-mata" href="/bolao-da-copa/public/mata_mata.php">
+                    Atualizar mata-mata
                 </a>
             </div>
         </aside>

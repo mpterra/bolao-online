@@ -4,6 +4,8 @@
    - Menu superior independente (sticky)
    - ✅ Remove "Voltar para Palpites"
    - ✅ Admin fica de OUTRA COR quando ativo na página admin
+   - ✅ FIX: botões/links do menu lateral sem “texto sublinhado/lixo”
+   - ✅ UPDATE: botões laterais com degrade roxo (estilo admin do topo)
    ========================================================= */
 
 :root{
@@ -330,53 +332,105 @@ body::before{
   text-transform: uppercase;
 }
 
-.menu-actions{ margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.10); }
-.menu-actions-tight{ margin-top: 0; padding-top: 0; border-top: 0; }
-
-.content-head{ margin-bottom: 12px; }
-
-.content-h1{
-  margin-bottom: 4px;
-  font-size: 16px;
-  font-weight: 900;
-}
-
-.content-sub{
-  color: rgba(255,255,255,.74);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
 /* =========================================================
-   BOTÕES (AÇÕES)
+   ✅ MENU LATERAL (AÇÕES) — AGORA COM DEGRADÊ ROXO (ADMIN)
    ========================================================= */
 
-.btn-receipt{
-  width: 100%;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
-  color: rgba(255,255,255,.92);
-  border-radius: 16px;
-  padding: 12px 14px;
-  cursor: pointer;
-  font-weight: 900;
-  font-size: 14px;
-  transition: 180ms ease;
-  box-shadow: 0 14px 30px rgba(0,0,0,.22);
+.app-menu a{
+  text-decoration: none;
+  color: inherit;
 }
 
-.btn-receipt:hover{
-  background: rgba(255,255,255,.10);
+.menu-actions{
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.10);
+
+  display:flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-actions-tight{
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Base: estilo “admin” (roxo) */
+.app-menu .menu-actions a,
+.app-menu .menu-actions button,
+.btn-receipt,
+.btn-mata-mata,
+.btn-atualizar-resultados{
+  width: 100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+
+  padding: 12px 14px;
+  border-radius: 16px;
+
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1.1;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  border: 1px solid rgba(140,120,255,.22);
+  background: linear-gradient(90deg, rgba(140,120,255,.32), rgba(70,220,255,.18));
+  color: rgba(255,255,255,.94);
+
+  box-shadow: 0 14px 30px rgba(0,0,0,.22);
+  transition: 180ms ease;
+
+  text-decoration: none;
+}
+
+/* Hover: “puxa” pro ativo do admin (mais forte) */
+.app-menu .menu-actions a:hover,
+.app-menu .menu-actions button:hover,
+.btn-receipt:hover,
+.btn-mata-mata:hover,
+.btn-atualizar-resultados:hover{
+  background: linear-gradient(90deg, rgba(140,120,255,.42), rgba(70,220,255,.24));
   transform: translateY(-1px);
   box-shadow: 0 16px 34px rgba(0,0,0,.28);
 }
 
-.btn-receipt:active{ transform: translateY(0) scale(.99); }
+.app-menu .menu-actions a:active,
+.app-menu .menu-actions button:active,
+.btn-receipt:active,
+.btn-mata-mata:active,
+.btn-atualizar-resultados:active{
+  transform: translateY(0) scale(.99);
+}
 
-a.btn-receipt{
-  display:block;
-  text-align:center;
-  text-decoration:none;
+/* Focus: glow azul/roxo, consistente com o topo */
+.app-menu .menu-actions a:focus-visible,
+.app-menu .menu-actions button:focus-visible,
+.btn-receipt:focus-visible,
+.btn-mata-mata:focus-visible,
+.btn-atualizar-resultados:focus-visible{
+  outline: none;
+  border-color: rgba(255,255,255,.10);
+  box-shadow:
+    0 0 0 4px rgba(70,220,255,.12),
+    0 16px 34px rgba(0,0,0,.28);
+}
+
+/* Disabled */
+.app-menu .menu-actions a[aria-disabled="true"],
+.app-menu .menu-actions button:disabled,
+.btn-receipt:disabled,
+.btn-mata-mata:disabled,
+.btn-atualizar-resultados:disabled{
+  opacity: .65;
+  cursor: not-allowed;
+  transform:none;
+  box-shadow: none;
 }
 
 /* =========================================================

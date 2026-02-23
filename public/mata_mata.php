@@ -14,7 +14,7 @@ date_default_timezone_set('America/Sao_Paulo');
 |--------------------------------------------------------------------------
 | mata_mata.php — ADMIN — Cadastro Manual Mata-mata
 |--------------------------------------------------------------------------
-| - ✅ Usa o HEADER PADRÃO (render_app_header)
+| - ✅ Usa o HEADER PADRÃO (render_app_header) via public/partials/app_header.php
 | - ✅ Botões exclusivos (Recarregar / Novo jogo) no MENU LATERAL ESQUERDO
 | - FASE controlada por menu (valores fixos)
 | - status sempre AGENDADO (não pede)
@@ -146,57 +146,6 @@ function get_active_edicao_id(PDO $pdo): ?int {
     $stmt = $pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC, id DESC LIMIT 1");
     $id = $stmt ? $stmt->fetchColumn() : false;
     return ($id !== false && $id !== null) ? (int)$id : null;
-}
-
-/* =========================
-   HEADER PADRÃO (com item Mata-Mata só admin)
-   ========================= */
-
-if (!function_exists("render_app_header")) {
-    function render_app_header(string $usuarioNome, bool $isAdmin, string $active, string $subtitle, string $logoutHref): void {
-        ?>
-        <header class="app-header">
-            <div class="app-brand">
-                <img src="/bolao-da-copa/public/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
-                <div class="app-title">
-                    <strong>Bolão da Copa</strong>
-                    <span><?php echo strh($subtitle); ?></span>
-                </div>
-            </div>
-
-            <nav class="app-topnav" aria-label="Menu principal">
-                <a class="topnav-link<?php echo $active === "apostas" ? " is-active" : ""; ?>"
-                   href="/bolao-da-copa/public/app.php">Apostas</a>
-
-                <a class="topnav-link<?php echo $active === "ranking" ? " is-active" : ""; ?>"
-                   href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
-
-                <a class="topnav-link<?php echo $active === "resultados_publico" ? " is-active" : ""; ?>"
-                   href="/bolao-da-copa/public/resultados.php">Resultados</a>
-
-                <?php if ($isAdmin): ?>
-                    <a class="topnav-link is-admin<?php echo $active === "admin" ? " is-active" : ""; ?>"
-                       href="/bolao-da-copa/public/admin.php">Admin</a>
-
-                    <a class="topnav-link is-admin<?php echo $active === "resultados" ? " is-active" : ""; ?>"
-                       href="/bolao-da-copa/public/admin_resultados.php">Salvar Resultados</a>
-
-                    <a class="topnav-link is-admin<?php echo $active === "mata_mata" ? " is-active" : ""; ?>"
-                       href="/bolao-da-copa/public/mata_mata.php">Cadastrar Mata-Mata</a>
-                <?php endif; ?>
-            </nav>
-
-            <div class="app-actions">
-                <div class="user-chip" title="<?php echo strh($usuarioNome); ?>">
-                    <span class="dot"></span>
-                    <span class="user-chip-name"><?php echo strh($usuarioNome); ?></span>
-                </div>
-
-                <a class="btn-logout" href="<?php echo strh($logoutHref); ?>">Sair</a>
-            </div>
-        </header>
-        <?php
-    }
 }
 
 /* =========================
@@ -505,6 +454,9 @@ $isAdmin = (mb_strtoupper($tipo, "UTF-8") === "ADMIN");
   Mantive o padrão mais comum.
 */
 $logoutHref = "/bolao-da-copa/public/logout.php";
+
+/* HEADER PADRÃO (partial) */
+require_once __DIR__ . "/partials/app_header.php";
 
 ?>
 <!doctype html>

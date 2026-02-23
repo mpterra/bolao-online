@@ -1133,20 +1133,59 @@ body::before{
     flex: 0 0 auto;
   }
 
+  /* =========================================================
+     ✅ FIX MOBILE: nomes dos times legíveis
+     - Em vez de 3 colunas apertadas (1fr/150/1fr),
+       vira 2 colunas + placar embaixo (full-width).
+     ========================================================= */
   .match-body{
-    grid-template-columns: 1fr 150px 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "home away"
+      "score score";
+    gap: 10px 12px;
+    align-items:start;
+  }
+
+  .team{
     gap: 10px;
+    align-items:center;
+  }
+
+  .team-home{
+    grid-area: home;
+    justify-content:flex-start;
+    text-align:left;
+  }
+
+  .team-away{
+    grid-area: away;
+    justify-content:flex-start;
+    text-align:left;
+  }
+
+  .scorebox{
+    grid-area: score;
+    width: 100%;
+    max-width: 260px;
+    margin: 0 auto;
+    justify-content:center;
   }
 
   .team-name{
+    /* aumenta legibilidade + quebra melhor em telas pequenas */
+    font-size: 14px;
+    line-height: 1.15;
     white-space: normal;
+    overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
 
-  .scorebox{ width: 150px; }
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+  }
 
   .match-actions{
     flex-direction: column;
@@ -1201,6 +1240,22 @@ body::before{
 
   .topnav-link{ padding: 10px 11px; }
   .user-chip-name{ max-width: 48vw; }
+
+  /* micro-ajuste: dá mais espaço pros nomes */
+  .team-badge{
+    width: 34px;
+    height: 34px;
+    border-radius: 13px;
+  }
+
+  .team-name{
+    font-size: 14px;
+    -webkit-line-clamp: 3;
+  }
+
+  .scorebox{
+    max-width: 240px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -1210,3 +1265,4 @@ body::before{
     scroll-behavior: auto !important;
   }
 }
+

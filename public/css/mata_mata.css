@@ -1,8 +1,9 @@
 /* =========================================================
    mata_mata.css — COMPLETO (MATA_MATA.PHP) — STANDALONE
-   - ✅ 1 arquitetura de topo (header global sticky)
-   - ✅ shell com menu lateral (botões exclusivos ficam à esquerda)
-   - phasebar + datalist + modal + tabela + toast
+   - 1 arquitetura de topo (header global sticky)
+   - shell com menu lateral
+   - phasebar + modal + tabela + toast
+   - MOBILE igual ao app.css (sem cortar pills, sem botão gigante)
    ========================================================= */
 
 :root{
@@ -46,7 +47,6 @@
 
   --in-ease: cubic-bezier(.2,.9,.2,1);
 
-  /* admin accent (igual admin.css) */
   --adminA: rgba(140,120,255,.92);
   --adminB: rgba(70,220,255,.90);
 }
@@ -119,7 +119,7 @@ body::before{
 }
 
 /* =========================================================
-   HEADER GLOBAL (menu topo)
+   HEADER GLOBAL
    ========================================================= */
 
 .app-header{
@@ -144,6 +144,9 @@ body::before{
   box-shadow: 0 16px 40px rgba(0,0,0,.28);
 
   margin-bottom: 10px;
+
+  /* ✅ garante que nada “corte” pills */
+  overflow: visible;
 }
 
 .app-brand{
@@ -197,6 +200,13 @@ body::before{
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+
+  /* ✅ evita “cortar” o primeiro/último pill */
+  padding: 2px 6px;
+
+  /* ✅ melhora snap/scroll e evita sensação de “corte” */
+  scroll-padding-left: 6px;
+  scroll-padding-right: 6px;
 }
 .app-topnav::-webkit-scrollbar{ display:none; }
 
@@ -240,7 +250,6 @@ body::before{
   background: linear-gradient(90deg, rgba(140,120,255,.42), rgba(70,220,255,.24));
 }
 
-/* ✅ admin ativo (não verde/dourado) */
 .topnav-link.is-admin.is-active{
   color: #062027;
   border-color: rgba(255,255,255,.10);
@@ -310,7 +319,7 @@ body::before{
 }
 
 /* =========================================================
-   SHELL / MENU LATERAL / CONTEÚDO
+   SHELL / MENU / CONTENT
    ========================================================= */
 
 .app-shell{
@@ -329,8 +338,16 @@ body::before{
   border-radius: 22px;
 }
 
-.app-menu{ padding: 14px; position: sticky; top: calc(10px + var(--safe-top) + 86px); }
-.app-content{ padding: 16px; min-height: 360px; }
+.app-menu{
+  padding: 14px;
+  position: sticky;
+  top: calc(10px + var(--safe-top) + 86px);
+}
+
+.app-content{
+  padding: 16px;
+  min-height: 360px;
+}
 
 .content-head{ margin-bottom: 12px; }
 .content-h1{ margin-bottom: 4px; font-size: 16px; font-weight: 900; }
@@ -344,18 +361,6 @@ body::before{
   text-transform: uppercase;
 }
 
-.menu-actions{
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
-}
-
-.menu-actions-tight{
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
-}
-
 .hint{
   margin-top: 10px;
   font-size: 12px;
@@ -365,7 +370,7 @@ body::before{
 }
 
 /* =========================================================
-   BOTÕES DO MENU LATERAL (reuso do app.css)
+   BOTÕES DO MENU LATERAL
    ========================================================= */
 
 .btn-save-all{
@@ -384,6 +389,7 @@ body::before{
   align-items:center;
   justify-content:center;
   gap: 8px;
+  line-height: 1.05;
 }
 
 .btn-save-all:hover{ filter: saturate(1.06); transform: translateY(-1px); }
@@ -406,6 +412,7 @@ body::before{
   display:block;
   text-align:center;
   text-decoration:none;
+  line-height: 1.05;
 }
 
 .btn-receipt:hover{
@@ -457,7 +464,7 @@ body::before{
 }
 
 /* =========================================================
-   FIELDS / INPUTS
+   FIELDS
    ========================================================= */
 
 .mm-field{
@@ -532,7 +539,7 @@ select{
 }
 
 /* =========================================================
-   PHASE MENU (scrollável)
+   PHASE MENU
    ========================================================= */
 
 .mm-phasebar{
@@ -546,6 +553,12 @@ select{
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+
+  /* ✅ evita cortar o primeiro/último pill */
+  padding: 2px 6px;
+
+  scroll-padding-left: 6px;
+  scroll-padding-right: 6px;
 }
 .mm-phasebar::-webkit-scrollbar{ display:none; }
 
@@ -570,6 +583,7 @@ select{
 
   cursor: pointer;
   user-select:none;
+  line-height: 1.05;
 }
 
 .mm-phasebtn:hover{
@@ -597,6 +611,7 @@ select{
   font-weight: 900;
   font-size: 12px;
   box-shadow: 0 10px 18px rgba(0,0,0,.18);
+  line-height: 1.05;
 }
 
 .mm-empty{
@@ -617,6 +632,7 @@ select{
   width: 100%;
   overflow:auto;
   border-radius: 18px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mm-table{
@@ -680,7 +696,7 @@ select{
 }
 
 /* =========================================================
-   BOTÕES (no modal / tabela)
+   BOTÕES (no conteúdo / modal)
    ========================================================= */
 
 .mm-btn{
@@ -698,6 +714,7 @@ select{
   align-items:center;
   justify-content:center;
   white-space: nowrap;
+  line-height: 1.05;
 }
 
 .mm-btn:hover{
@@ -842,10 +859,10 @@ select{
 }
 
 /* =========================================================
-   RESPONSIVO
+   RESPONSIVO (mesmo “jeito” do app.css + ajustes reais de mobile)
    ========================================================= */
 
-@media (max-width: 920px){
+@media (max-width: 860px){
   .app-shell{ grid-template-columns: 1fr; }
 
   .app-menu{
@@ -872,6 +889,7 @@ select{
   .mm-field{ min-width: 0; }
 }
 
+/* ✅ MOBILE “PERFEITO”: sem corte + sem botão gigante + layout do head alinhado */
 @media (max-width: 560px){
   body{
     padding:
@@ -884,15 +902,154 @@ select{
   .app-wrap{ padding: 10px; }
   .app-header{ padding: 10px; border-radius: 18px; }
 
-  .app-menu{ padding: 12px; }
-  .app-content{ padding: 14px; }
+  .app-menu{ padding: 12px; border-radius: 18px; }
+  .app-content{ padding: 14px; border-radius: 18px; }
 
-  .mm-btn{
+  /* ✅ pills NÃO cortam */
+  .app-topnav{ padding: 2px 6px; }
+
+  /* ✅ menu lateral (agora em cima): menos “tijolo” */
+  .menu-title{
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+  .hint{
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: 900;
+  }
+
+  /* ✅ botões do menu: menores (sem “gigante”), mas ainda clicáveis */
+  .btn-save-all,
+  .btn-receipt{
+    padding: 11px 12px;
+    font-size: 13px;
     border-radius: 14px;
+  }
+  .btn-receipt{ margin-top: 8px; }
+
+  /* ✅ card head: vira “stack” limpo e sem corte */
+  .mm-card-head{
+    padding: 12px;
+    border-radius: 18px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .mm-head-left{
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .mm-field,
+  .mm-field-small{
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* ✅ fase: full width, pills menores, sem inflar */
+  .mm-phasebar{
+    width: 100%;
+    padding: 2px 6px;
+  }
+  .mm-phasebtn{
+    padding: 9px 11px;
+    font-size: 12px;
+    border-radius: 999px;
+  }
+
+  /* ✅ pill da direita: não “estoura” e distribui melhor */
+  .mm-right{
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .mm-pill{
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+
+  /* ✅ botões gerais: levemente menores no mobile */
+  .mm-btn{
     padding: 10px 12px;
+    font-size: 13px;
+    border-radius: 14px;
+  }
+  .mm-row-actions .mm-btn{
+    padding: 9px 11px;
+    font-size: 13px;
+    border-radius: 13px;
+  }
+
+  /* ✅ modal: nunca corta em tela baixa */
+  .mm-modal{
+    border-radius: 18px;
+    max-height: calc(100dvh - (18px + var(--safe-top) + var(--safe-bottom)));
+  }
+  .mm-modal-head{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .mm-modal-actions{
+    width: 100%;
+  }
+  .mm-modal-actions .mm-btn{
+    flex: 1 1 auto;
+  }
+  .mm-modal-body{
+    max-height: calc(100dvh - (170px + var(--safe-top) + var(--safe-bottom)));
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mm-modal-footer{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  #btnDelete{ width: 100%; }
+
+  /* ✅ tabela: continua rolável, mas menos agressiva */
+  .mm-table{ min-width: 720px; }
+
+  .user-chip{
+    padding: 9px 10px;
+    border-radius: 14px;
+    flex: 1 1 auto;
+  }
+  .user-chip-name{ max-width: 50vw; }
+
+  .btn-logout{
+    padding: 10px 12px;
+    border-radius: 14px;
+    flex: 0 0 auto;
   }
 
   .mm-toast{ min-width: calc(100% - 20px); }
+}
+
+@media (max-width: 380px){
+  .app-wrap{ padding: 8px; }
+  .app-content{ padding: 12px; }
+
+  .topnav-link{ padding: 10px 11px; }
+  .user-chip-name{ max-width: 48vw; }
+
+  .mm-card-head{ padding: 11px; }
+  .mm-phasebtn{ padding: 9px 10px; font-size: 12px; }
+
+  .btn-save-all,
+  .btn-receipt{
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .mm-table{ min-width: 680px; }
+}
+
+/* iOS Safari: evita zoom em inputs (sem mexer em botões/pills) */
+@supports (-webkit-touch-callout: none){
+  select, input{ font-size: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce){
