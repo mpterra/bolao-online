@@ -785,3 +785,109 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   .score{ width: 56px; height: 42px; line-height: 42px; }
   .toast{ min-width: calc(100% - 20px); }
 }
+
+/* =========================================================
+   ✅ MOBILE <= 560px — JOGOS (IDÊNTICO AO CONCEITO DO RESULTADOS)
+   - Bandeira acima + nome abaixo
+   - Time casa / placar / time fora em coluna
+   - Tudo centralizado e simétrico
+   Cole NO FINAL do admin_resultados.css
+   ========================================================= */
+@media (max-width: 560px){
+
+  /* stack: casa / placar / fora */
+  .match-body{
+    padding: 12px;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "home"
+      "score"
+      "away";
+    gap: 14px !important;
+    align-items: center !important;
+    justify-items: center !important;
+  }
+
+  .team-home{ grid-area: home; }
+  .scorebox{ grid-area: score; }
+  .team-away{ grid-area: away; }
+
+  /* força centralização (override do desktop) */
+  .team-home,
+  .team-away{
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* time vira coluna: flag em cima, nome embaixo */
+  .team{
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  .team .team-flag{ order: 1 !important; }
+  .team .team-name{ order: 2 !important; }
+
+  .team-flag{
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 18px !important;
+  }
+
+  .team-name{
+    width: 100% !important;
+    max-width: 86vw !important;
+
+    font-size: 15px !important;
+    line-height: 1.15 !important;
+    font-weight: 900 !important;
+    text-align: center !important;
+
+    white-space: normal !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    hyphens: auto !important;
+  }
+
+  .scorebox{
+    width: 100% !important;
+    max-width: 340px !important;
+    margin: 0 auto !important;
+    justify-content: center !important;
+    padding: 12px 12px !important;
+    border-radius: 18px !important;
+  }
+
+  .score{
+    width: 64px !important;
+    height: 46px !important;
+    line-height: 46px !important;
+    font-size: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .x{
+    font-size: 15px !important;
+  }
+
+  /* ações ficam em coluna (se existir no admin_resultados) */
+  .match-actions{
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .btn-save-one{
+    width: 100% !important;
+  }
+}
