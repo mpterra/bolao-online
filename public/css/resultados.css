@@ -892,3 +892,93 @@ body::before{
     scroll-behavior: auto !important;
   }
 }
+
+
+/* =========================================================
+   FIX MOBILE (RESULTADOS) — SIMETRIA REAL (FLAG EM CIMA, NOME EMBAIXO)
+   Cole no FINAL do resultados.css
+   ========================================================= */
+@media (max-width: 560px){
+
+  /* corpo do card vira: TIME CASA / PLACAR / TIME FORA */
+  .match-body{
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "home"
+      "mid"
+      "away";
+    gap: 14px;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .team-home{ grid-area: home; }
+  .midbox{ grid-area: mid; width: 100%; display:flex; justify-content:center; }
+  .team-away{ grid-area: away; }
+
+  /* zera os alinhamentos desktop que estavam “entortando” */
+  .team-home,
+  .team-away{
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* ambos os times viram coluna centralizada */
+  .team{
+    width: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    min-width: 0;
+  }
+
+  /* força a MESMA ordem visual em ambos: FLAG -> NOME */
+  .team .team-flag{ order: 1 !important; }
+  .team .team-name{ order: 2 !important; }
+
+  /* bandeira consistente */
+  .team-flag{
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 18px !important;
+    flex: 0 0 auto !important;
+  }
+
+  /* nome consistente e central */
+  .team-name{
+    width: 100% !important;
+    max-width: 86vw !important;
+
+    font-weight: 900 !important;
+    font-size: 15px !important;
+    line-height: 1.15 !important;
+
+    text-align: center !important;
+    margin: 0 !important;
+
+    white-space: normal !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    hyphens: auto !important;
+  }
+
+  /* placar centralizado e com largura boa */
+  .score-compare{
+    width: 100% !important;
+    max-width: 360px !important;
+    margin: 0 auto !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .score-sep{ display:none !important; }
+}

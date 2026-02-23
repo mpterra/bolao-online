@@ -645,7 +645,7 @@ require_once __DIR__ . "/partials/app_header.php";
 	<meta charset="UTF-8" />
 	<title>Bolão da Copa - Palpites</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-	<link rel="stylesheet" href="/bolao-da-copa/public/css/app.css">
+	<link rel="stylesheet" href="/bolao-da-copa/public/css/app.css?v=<?php echo filemtime(__DIR__ . '/css/app.css'); ?>">
 </head>
 <body>
 

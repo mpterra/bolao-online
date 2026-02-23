@@ -1059,3 +1059,139 @@ select{
     scroll-behavior: auto !important;
   }
 }
+
+/* =========================================================
+   MOBILE: remover qualquer scroll horizontal (SEM mexer no desktop)
+   - Converte a tabela em "cards" no celular
+   - Elimina min-width que estoura viewport
+   ========================================================= */
+
+@media (max-width: 560px){
+
+  /* evita overflow por grid/flex */
+  .app-shell,
+  .app-menu,
+  .app-content,
+  .mm-card-head,
+  .mm-head-left,
+  .mm-right{
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* ✅ mata o scroll lateral (a página não pode “vazar”) */
+  html, body{
+    overflow-x: hidden;
+  }
+
+  /* =========================
+     TABELA -> CARDS (MOBILE)
+     ========================= */
+
+  /* wrapper não vira “scroll horizontal” */
+  .mm-table-wrap{
+    overflow: visible;          /* nada de rolagem horizontal */
+    border-radius: 0;
+  }
+
+  /* remove min-width que estoura viewport */
+  .mm-table{
+    min-width: 0 !important;
+    width: 100% !important;
+
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+
+    border-collapse: separate;
+    border-spacing: 0 10px;     /* espaço entre cards */
+  }
+
+  .mm-table thead{
+    display: none;              /* cabeçalho some no mobile */
+  }
+
+  .mm-table tbody{
+    display: block;
+    width: 100%;
+  }
+
+  .mm-table tr{
+    display: block;
+    width: 100%;
+
+    border-radius: 18px;
+    overflow: hidden;
+
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.10);
+    box-shadow: 0 14px 34px rgba(0,0,0,.18);
+  }
+
+  .mm-table td{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    width: 100%;
+    padding: 10px 12px;
+
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    font-size: 12px;
+    font-weight: 900;
+    color: rgba(255,255,255,.92);
+
+    /* impede “vazamento” por textos longos */
+    min-width: 0;
+  }
+
+  .mm-table td:last-child{
+    border-bottom: 0;
+  }
+
+  /* labels por coluna (sem alterar HTML) */
+  .mm-table td:nth-child(1)::before{ content:"Data/Hora"; opacity:.75; }
+  .mm-table td:nth-child(2)::before{ content:"Casa";     opacity:.75; }
+  .mm-table td:nth-child(3)::before{ content:"Fora";     opacity:.75; }
+  .mm-table td:nth-child(4)::before{ content:"Código FIFA"; opacity:.75; }
+  .mm-table td:nth-child(5)::before{ content:"Zebra";    opacity:.75; }
+  .mm-table td:nth-child(6)::before{ content:"Palpites"; opacity:.75; }
+  .mm-table td:nth-child(7)::before{ content:"Ações";    opacity:.75; }
+
+  .mm-table td::before{
+    flex: 0 0 auto;
+    font-size: 11px;
+    letter-spacing: .35px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.72);
+  }
+
+  /* conteúdo da célula: deixa quebrar e não estourar */
+  .mm-table td{
+    overflow: hidden;
+  }
+  .mm-table td > *{
+    min-width: 0;
+  }
+
+  /* palpite badge e ações ficam “bons” no card */
+  .mm-badge-lock{
+    white-space: nowrap;
+  }
+
+  .mm-row-actions{
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .mm-row-actions .mm-btn{
+    width: auto;
+  }
+}
+
+/* (opcional) telas MUITO pequenas: botões ocupam largura toda */
+@media (max-width: 380px){
+  .mm-row-actions .mm-btn{
+    width: 100%;
+  }
+}
