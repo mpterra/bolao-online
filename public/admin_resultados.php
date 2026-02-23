@@ -307,7 +307,7 @@ require_once __DIR__ . "/partials/app_header.php";
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="stylesheet" href="/bolao-da-copa/public/css/admin_resultados.css">
 </head>
-<body>
+<body data-page="admin_resultados">
 
 <div class="app-wrap">
 

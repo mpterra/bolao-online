@@ -347,4 +347,3 @@ VALUES
  '2026-02-15 10:56:27');
 
 
-select * from usuarios;

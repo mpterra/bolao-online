@@ -15,7 +15,7 @@ if (!function_exists("strh")) {
  *  - $isAdmin (bool)
  *
  * Parâmetros:
- *  - $active: string ('apostas'|'ranking'|'admin'|'resultados'|etc)
+ *  - $active: string ('apostas'|'ranking'|'admin'|'resultados'|'mata_mata'|etc)
  *  - $subtitle: string (texto pequeno abaixo do título)
  *  - $logoutHref: string (link de logout da tela atual)
  */
@@ -46,6 +46,9 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 
                 <a class="topnav-link is-admin<?php echo $active === "resultados" ? " is-active" : ""; ?>"
                    href="/bolao-da-copa/public/admin_resultados.php">Salvar Resultados</a>
+
+                <a class="topnav-link is-admin<?php echo $active === "mata_mata" ? " is-active" : ""; ?>"
+                   href="/bolao-da-copa/public/mata_mata.php">Cadastrar Mata-Mata</a>
             <?php endif; ?>
         </nav>
 

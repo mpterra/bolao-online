@@ -1,7 +1,8 @@
 /* =========================================================
-   admin_resultados.css — COMPLETO (ADMIN_RESULTADOS.PHP)
-   - Layout igual app.php (grupos + cards + bandeiras)
-   - Admin-only (só muda o conteúdo, visual é o mesmo)
+   mata_mata.css — COMPLETO (MATA_MATA.PHP) — STANDALONE
+   - ✅ 1 arquitetura de topo (header global sticky)
+   - ✅ shell com menu lateral (botões exclusivos ficam à esquerda)
+   - phasebar + datalist + modal + tabela + toast
    ========================================================= */
 
 :root{
@@ -17,8 +18,10 @@
   --muted: rgba(255,255,255,.75);
 
   --card: rgba(255,255,255,.08);
+  --card2: rgba(255,255,255,.12);
   --stroke: rgba(255,255,255,.18);
 
+  --shadow: 0 24px 60px rgba(0,0,0,.55);
   --shadow2: 0 12px 30px rgba(0,0,0,.45);
 
   --safe-top: env(safe-area-inset-top);
@@ -34,10 +37,16 @@
   --foot-grad: linear-gradient(90deg, rgba(70,220,255,.14), rgba(16,208,138,.12));
   --card-grad: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
 
+  --violet: rgba(140,120,255,.22);
+  --aqua: rgba(70,220,255,.18);
+
   --ok: rgba(16,208,138,.92);
+  --warn: rgba(247,201,72,.95);
   --bad: rgba(255,140,140,.95);
 
-  /* ✅ admin accent (igual admin.css) */
+  --in-ease: cubic-bezier(.2,.9,.2,1);
+
+  /* admin accent (igual admin.css) */
   --adminA: rgba(140,120,255,.92);
   --adminB: rgba(70,220,255,.90);
 }
@@ -49,7 +58,10 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-html, body{ height: 100%; height: 100dvh; }
+html, body{
+  height: 100%;
+  height: 100dvh;
+}
 
 body{
   min-height: 100vh;
@@ -72,10 +84,7 @@ body{
     calc(10px + var(--safe-left));
 }
 
-a{ color: inherit; }
-button, input, select, textarea{ font: inherit; }
-img{ max-width:100%; height:auto; display:block; }
-
+/* fundo leve */
 @keyframes twinkle{
   0%{ transform: translate3d(0,0,0); opacity:.20; }
   50%{ opacity:.28; }
@@ -98,8 +107,9 @@ body::before{
 }
 
 /* =========================================================
-   APP (layout geral)
+   APP WRAP
    ========================================================= */
+
 .app-wrap{
   width: min(1120px, 100%);
   margin: 0 auto;
@@ -109,8 +119,9 @@ body::before{
 }
 
 /* =========================================================
-   HEADER GLOBAL
+   HEADER GLOBAL (menu topo)
    ========================================================= */
+
 .app-header{
   position: sticky;
   top: calc(10px + var(--safe-top));
@@ -225,21 +236,12 @@ body::before{
   border-color: rgba(140,120,255,.22);
   background: linear-gradient(90deg, rgba(140,120,255,.32), rgba(70,220,255,.18));
 }
-
 .topnav-link.is-admin:hover{
   background: linear-gradient(90deg, rgba(140,120,255,.42), rgba(70,220,255,.24));
 }
 
-/* ✅ ADMIN ATIVO: outra cor (não verde/dourado) — igual admin.css */
+/* ✅ admin ativo (não verde/dourado) */
 .topnav-link.is-admin.is-active{
-  color: #062027;
-  border-color: rgba(255,255,255,.10);
-  background: linear-gradient(90deg, var(--adminA), var(--adminB));
-  box-shadow: 0 16px 34px rgba(0,0,0,.22);
-}
-
-/* ✅ Fallback limpo: nesta página, "Salvar Resultados" fica ativo mesmo se o header não marcar is-active */
-body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="admin_resultados.php"]{
   color: #062027;
   border-color: rgba(255,255,255,.10);
   background: linear-gradient(90deg, var(--adminA), var(--adminB));
@@ -301,12 +303,19 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   white-space: nowrap;
 }
 
+.btn-logout:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(0,0,0,.22);
+}
+
 /* =========================================================
-   SHELL
+   SHELL / MENU LATERAL / CONTEÚDO
    ========================================================= */
+
 .app-shell{
   display:grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 240px 1fr;
   gap: 12px;
   align-items:start;
 }
@@ -320,26 +329,13 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   border-radius: 22px;
 }
 
-.app-menu{ padding: 14px; }
+.app-menu{ padding: 14px; position: sticky; top: calc(10px + var(--safe-top) + 86px); }
 .app-content{ padding: 16px; min-height: 360px; }
 
 .content-head{ margin-bottom: 12px; }
+.content-h1{ margin-bottom: 4px; font-size: 16px; font-weight: 900; }
+.content-sub{ color: rgba(255,255,255,.74); font-size: 12px; line-height: 1.45; }
 
-.content-h1{
-  margin-bottom: 4px;
-  font-size: 16px;
-  font-weight: 900;
-}
-
-.content-sub{
-  color: rgba(255,255,255,.74);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-/* =========================================================
-   MENU (GRUPOS)
-   ========================================================= */
 .menu-title{
   font-size: 12px;
   color: rgba(255,255,255,.70);
@@ -348,59 +344,51 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   text-transform: uppercase;
 }
 
-.menu-list{
-  display:flex;
-  flex-direction:column;
-  gap: 10px;
+.menu-actions{
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 
-.menu-link{
-  padding: 12px;
-  border-radius: 16px;
-  text-decoration:none;
-  color: rgba(255,255,255,.92);
-  background:
-    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.10), transparent 60%),
-    rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.10);
+.menu-actions-tight{
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.hint{
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255,255,255,.72);
   font-weight: 900;
-  transition: 180ms ease;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 10px;
 }
 
-.menu-link:hover{
-  background:
-    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.12), transparent 60%),
-    rgba(255,255,255,.09);
-  transform: translateY(-1px);
-}
+/* =========================================================
+   BOTÕES DO MENU LATERAL (reuso do app.css)
+   ========================================================= */
 
-.menu-link.is-active{
+.btn-save-all{
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  border-radius: 16px;
+  padding: 12px 14px;
+  font-weight: 900;
+  font-size: 14px;
   color: #062027;
   background: linear-gradient(90deg, var(--green), var(--gold));
-  border-color: rgba(255,255,255,.10);
-  box-shadow: 0 16px 34px rgba(0,0,0,.22);
+  box-shadow: 0 16px 42px rgba(0,0,0,.35);
+  transition: transform 140ms ease, filter 180ms ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
 }
 
-.badge{
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 900;
-  color: rgba(255,255,255,.86);
-  background: rgba(255,255,255,.10);
-  border: 1px solid rgba(255,255,255,.12);
-}
-
-/* Botões (menu) */
-.menu-actions{
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,.10);
-}
+.btn-save-all:hover{ filter: saturate(1.06); transform: translateY(-1px); }
+.btn-save-all:active{ transform: translateY(0) scale(.99); }
+.btn-save-all:disabled{ opacity: .65; cursor: not-allowed; transform: none; }
 
 .btn-receipt{
   width: 100%;
@@ -425,84 +413,356 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   transform: translateY(-1px);
   box-shadow: 0 16px 34px rgba(0,0,0,.28);
 }
+.btn-receipt:active{ transform: translateY(0) scale(.99); }
 
 /* =========================================================
-   GRUPOS
+   "CARD HEAD" (dentro do conteúdo)
    ========================================================= */
-.group-block{
-  display:none;
-  padding: 12px;
+
+.mm-card-head{
+  padding: 14px;
   border-radius: 22px;
   border: 1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.10);
+  background: var(--head-grad);
+  box-shadow: 0 14px 34px rgba(0,0,0,.18);
+
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+
   margin-bottom: 12px;
 }
-.group-block.is-active-group{ display:block; }
 
-.group-head{ margin-bottom: 10px; }
+.mm-head-left{
+  display:flex;
+  align-items:flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
 
-.group-line{
+.mm-right{
   display:flex;
   align-items:center;
-  justify-content:space-between;
+  justify-content:flex-end;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.group-pill{
-  display:inline-flex;
-  width: fit-content;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(16,208,138,.12);
-  border: 1px solid rgba(16,208,138,.28);
-  color: rgba(210,255,240,.98);
-  font-weight: 900;
-  font-size: 12px;
-}
-
-.group-count{
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(247,201,72,.26);
-  background: rgba(247,201,72,.12);
-  color: rgba(255,245,210,.98);
-  font-weight: 900;
-  font-size: 12px;
-}
-
-.group-name{
-  margin-top: 6px;
-  font-size: 14px;
-  font-weight: 900;
-  color: rgba(255,255,255,.92);
+.mm-card-body{
+  padding: 0;
+  min-height: 360px;
 }
 
 /* =========================================================
-   JOGOS
+   FIELDS / INPUTS
    ========================================================= */
-.matches{
+
+.mm-field{
   display:flex;
   flex-direction:column;
-  gap: 10px;
+  gap: 6px;
+  min-width: 240px;
+  min-width: min(260px, 100%);
+}
+.mm-field-small{
+  min-width: 240px;
+  min-width: min(260px, 100%);
 }
 
-.match-card{
+label{
+  font-size: 12px;
+  color: rgba(255,255,255,.78);
+  font-weight: 900;
+  letter-spacing: .2px;
+}
+
+select, input{
+  width: 100%;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.94);
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 12px;
+  outline: none;
+  transition: 180ms var(--in-ease);
+  min-width: 0;
+}
+
+input::placeholder{ color: rgba(255,255,255,.55); }
+
+select:focus, input:focus{
+  border-color: rgba(70,220,255,.40);
+  box-shadow: 0 0 0 4px rgba(70,220,255,.12);
+  background: rgba(255,255,255,.10);
+}
+
+input.is-invalid, select.is-invalid{
+  border-color: rgba(255,140,140,.45);
+  box-shadow: 0 0 0 4px rgba(255,140,140,.10);
+}
+
+select{
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255,255,255,.85) 50%),
+    linear-gradient(135deg, rgba(255,255,255,.85) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% + 1px),
+    calc(100% - 12px) calc(50% + 1px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 40px;
+}
+
+.mm-hint{
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255,255,255,.72);
+  font-weight: 900;
+}
+
+/* =========================================================
+   PHASE MENU (scrollável)
+   ========================================================= */
+
+.mm-phasebar{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+
+  overflow-x:auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.mm-phasebar::-webkit-scrollbar{ display:none; }
+
+.mm-phasebtn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  text-decoration:none;
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+
+  transition: 180ms ease;
+  box-shadow: 0 12px 22px rgba(0,0,0,.16);
+
+  cursor: pointer;
+  user-select:none;
+}
+
+.mm-phasebtn:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+}
+
+.mm-phasebtn.is-active{
+  color: #062027;
+  border-color: rgba(255,255,255,.10);
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 16px 34px rgba(0,0,0,.22);
+}
+
+/* =========================================================
+   PILL / EMPTY
+   ========================================================= */
+
+.mm-pill{
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.18);
+  color: rgba(255,255,255,.92);
+  font-weight: 900;
+  font-size: 12px;
+  box-shadow: 0 10px 18px rgba(0,0,0,.18);
+}
+
+.mm-empty{
+  padding: 12px 14px;
   border-radius: 18px;
+  border: 1px dashed rgba(255,255,255,.16);
+  background: rgba(0,0,0,.12);
+  color: rgba(255,255,255,.78);
+  font-weight: 900;
+  font-size: 13px;
+}
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.mm-table-wrap{
+  width: 100%;
+  overflow:auto;
+  border-radius: 18px;
+}
+
+.mm-table{
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.10);
+  box-shadow: 0 14px 34px rgba(0,0,0,.22);
+}
+
+.mm-table th, .mm-table td{
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255,255,255,.90);
+  vertical-align: middle;
+}
+
+.mm-table th{
+  font-size: 11px;
+  color: rgba(255,255,255,.74);
+  background: rgba(0,0,0,.14);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+}
+
+.mm-table tr:hover td{ background: rgba(255,255,255,.04); }
+
+.mm-row-actions{
+  display:flex;
+  gap: 10px;
+  justify-content:flex-end;
+  flex-wrap: wrap;
+}
+
+/* botões pequenos na linha */
+.mm-row-actions .mm-btn{
+  padding: 9px 12px;
+  border-radius: 13px;
+  font-size: 13px;
+}
+
+.mm-badge-lock{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(140,120,255,.34);
+  background: rgba(140,120,255,.18);
+  color: rgba(245,242,255,.96);
+}
+
+/* =========================================================
+   BOTÕES (no modal / tabela)
+   ========================================================= */
+
+.mm-btn{
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  border-radius: 16px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 14px;
+  transition: 180ms ease;
+  box-shadow: 0 14px 30px rgba(0,0,0,.22);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  white-space: nowrap;
+}
+
+.mm-btn:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(0,0,0,.28);
+}
+.mm-btn:active{ transform: translateY(0) scale(.99); }
+.mm-btn:disabled{ opacity: .65; cursor: not-allowed; transform:none; box-shadow: none; }
+
+.mm-btn-primary{
+  border: 0;
+  color: #062027;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 16px 42px rgba(0,0,0,.35);
+}
+.mm-btn-primary:hover{ filter: saturate(1.06); }
+
+.mm-btn-danger{
+  border: 1px solid rgba(255,140,140,.28);
+  background: rgba(255,140,140,.12);
+  color: rgba(255,255,255,.92);
+}
+.mm-btn-danger:hover{ background: rgba(255,140,140,.16); }
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.mm-modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:
+    calc(14px + var(--safe-top))
+    calc(14px + var(--safe-right))
+    calc(14px + var(--safe-bottom))
+    calc(14px + var(--safe-left));
+  z-index: 9999;
+}
+
+.mm-modal{
+  width: min(860px, 100%);
+  border-radius: 22px;
+  overflow: hidden;
+
   border: 1px solid rgba(255,255,255,.12);
   background:
     radial-gradient(900px 320px at 18% 10%, rgba(16,208,138,.12), transparent 58%),
     radial-gradient(760px 300px at 82% 18%, rgba(247,201,72,.10), transparent 58%),
     radial-gradient(720px 300px at 50% 120%, rgba(70,220,255,.10), transparent 62%),
-    var(--card-grad);
-  box-shadow: 0 14px 34px rgba(0,0,0,.26);
-  overflow:hidden;
+    rgba(0,0,0,.18);
+
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 70px rgba(0,0,0,.60);
 }
 
-.match-top{
+.mm-modal-head{
   padding: 10px 12px;
   background: var(--head-grad);
   border-bottom: 1px solid rgba(255,255,255,.10);
+
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -510,208 +770,54 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   flex-wrap: wrap;
 }
 
-.match-when{
-  display:flex;
-  align-items:center;
-  gap: 8px;
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.match-when .when{
-  font-weight: 900;
-  font-size: 12px;
-  color: rgba(255,255,255,.96);
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.18);
-  border: 1px solid rgba(255,255,255,.10);
-}
-
-.match-when .round{
-  font-weight: 900;
-  font-size: 11px;
-  color: rgba(245,242,255,.96);
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(140,120,255,.34);
-  background: rgba(140,120,255,.18);
-}
-
-.match-status{
-  font-weight: 900;
-  font-size: 10px;
-  letter-spacing: .35px;
-  text-transform: uppercase;
-  padding: 5px 9px;
-  border-radius: 999px;
-  border: 1px solid rgba(140,120,255,.28);
-  background: rgba(140,120,255,.16);
-  color: rgba(245,242,255,.96);
-}
-.match-status.status-EM_ANDAMENTO{
-  border-color: rgba(16,208,138,.30);
-  background: rgba(16,208,138,.14);
-  color: rgba(210,255,240,.98);
-}
-.match-status.status-ENCERRADO{
-  border-color: rgba(247,201,72,.34);
-  background: rgba(247,201,72,.14);
-  color: rgba(255,245,210,.98);
-}
-
-.match-body{
-  padding: 12px;
-  display:grid;
-  grid-template-columns: 1fr 170px 1fr;
-  align-items:center;
-  gap: 10px;
-}
-
-.team{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-  min-width: 0;
-}
-.team-home{ justify-content:flex-end; text-align:right; }
-.team-away{ justify-content:flex-start; text-align:left; }
-
-.team-name{
-  font-weight: 900;
-  font-size: 13px;
-  color: rgba(255,255,255,.92);
-  overflow:hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-/* bandeira + fallback sigla */
-.team-flag{
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.14);
-  box-shadow: 0 10px 18px rgba(0,0,0,.22);
-  display:grid;
-  place-items:center;
-  overflow:hidden;
-  flex: 0 0 auto;
-}
-
-.team-flag img{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.team-badge{
-  display:none;
-  font-weight: 900;
-  font-size: 12px;
-  color: rgba(255,255,255,.96);
-}
-.team-flag.no-flag .team-badge{ display:block; }
-.team-flag.no-flag{ background: rgba(255,255,255,.10); }
-
-.scorebox{
-  width: 170px;
-  margin: 0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap: 8px;
-  padding: 9px 10px;
-  border-radius: 16px;
-  background:
-    radial-gradient(180px 60px at 30% 30%, rgba(16,208,138,.12), transparent 65%),
-    radial-gradient(180px 60px at 70% 30%, rgba(247,201,72,.10), transparent 65%),
-    rgba(0,0,0,.14);
-  border: 1px solid rgba(255,255,255,.12);
-}
-
-.score{
-  width: 56px;
-  height: 42px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.10);
-  color: rgba(255,255,255,.96);
-  font-weight: 900;
-  font-size: 16px;
-  text-align:center;
-  padding: 0;
-  line-height: 42px;
-  outline: none;
-  transition: 180ms ease;
-  font-variant-numeric: tabular-nums;
-}
-
-.score:focus{
-  border-color: rgba(16,208,138,.55);
-  box-shadow: 0 0 0 4px rgba(16,208,138,.12);
-  background: rgba(255,255,255,.12);
-}
-
-.score::-webkit-outer-spin-button,
-.score::-webkit-inner-spin-button{
-  -webkit-appearance: none;
-  margin: 0;
-}
-.score[type="number"]{ -moz-appearance: textfield; }
-
-.x{
-  font-weight: 900;
+.mm-modal-head strong{
   font-size: 14px;
-  color: rgba(255,255,255,.88);
-  text-shadow: 0 8px 18px rgba(0,0,0,.25);
+  font-weight: 900;
+  color: rgba(255,255,255,.96);
 }
 
-.match-actions{
-  padding: 10px 12px;
-  background: var(--foot-grad);
-  border-top: 1px solid rgba(255,255,255,.10);
+.mm-modal-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mm-modal-body{ padding: 14px; }
+
+.mm-modal-sub{
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255,255,255,.78);
+}
+
+.mm-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items:start;
+}
+
+.mm-modal-footer{
+  margin-top: 12px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap: 10px;
   flex-wrap: wrap;
 }
-
-.btn-save-one{
-  border: 0;
-  cursor: pointer;
-  border-radius: 13px;
-  padding: 9px 12px;
-  font-weight: 900;
-  font-size: 13px;
-  color: #062027;
-  background: linear-gradient(90deg, rgba(16,208,138,.95), rgba(247,201,72,.95));
-  box-shadow: 0 16px 34px rgba(0,0,0,.28);
-  transition: transform 140ms ease, filter 180ms ease;
-}
-.btn-save-one:hover{ filter: saturate(1.06); transform: translateY(-1px); }
-.btn-save-one:disabled{ opacity:.65; cursor:not-allowed; transform:none; }
-
-.save-state{
-  font-size: 11px;
-  font-weight: 900;
-  color: rgba(255,255,255,.72);
-}
-.save-state.ok{ color: var(--ok); }
-.save-state.err{ color: var(--bad); }
 
 /* =========================================================
    TOAST
    ========================================================= */
+
 @keyframes toastIn{
   from{ opacity: 0; transform: translate(-50%, 10px) scale(.98); }
   to{ opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 
-.toast{
+.mm-toast{
   position: fixed;
   left: 50%;
   bottom: calc(14px + var(--safe-bottom));
@@ -729,13 +835,23 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   font-weight: 900;
   font-size: 13px;
 }
-.toast.is-open{ display:block; animation: toastIn 180ms ease-out both; }
+
+.mm-toast.is-open{
+  display:block;
+  animation: toastIn 180ms ease-out both;
+}
 
 /* =========================================================
    RESPONSIVO
    ========================================================= */
-@media (max-width: 860px){
+
+@media (max-width: 920px){
   .app-shell{ grid-template-columns: 1fr; }
+
+  .app-menu{
+    position: relative;
+    top: auto;
+  }
 
   .app-header{
     flex-direction: column;
@@ -751,6 +867,9 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   }
 
   .user-chip-name{ max-width: 55vw; }
+
+  .mm-grid{ grid-template-columns: 1fr; }
+  .mm-field{ min-width: 0; }
 }
 
 @media (max-width: 560px){
@@ -768,20 +887,18 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   .app-menu{ padding: 12px; }
   .app-content{ padding: 14px; }
 
-  .match-body{
-    grid-template-columns: 1fr 150px 1fr;
-    gap: 10px;
+  .mm-btn{
+    border-radius: 14px;
+    padding: 10px 12px;
   }
 
-  .team-name{
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+  .mm-toast{ min-width: calc(100% - 20px); }
+}
 
-  .scorebox{ width: 150px; }
-  .score{ width: 56px; height: 42px; line-height: 42px; }
-  .toast{ min-width: calc(100% - 20px); }
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
