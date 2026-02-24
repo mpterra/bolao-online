@@ -27,9 +27,9 @@
   window.__LOCK_INFO__ = (APP_CFG && APP_CFG.lock) ? APP_CFG.lock : null;
 
   const ENDPOINTS = {
-    save_games: (APP_CFG && APP_CFG.endpoints && APP_CFG.endpoints.save_games) ? APP_CFG.endpoints.save_games : "/bolao-da-copa/public/app.php?action=save",
-    save_group_rank: (APP_CFG && APP_CFG.endpoints && APP_CFG.endpoints.save_group_rank) ? APP_CFG.endpoints.save_group_rank : "/bolao-da-copa/public/app.php?action=save_group_rank",
-    receipt_url: (APP_CFG && APP_CFG.endpoints && APP_CFG.endpoints.receipt_url) ? APP_CFG.endpoints.receipt_url : "/bolao-da-copa/php/recibo.php?action=pdf"
+    save_games: (APP_CFG && APP_CFG.endpoints && APP_CFG.endpoints.save_games) ? APP_CFG.endpoints.save_games : "/app.php?action=save",
+    save_group_rank: (APP_CFG && APP_CFG.endpoints && APP_CFG.endpoints.save_group_rank) ? APP_CFG.endpoints.save_group_rank : "/app.php?action=save_group_rank",
+    receipt_url: (APP_CFG && APP_CFG.endpoints && APP_CFG.endpoints.receipt_url) ? APP_CFG.endpoints.receipt_url : "/php/recibo.php?action=pdf"
   };
 
   // =========================================================

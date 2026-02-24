@@ -14,10 +14,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let cfg = {};
   try { cfg = JSON.parse(cfgEl.textContent || "{}"); } catch { cfg = {}; }
 
-  const endpointSave = cfg?.endpoints?.save || "/bolao-da-copa/public/campeao.php?action=save";
+  const endpointSave = cfg?.endpoints?.save || "/campeao.php?action=save";
 
   // ✅ endpoint do recibo (se não vier no config, usa o padrão)
-  const endpointRecibo = cfg?.endpoints?.recibo || "/bolao-da-copa/php/recibo.php";
+  const endpointRecibo = cfg?.endpoints?.recibo || "/php/recibo.php";
 
   let selectedId = Number(cfg?.selected_time_id || 0);
   let pendingId = selectedId;

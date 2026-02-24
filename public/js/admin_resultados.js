@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.textContent = "Salvando...";
 
     try {
-      const resp = await fetch("/bolao-da-copa/public/admin_resultados.php?action=save", {
+      const resp = await fetch("/admin_resultados.php?action=save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

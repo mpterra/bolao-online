@@ -411,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnOk = document.getElementById("btnOkCadastro");
 
   function goLogin() {
-    window.location.href = "/bolao-da-copa/public/index.php";
+    window.location.href = "/index.php";
   }
 
   function openModal() {

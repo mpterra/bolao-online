@@ -23,6 +23,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const ENDPOINTS = (CFG && CFG.endpoints) ? CFG.endpoints : {};
   let CSRF = (CFG && CFG.csrf_token) ? CFG.csrf_token : "";
 
+  // =========================================================
+  // FALLBACKS (HostGator/public_html - raiz)
+  // =========================================================
+  if (!ENDPOINTS.bootstrap) ENDPOINTS.bootstrap = "/mata_mata.php?action=bootstrap";
+  if (!ENDPOINTS.list_games) ENDPOINTS.list_games = "/mata_mata.php?action=list_games";
+  if (!ENDPOINTS.create) ENDPOINTS.create = "/mata_mata.php?action=create";
+  if (!ENDPOINTS.update) ENDPOINTS.update = "/mata_mata.php?action=update";
+  if (!ENDPOINTS.delete) ENDPOINTS.delete = "/mata_mata.php?action=delete";
+
   const $ = (sel) => document.querySelector(sel);
 
   const elEdicao = $("#edicao");
@@ -345,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderList() {
     if (!elList) return;
 
-    elPillCount.textContent = `${currentGames.length} jogo(s)`;
+    if (elPillCount) elPillCount.textContent = `${currentGames.length} jogo(s)`;
 
     if (currentGames.length === 0) {
       elList.innerHTML = `<div class="mm-empty">Nenhum jogo cadastrado nesta fase.</div>`;

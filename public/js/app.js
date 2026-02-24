@@ -29,15 +29,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const ENDPOINT_SAVE_GAMES = (APP_CFG && APP_CFG.endpoints && APP_CFG.endpoints.save_games)
     ? APP_CFG.endpoints.save_games
-    : "/bolao-da-copa/public/app.php?action=save";
+    : "/app.php?action=save";
 
   const ENDPOINT_SAVE_GROUP_RANK = (APP_CFG && APP_CFG.endpoints && APP_CFG.endpoints.save_group_rank)
     ? APP_CFG.endpoints.save_group_rank
-    : "/bolao-da-copa/public/app.php?action=save_group_rank";
+    : "/app.php?action=save_group_rank";
 
   const ENDPOINT_RECEIPT = (APP_CFG && APP_CFG.endpoints && APP_CFG.endpoints.receipt_url)
     ? APP_CFG.endpoints.receipt_url
-    : "/bolao-da-copa/php/recibo.php?action=pdf";
+    : "/php/recibo.php?action=pdf";
 
   // =========================================================
   // TOAST
@@ -742,7 +742,7 @@ document.addEventListener("DOMContentLoaded", () => {
       btnGoChampion.disabled = true;
 
       const url = (btnGoChampion.getAttribute("data-champion-url") || "").trim()
-        || "/bolao-da-copa/public/campeao.php";
+        || "/campeao.php";
 
       try {
         await saveAll();
