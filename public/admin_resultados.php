@@ -6,13 +6,16 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 session_start();
-require_once __DIR__ . "/../php/conexao.php";
+
+// ✅ HostGator: arquivo em /public_html => sobe 1 nível para /home2/mauri075 e entra em /php
+require_once dirname(__DIR__) . "/php/conexao.php";
 
 date_default_timezone_set('America/Sao_Paulo');
 
 function require_login(): void {
     if (empty($_SESSION["usuario_id"])) {
-        header("Location: /bolao-da-copa/public/index.php");
+        // ✅ HostGator: páginas públicas na raiz do public_html
+        header("Location: /index.php");
         exit;
     }
 }
@@ -113,7 +116,7 @@ function flag_slug_aliases(string $slugBase): array {
 }
 
 function flag_url_for_team(string $teamName, string $sigla): ?string {
-    $baseDir = __DIR__ . "/img/flags"; // /public/img/flags
+    $baseDir = __DIR__ . "/img/flags"; // /public_html/img/flags
     $candidates = [];
 
     $slugByName = flag_slug_from_name($teamName);
@@ -134,7 +137,8 @@ function flag_url_for_team(string $teamName, string $sigla): ?string {
     foreach ($candidates as $slug) {
         $fs = $baseDir . "/" . $slug . ".png";
         if (is_file($fs)) {
-            return "/bolao-da-copa/public/img/flags/" . $slug . ".png";
+            // ✅ HostGator: público na raiz
+            return "/img/flags/" . $slug . ".png";
         }
     }
     return null;
@@ -153,7 +157,7 @@ $now = new DateTimeImmutable("now", $tz);
 /* Logout */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
     session_destroy();
-    header("Location: /bolao-da-copa/public/index.php");
+    header("Location: /index.php");
     exit;
 }
 
@@ -305,7 +309,7 @@ require_once __DIR__ . "/partials/app_header.php";
     <meta charset="UTF-8" />
     <title>Bolão da Copa - Admin Resultados</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="stylesheet" href="/bolao-da-copa/public/css/admin_resultados.css?v=<?php echo filemtime(__DIR__ . '/css/admin_resultados.css'); ?>">
+    <link rel="stylesheet" href="/css/admin_resultados.css?v=<?php echo filemtime(__DIR__ . '/css/admin_resultados.css'); ?>">
 </head>
 <body data-page="admin_resultados">
 
@@ -317,7 +321,7 @@ require_once __DIR__ . "/partials/app_header.php";
             $isAdmin,
             "resultados",
             "Admin • Resultados (placar real)",
-            "/bolao-da-copa/public/admin_resultados.php?action=logout"
+            "/admin_resultados.php?action=logout"
         );
     ?>
 
@@ -490,6 +494,6 @@ echo json_encode([
 ?>
 </script>
 
-<script src="/bolao-da-copa/public/js/admin_resultados.js"></script>
+<script src="/js/admin_resultados.js"></script>
 </body>
 </html>

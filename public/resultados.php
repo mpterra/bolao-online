@@ -6,13 +6,18 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 session_start();
-require_once __DIR__ . "/../php/conexao.php";
+
+/**
+ * ✅ HOSTGATOR:
+ * conexao.php fora do public_html
+ */
+require_once "/home2/mauri075/php/conexao.php";
 
 date_default_timezone_set('America/Sao_Paulo');
 
 function require_login(): void {
     if (empty($_SESSION["usuario_id"])) {
-        header("Location: /bolao-da-copa/public/index.php");
+        header("Location: /index.php");
         exit;
     }
 }
@@ -126,7 +131,7 @@ function flag_slug_aliases(string $slugBase): array {
 }
 
 function flag_url_for_team(string $teamName, string $sigla): ?string {
-    $baseDir = __DIR__ . "/img/flags"; // /public/img/flags
+    $baseDir = __DIR__ . "/img/flags"; // /public_html/img/flags (este arquivo está no public_html)
     $candidates = [];
 
     $slugByName = flag_slug_from_name($teamName);
@@ -146,7 +151,7 @@ function flag_url_for_team(string $teamName, string $sigla): ?string {
     foreach ($candidates as $slug) {
         $fs = $baseDir . "/" . $slug . ".png";
         if (is_file($fs)) {
-            return "/bolao-da-copa/public/img/flags/" . $slug . ".png";
+            return "/img/flags/" . $slug . ".png";
         }
     }
     return null;
@@ -166,7 +171,7 @@ $now = new DateTimeImmutable("now", $tz);
 /* Logout */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
     session_destroy();
-    header("Location: /bolao-da-copa/public/index.php");
+    header("Location: /index.php");
     exit;
 }
 
@@ -238,6 +243,7 @@ $activeGroupId = 0;
 if (isset($_GET["grupo_id"])) $activeGroupId = (int)$_GET["grupo_id"];
 if ($activeGroupId <= 0 && count($grupos) > 0) $activeGroupId = (int)$grupos[0]["id"];
 
+/* HEADER PADRÃO (partial) - arquivo em /public_html/partials */
 require_once __DIR__ . "/partials/app_header.php";
 ?>
 <!DOCTYPE html>
@@ -246,7 +252,7 @@ require_once __DIR__ . "/partials/app_header.php";
     <meta charset="UTF-8" />
     <title>Bolão da Copa - Resultados</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="stylesheet" href="/bolao-da-copa/public/css/resultados.css?v=<?php echo filemtime(__DIR__ . '/css/resultados.css'); ?>">
+    <link rel="stylesheet" href="/css/resultados.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/resultados.css'); ?>">
 </head>
 <body>
 
@@ -258,7 +264,7 @@ require_once __DIR__ . "/partials/app_header.php";
             $isAdmin,
             "resultados_publico",
             "Resultados • Real x Seu palpite",
-            "/bolao-da-copa/public/resultados.php?action=logout"
+            "/resultados.php?action=logout"
         );
     ?>
 
@@ -440,6 +446,6 @@ echo json_encode([
 ?>
 </script>
 
-<script src="/bolao-da-copa/public/js/resultados.js"></script>
+<script src="/js/resultados.js"></script>
 </body>
 </html>

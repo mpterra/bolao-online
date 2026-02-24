@@ -6,13 +6,18 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 session_start();
-require_once __DIR__ . "/../php/conexao.php";
 
 /**
- * ✅ Header padrão (função render_app_header)
- * Ajuste o caminho se você colocou o arquivo em outro lugar.
+ * ✅ HOSTGATOR:
+ * conexao.php fora do public_html
  */
-require_once __DIR__ . "/../public/partials/app_header.php";
+require_once "/home2/mauri075/php/conexao.php";
+
+/**
+ * ✅ PADRÃO DO PROJETO:
+ * partials dentro de /public/partials (mesma pasta deste arquivo)
+ */
+require_once __DIR__ . "/partials/app_header.php";
 
 /* =========================================================
    Helpers
@@ -20,7 +25,8 @@ require_once __DIR__ . "/../public/partials/app_header.php";
 
 function require_login(): void {
     if (empty($_SESSION["usuario_id"])) {
-        header("Location: /bolao-da-copa/public/index.php");
+        // ✅ HOSTGATOR: sem /bolao-da-copa
+        header("Location: /index.php");
         exit;
     }
 }
@@ -168,8 +174,9 @@ function build_row_class(int $uid, int $meId, int $pos): string {
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Ranking — Bolão da Copa</title>
 
-  <link rel="stylesheet" href="/bolao-da-copa/public/css/base.css?v=1">
-  <link rel="stylesheet" href="/bolao-da-copa/public/css/ranking.css?v=1">
+  <!-- ✅ HOSTGATOR: sem /bolao-da-copa -->
+  <link rel="stylesheet" href="/css/base.css?v=1">
+  <link rel="stylesheet" href="/css/ranking.css?v=1">
 </head>
 <body>
 
@@ -182,7 +189,8 @@ function build_row_class(int $uid, int $meId, int $pos): string {
         $isAdmin,
         "ranking",
         $subtitle,
-        "/bolao-da-copa/public/app.php?action=logout"
+        // ✅ HOSTGATOR: logout pela action no app.php (sem /bolao-da-copa)
+        "/app.php?action=logout"
     );
   ?>
 
@@ -313,6 +321,8 @@ function build_row_class(int $uid, int $meId, int $pos): string {
 </div>
 
 <script type="application/json" id="app-config"><?php echo json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
-<script src="/bolao-da-copa/public/js/ranking.js?v=1"></script>
+
+<!-- ✅ HOSTGATOR: sem /bolao-da-copa -->
+<script src="/js/ranking.js?v=1"></script>
 </body>
 </html>

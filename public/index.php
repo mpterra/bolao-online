@@ -1,6 +1,10 @@
 <?php
+declare(strict_types=1);
+
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+
 session_start();
 
 /**
@@ -30,7 +34,7 @@ if (!in_array($flashType, $allowed, true)) $flashType = "";
     <title>Bolão do Thiago</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <link rel="stylesheet" href="/bolao-da-copa/public/css/login.css">
+    <link rel="stylesheet" href="/css/login.css">
 </head>
 
 <body
@@ -44,13 +48,13 @@ if (!in_array($flashType, $allowed, true)) $flashType = "";
 <div class="page">
 
     <div class="logo-wrapper">
-        <img src="/bolao-da-copa/public/img/logo.png" alt="Bolão da Copa">
+        <img src="/img/logo.png" alt="Bolão da Copa">
     </div>
 
     <div class="login-card">
         <h1>Bolão do Thiago</h1>
 
-        <form method="POST" action="/bolao-da-copa/php/auth.php" class="login-form" autocomplete="on">
+        <form method="POST" action="/php/auth.php" class="login-form" autocomplete="on">
 
             <div class="input-group">
                 <input type="text" name="usuario" required autocomplete="username">
@@ -66,7 +70,7 @@ if (!in_array($flashType, $allowed, true)) $flashType = "";
 
             <p class="cadastro-link">
                 Não tem conta?
-                <a href="/bolao-da-copa/public/cadastro.php">Cadastre-se</a>
+                <a href="/cadastro.php">Cadastre-se</a>
             </p>
 
         </form>
@@ -74,6 +78,6 @@ if (!in_array($flashType, $allowed, true)) $flashType = "";
 
 </div>
 
-<script src="/bolao-da-copa/public/js/index.js"></script>
+<script src="/js/index.js"></script>
 </body>
 </html>

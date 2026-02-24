@@ -15,7 +15,7 @@ if (!function_exists("strh")) {
  *  - $isAdmin (bool)
  *
  * Parâmetros:
- *  - $active: string ('apostas'|'ranking'|'admin'|'resultados'|'mata_mata'|etc)
+ *  - $active: string ('apostas'|'ranking'|'admin'|'resultados_publico'|'mata_mata'|etc)
  *  - $subtitle: string (texto pequeno abaixo do título)
  *  - $logoutHref: string (link de logout da tela atual)
  */
@@ -23,7 +23,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
     ?>
     <header class="app-header">
         <div class="app-brand">
-            <img src="/bolao-da-copa/public/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
+            <img src="/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
             <div class="app-title">
                 <strong>Bolão da Copa</strong>
                 <span><?php echo strh($subtitle); ?></span>
@@ -32,17 +32,17 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 
         <nav class="app-topnav" aria-label="Menu principal">
             <a class="topnav-link<?php echo $active === "apostas" ? " is-active" : ""; ?>"
-               href="/bolao-da-copa/public/app.php">Apostas</a>
+               href="/app.php">Apostas</a>
 
             <a class="topnav-link<?php echo $active === "ranking" ? " is-active" : ""; ?>"
-               href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
+               href="/ranking.php">Ranking do Bolão</a>
 
             <a class="topnav-link<?php echo $active === "resultados_publico" ? " is-active" : ""; ?>"
-               href="/bolao-da-copa/public/resultados.php">Resultados</a>
+               href="/resultados.php">Resultados</a>
 
             <?php if ($isAdmin): ?>
                 <a class="topnav-link is-admin<?php echo $active === "admin" ? " is-active" : ""; ?>"
-                   href="/bolao-da-copa/public/admin.php">Admin</a>
+                   href="/admin.php">Admin</a>
             <?php endif; ?>
         </nav>
 

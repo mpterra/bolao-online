@@ -6,11 +6,14 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 session_start();
-require_once __DIR__ . "/../php/conexao.php";
+
+// ✅ HostGator: arquivo em /public_html => sobe 1 nível para /home2/mauri075 e entra em /php
+require_once dirname(__DIR__) . "/php/conexao.php";
 
 function require_login(): void {
     if (empty($_SESSION["usuario_id"])) {
-        header("Location: /bolao-da-copa/public/index.php");
+        // ✅ HostGator: páginas públicas na raiz do public_html
+        header("Location: /index.php");
         exit;
     }
 }
@@ -38,7 +41,7 @@ $isAdmin = (mb_strtoupper($tipoSessao, "UTF-8") === "ADMIN");
 /* Logout */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
     session_destroy();
-    header("Location: /bolao-da-copa/public/index.php");
+    header("Location: /index.php");
     exit;
 }
 
@@ -64,7 +67,7 @@ require_once __DIR__ . "/partials/app_header.php";
     <meta charset="UTF-8" />
     <title>Bolão da Copa - Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="stylesheet" href="/bolao-da-copa/public/css/admin.css">
+    <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
 
@@ -76,7 +79,7 @@ require_once __DIR__ . "/partials/app_header.php";
             $isAdmin,
             "admin",
             "Admin • Exportar apostas",
-            "/bolao-da-copa/public/admin.php?action=logout"
+            "/admin.php?action=logout"
         );
     ?>
 
@@ -85,13 +88,13 @@ require_once __DIR__ . "/partials/app_header.php";
             <div class="menu-title">Ações</div>
 
             <div class="menu-actions menu-actions-tight">
-                <a class="btn-receipt" href="/bolao-da-copa/php/export_apostas_todas_zip.php">
+                <a class="btn-receipt" href="/php/export_apostas_todas_zip.php">
                     Baixar todas apostas
                 </a>
-                <a class="btn-atualizar-resultados" href="/bolao-da-copa/public/admin_resultados.php">
-                    Atualizar resultados                
+                <a class="btn-atualizar-resultados" href="/admin_resultados.php">
+                    Atualizar resultados
                 </a>
-                <a class="btn-mata-mata" href="/bolao-da-copa/public/mata_mata.php">
+                <a class="btn-mata-mata" href="/mata_mata.php">
                     Atualizar mata-mata
                 </a>
             </div>
@@ -122,7 +125,7 @@ require_once __DIR__ . "/partials/app_header.php";
                             $tipo = (string)$u["tipo_usuario"];
                         ?>
                         <a class="admin-user-btn"
-                           href="/bolao-da-copa/php/export_apostas_excel.php?usuario_id=<?php echo $uid; ?>">
+                           href="/php/export_apostas_excel.php?usuario_id=<?php echo $uid; ?>">
                             <span><?php echo strh($nome); ?></span>
                             <span class="small"><?php echo strh($tipo); ?></span>
                         </a>
@@ -134,6 +137,6 @@ require_once __DIR__ . "/partials/app_header.php";
     </div>
 </div>
 
-<script src="/bolao-da-copa/public/js/admin.js"></script>
+<script src="/js/admin.js"></script>
 </body>
 </html>

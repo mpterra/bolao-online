@@ -6,11 +6,15 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 session_start();
+
+// ✅ HostGator: este arquivo fica em /home2/mauri075/php/
+// então conexao.php é "vizinho" (mesma pasta).
 require_once __DIR__ . "/conexao.php";
 
 function require_login(): void {
     if (empty($_SESSION["usuario_id"])) {
-        header("Location: /bolao-da-copa/public/index.php");
+        // ✅ HostGator: páginas públicas na raiz do public_html
+        header("Location: /index.php");
         exit;
     }
 }

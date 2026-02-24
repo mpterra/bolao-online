@@ -5,12 +5,13 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 | AUTH.PHP — LOGIN (BOLÃO DA COPA)
 |--------------------------------------------------------------------------
-| Melhorias (sem quebrar fluxo):
-| - Sessão mais segura (cookie flags + modo estrito)
-| - Regenera session_id após login (mitiga session fixation)
-| - Rate-limit simples por IP (mitiga brute force básico)
-| - Não expõe erros em produção (loga no error_log)
-| - ✅ Detecta automaticamente BASE PATH (localhost /bolao-da-copa/public vs host raiz /)
+| HostGator (seu cenário):
+| - Páginas públicas na raiz do public_html:
+|     /home2/mauri075/public_html/index.php  -> /index.php
+|     /home2/mauri075/public_html/app.php    -> /app.php
+| - Backend fora do public_html:
+|     /home2/mauri075/php/auth.php
+|     /home2/mauri075/php/conexao.php
 |--------------------------------------------------------------------------
 */
 
@@ -22,73 +23,10 @@ ini_set("display_errors", $debug ? "1" : "0");
 ini_set("display_startup_errors", $debug ? "1" : "0");
 
 // ------------------------------------------------------------
-// Helpers de path
+// URLs públicas (HostGator: raiz do domínio)
 // ------------------------------------------------------------
-function url_path_join(string $a, string $b): string {
-    $a = rtrim($a, "/");
-    $b = ltrim($b, "/");
-    $out = $a === "" ? "/" . $b : $a . "/" . $b;
-    // garante que começa com /
-    if ($out === "") $out = "/";
-    if ($out[0] !== "/") $out = "/" . $out;
-    // remove // repetidos
-    $out = preg_replace("#/+#", "/", $out) ?? $out;
-    return $out;
-}
-
-/**
- * Descobre o prefixo do projeto via URL a partir do caminho do script atual.
- * Como auth.php fica em /php/auth.php:
- * - localhost: /bolao-da-copa/php/auth.php  -> prefixo: /bolao-da-copa
- * - host raiz: /php/auth.php                -> prefixo: (vazio) => "/"
- */
-function detect_project_prefix_from_script(): string {
-    $script = (string)($_SERVER["SCRIPT_NAME"] ?? "");
-    if ($script === "") return "";
-
-    $d1 = dirname($script);         // .../php
-    $d2 = dirname($d1);             // ... (raiz do projeto) ou "/"
-    $d2 = str_replace("\\", "/", $d2);
-
-    if ($d2 === "/" || $d2 === "." || $d2 === "\\") return "";
-    return $d2;
-}
-
-/**
- * Decide se a "public" é um diretório na URL ou se as páginas estão na raiz.
- * Baseado no filesystem:
- * - Dev: existe ../public/index.php e ../public/app.php => usa /<prefix>/public
- * - Deploy raiz: existe ../index.php e ../app.php => usa /<prefix> (sem /public)
- */
-function detect_public_url_prefix(): string {
-    $projectPrefix = detect_project_prefix_from_script(); // "" ou "/bolao-da-copa"
-
-    $fsPublicIndex = __DIR__ . "/../public/index.php";
-    $fsPublicApp   = __DIR__ . "/../public/app.php";
-
-    $fsRootIndex = __DIR__ . "/../index.php";
-    $fsRootApp   = __DIR__ . "/../app.php";
-
-    $hasPublic = is_file($fsPublicIndex) && is_file($fsPublicApp);
-    $hasRoot   = is_file($fsRootIndex) && is_file($fsRootApp);
-
-    // Se existe /public "de verdade", prioriza ela.
-    if ($hasPublic) {
-        return url_path_join($projectPrefix, "public");
-    }
-
-    // Se não existe /public, assume páginas na raiz do projeto
-    if ($hasRoot) {
-        return $projectPrefix === "" ? "" : $projectPrefix;
-    }
-
-    // Fallback: tenta /public (comportamento antigo), senão raiz
-    return url_path_join($projectPrefix, "public");
-}
-
-$PUBLIC_URL_PREFIX = detect_public_url_prefix();
-$LOGIN_PATH = url_path_join($PUBLIC_URL_PREFIX, "index.php");
-$APP_PATH   = url_path_join($PUBLIC_URL_PREFIX, "app.php");
+$LOGIN_PATH = "/index.php";
+$APP_PATH   = "/app.php";
 
 // ------------------------------------------------------------
 // Sessão segura (antes de session_start)
@@ -115,6 +53,7 @@ ini_set("session.use_only_cookies", "1");
 
 session_start();
 
+// ✅ HostGator: conexao.php fica na mesma pasta /php
 require_once __DIR__ . "/conexao.php";
 
 function redirect_login_with_flash(string $msg, string $type = "error"): void {

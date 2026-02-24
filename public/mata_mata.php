@@ -31,7 +31,8 @@ date_default_timezone_set('America/Sao_Paulo');
 
 function require_login(): void {
     if (empty($_SESSION["usuario_id"])) {
-        header("Location: /bolao-da-copa/public/index.php");
+        // ✅ HostGator: sem /bolao-da-copa
+        header("Location: /public/index.php");
         exit;
     }
 }
@@ -73,8 +74,10 @@ function require_csrf(): void {
 }
 
 function get_pdo(): PDO {
+    // ✅ conexao.php já deve popular $pdo
     if (isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) return $GLOBALS['pdo'];
 
+    // ✅ Mantém compatibilidade: só tenta chamar se existir
     if (function_exists('conectar')) {
         $p = conectar();
         if ($p instanceof PDO) return $p;
@@ -438,8 +441,9 @@ if ($action !== '') {
 
 $csrf = csrf_token();
 
-$cssHref = "/bolao-da-copa/public/css/mata_mata.css?v=3";
-$jsSrc   = "/bolao-da-copa/public/js/mata_mata.js?v=3";
+// ✅ HostGator: sem /bolao-da-copa + ✅ filemtime NÃO pode estar dentro de string PHP
+$cssHref = "/css/mata_mata.css?v=" . @filemtime(__DIR__ . "/css/mata_mata.css");
+$jsSrc   = "/js/mata_mata.js?v=" . @filemtime(__DIR__ . "/js/mata_mata.js");
 
 $usuarioNome = '';
 if (isset($_SESSION['usuario_nome']) && is_string($_SESSION['usuario_nome'])) $usuarioNome = $_SESSION['usuario_nome'];
@@ -449,11 +453,8 @@ else $usuarioNome = 'Admin';
 $tipo = isset($_SESSION["tipo_usuario"]) ? (string)$_SESSION["tipo_usuario"] : "";
 $isAdmin = (mb_strtoupper($tipo, "UTF-8") === "ADMIN");
 
-/*
-  Ajuste este href se teu projeto usa outro endpoint de logout.
-  Mantive o padrão mais comum.
-*/
-$logoutHref = "/bolao-da-copa/public/logout.php";
+/* Logout (padrão deste projeto) */
+$logoutHref = "/public/mata_mata.php?action=logout";
 
 /* HEADER PADRÃO (partial) */
 require_once __DIR__ . "/partials/app_header.php";
@@ -595,11 +596,11 @@ require_once __DIR__ . "/partials/app_header.php";
     echo json_encode([
       'csrf_token' => $csrf,
       'endpoints' => [
-        'bootstrap'  => '/bolao-da-copa/public/mata_mata.php?action=bootstrap',
-        'list_games' => '/bolao-da-copa/public/mata_mata.php?action=list_games',
-        'create'     => '/bolao-da-copa/public/mata_mata.php?action=create',
-        'update'     => '/bolao-da-copa/public/mata_mata.php?action=update',
-        'delete'     => '/bolao-da-copa/public/mata_mata.php?action=delete',
+        'bootstrap'  => '/public/mata_mata.php?action=bootstrap',
+        'list_games' => '/public/mata_mata.php?action=list_games',
+        'create'     => '/public/mata_mata.php?action=create',
+        'update'     => '/public/mata_mata.php?action=update',
+        'delete'     => '/public/mata_mata.php?action=delete',
       ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
   ?></script>

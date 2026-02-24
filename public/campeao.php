@@ -19,7 +19,7 @@ function json_response(array $data, int $code = 200): void {
 
 function require_login(): void {
 	if (empty($_SESSION["usuario_id"])) {
-		header("Location: /bolao-da-copa/public/index.php");
+		header("Location: /index.php");
 		exit;
 	}
 }
@@ -57,7 +57,7 @@ function flag_url(string $teamName): ?string {
 
 	$fsPath = __DIR__ . "/img/flags/" . $slug . ".png"; // campeao.php está em /public
 	if (is_file($fsPath)) {
-		return "/bolao-da-copa/public/img/flags/" . $slug . ".png";
+		return "/img/flags/" . $slug . ".png";
 	}
 	return null;
 }
@@ -73,7 +73,7 @@ $isAdmin = (mb_strtoupper($tipoUsuario, "UTF-8") === "ADMIN");
 /* Logout */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 	session_destroy();
-	header("Location: /bolao-da-copa/public/index.php");
+	header("Location: /index.php");
 	exit;
 }
 
@@ -175,6 +175,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	}
 }
 
+// include do header único
+require_once __DIR__ . "/partials/app_header.php";
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -182,38 +184,21 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	<meta charset="UTF-8" />
 	<title>Bolão da Copa - Campeão</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-	<link rel="stylesheet" href="/bolao-da-copa/public/css/campeao.css">
+	<link rel="stylesheet" href="/css/campeao.css">
 </head>
 <body>
 
 <div class="app-wrap">
 
-	<header class="app-header">
-		<div class="app-brand">
-			<img src="/bolao-da-copa/public/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
-			<div class="app-title">
-				<strong>Bolão da Copa</strong>
-				<span>Quem será o campeão?</span>
-			</div>
-		</div>
-
-		<nav class="app-topnav" aria-label="Menu principal">
-			<a class="topnav-link" href="/bolao-da-copa/public/app.php">Apostas</a>
-			<a class="topnav-link" href="/bolao-da-copa/public/ranking.php">Ranking do Bolão</a>
-			<?php if ($isAdmin): ?>
-				<a class="topnav-link is-admin" href="/bolao-da-copa/public/admin.php">Admin</a>
-				<a class="topnav-link is-admin" href="/bolao-da-copa/public/admin_resultados.php">Resultados</a>
-			<?php endif; ?>
-		</nav>
-
-		<div class="app-actions">
-			<div class="user-chip" title="<?php echo strh($usuarioNome); ?>">
-				<span class="dot"></span>
-				<span class="user-chip-name"><?php echo strh($usuarioNome); ?></span>
-			</div>
-			<a class="btn-logout" href="/bolao-da-copa/public/campeao.php?action=logout">Sair</a>
-		</div>
-	</header>
+	<?php
+		render_app_header(
+			$usuarioNome,
+			$isAdmin,
+			"campeao",
+			"Quem será o campeão?",
+			"/campeao.php?action=logout"
+		);
+	?>
 
 	<div class="app-shell">
 		<main class="app-content">
@@ -293,7 +278,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 						</div>
 
 						<div style="margin-top:10px;">
-							<a class="btn-back" href="/bolao-da-copa/public/app.php">Voltar para Apostas</a>
+							<a class="btn-back" href="/app.php">Voltar para Apostas</a>
 						</div>
 					</div>
 
@@ -312,13 +297,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	"edicao" => ["id" => $edicaoId],
 	"selected_time_id" => $selectedTimeId,
 	"endpoints" => [
-		"save" => "/bolao-da-copa/public/campeao.php?action=save",
+		"save" => "/campeao.php?action=save",
 		// opcional (o JS já tem fallback):
-		"recibo" => "/bolao-da-copa/php/recibo.php",
+		"recibo" => "/php/recibo.php",
 	],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
 </script>
 
-<script src="/bolao-da-copa/public/js/campeao.js"></script>
+<script src="/js/campeao.js"></script>
 </body>
 </html>

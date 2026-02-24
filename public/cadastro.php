@@ -18,9 +18,9 @@ $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
     <title>Cadastro - Bolão da Copa</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="/bolao-da-copa/public/css/base.css">
-    <link rel="stylesheet" href="/bolao-da-copa/public/css/login.css">
-    <link rel="stylesheet" href="/bolao-da-copa/public/css/cadastro.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/login.css">
+    <link rel="stylesheet" href="/css/cadastro.css">
 </head>
 
 <body data-reg-success="<?php echo $sucesso ? '1' : '0'; ?>">
@@ -28,13 +28,13 @@ $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
     <div class="page">
 
         <div class="logo-wrapper">
-            <img src="/bolao-da-copa/public/img/logo.png" alt="Bolão da Copa">
+            <img src="/img/logo.png" alt="Bolão da Copa">
         </div>
 
         <div class="login-card">
             <h1>Criar Conta</h1>
 
-            <form method="POST" action="/bolao-da-copa/php/cadastrar_usuario.php" class="login-form" autocomplete="on">
+            <form method="POST" action="/php/cadastrar_usuario.php" class="login-form" autocomplete="on">
 
                 <div class="input-group">
                     <input type="text" name="nome" required autocomplete="given-name">
@@ -104,7 +104,7 @@ $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
 
                 <p class="cadastro-link">
                     Já tem conta?
-                    <a href="/bolao-da-copa/public/index.php">Entrar</a>
+                    <a href="/index.php">Entrar</a>
                 </p>
 
             </form>
@@ -133,6 +133,6 @@ $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
         </div>
     </div>
 
-    <script src="/bolao-da-copa/public/js/cadastro.js"></script>
+    <script src="/js/cadastro.js"></script>
 </body>
 </html>

@@ -6,7 +6,9 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 session_start();
-require_once __DIR__ . "/../php/conexao.php";
+
+// ✅ HostGator: app.php está em /public_html => sobe 1 nível e entra em /php
+require_once dirname(__DIR__) . "/php/conexao.php";
 
 /*
 |--------------------------------------------------------------------------
@@ -44,7 +46,8 @@ function json_response(array $data, int $code = 200): void {
 
 function require_login(): void {
 	if (empty($_SESSION["usuario_id"])) {
-		header("Location: /bolao-da-copa/public/index.php");
+		// ✅ HostGator: login na raiz
+		header("Location: /index.php");
 		exit;
 	}
 }
@@ -88,15 +91,16 @@ function flag_slug(string $nome): string {
 
 /**
  * Retorna URL pública da bandeira se existir no disco, senão null.
- * Pasta: /public/img/flags/{slug}.png
+ * Pasta: /public_html/img/flags/{slug}.png
  */
 function flag_url(string $teamName): ?string {
 	$slug = flag_slug($teamName);
 	if ($slug === "") return null;
 
-	$fsPath = __DIR__ . "/img/flags/" . $slug . ".png"; // app.php está em /public
+	$fsPath = __DIR__ . "/img/flags/" . $slug . ".png"; // app.php está em /public_html
 	if (is_file($fsPath)) {
-		return "/bolao-da-copa/public/img/flags/" . $slug . ".png";
+		// ✅ HostGator: sem /bolao-da-copa/public
+		return "/img/flags/" . $slug . ".png";
 	}
 	return null;
 }
@@ -233,7 +237,7 @@ $lockCache = [];
 --------------------------- */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 	session_destroy();
-	header("Location: /bolao-da-copa/public/index.php");
+	header("Location: /index.php");
 	exit;
 }
 
@@ -645,7 +649,7 @@ require_once __DIR__ . "/partials/app_header.php";
 	<meta charset="UTF-8" />
 	<title>Bolão da Copa - Palpites</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-	<link rel="stylesheet" href="/bolao-da-copa/public/css/app.css?v=<?php echo filemtime(__DIR__ . '/css/app.css'); ?>">
+	<link rel="stylesheet" href="/css/app.css?v=<?php echo filemtime(__DIR__ . '/css/app.css'); ?>">
 </head>
 <body>
 
@@ -657,7 +661,7 @@ require_once __DIR__ . "/partials/app_header.php";
 			$isAdmin,
 			"apostas",
 			"Fase de Grupos • Palpites",
-			"/bolao-da-copa/public/app.php?action=logout"
+			"/app.php?action=logout"
 		);
 	?>
 
@@ -685,7 +689,7 @@ require_once __DIR__ . "/partials/app_header.php";
 				<?php endforeach; ?>
 
 				<a class="menu-link menu-link-champion"
-				   href="/bolao-da-copa/public/campeao.php"
+				   href="/campeao.php"
 				   title="Escolher o campeão">
 					<span class="menu-link-text">Quem será o campeão</span>
 					<span class="badge badge-champion">★</span>
@@ -698,7 +702,7 @@ require_once __DIR__ . "/partials/app_header.php";
 					<span class="kbd">Ctrl</span><span class="kbd">↵</span>
 				</button>
 
-				<button class="btn-receipt" id="btnRecibo" type="button" data-receipt-url="/bolao-da-copa/php/recibo.php">
+				<button class="btn-receipt" id="btnRecibo" type="button" data-receipt-url="/php/recibo.php">
 					Recibo
 				</button>
 
@@ -959,7 +963,7 @@ require_once __DIR__ . "/partials/app_header.php";
 											Próximo <span class="muted">(Grupo <?php echo strh((string)$prox); ?>)</span>
 										</button>
 									<?php else: ?>
-										<button class="btn-next-group btn-go-champion" type="button" data-champion-url="/bolao-da-copa/public/campeao.php">
+										<button class="btn-next-group btn-go-champion" type="button" data-champion-url="/campeao.php">
 											Quem será o campeão <span class="muted">(salva antes)</span>
 										</button>
 									<?php endif; ?>
@@ -990,13 +994,14 @@ require_once __DIR__ . "/partials/app_header.php";
 		"logical_day_rule" => "00:00-04:59 pertence ao dia anterior",
 	],
 	"endpoints" => [
-		"save_games" => "/bolao-da-copa/public/app.php?action=save",
-		"save_group_rank" => "/bolao-da-copa/public/app.php?action=save_group_rank",
-		"receipt_url" => "/bolao-da-copa/php/recibo.php?action=pdf",
+		// ✅ HostGator: app.php na raiz do public_html
+		"save_games" => "/app.php?action=save",
+		"save_group_rank" => "/app.php?action=save_group_rank",
+		"receipt_url" => "/php/recibo.php?action=pdf",
 	],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
 </script>
 
-<script src="/bolao-da-copa/public/js/app.js"></script>
+<script src="/js/app.js"></script>
 </body>
 </html>

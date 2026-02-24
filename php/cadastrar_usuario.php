@@ -9,10 +9,13 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+// ✅ HostGator: pasta /php fica fora do public_html, mas ESTE arquivo também está em /php.
+// Então conexao.php é "vizinho" (mesma pasta).
 require_once __DIR__ . "/conexao.php";
 
 if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
-    header("Location: /bolao-da-copa/public/cadastro.php");
+    // ✅ HostGator: páginas públicas ficam na raiz do public_html
+    header("Location: /cadastro.php");
     exit;
 }
 
@@ -108,8 +111,8 @@ try {
 
     $pdo->commit();
 
-    // volta pra tela de cadastro para abrir o modal e, ao OK, retornar ao login
-    header("Location: /bolao-da-copa/public/cadastro.php?sucesso=1");
+    // ✅ HostGator: volta pra /cadastro.php
+    header("Location: /cadastro.php?sucesso=1");
     exit;
 
 } catch (Throwable $e) {
