@@ -454,7 +454,7 @@ $tipo = isset($_SESSION["tipo_usuario"]) ? (string)$_SESSION["tipo_usuario"] : "
 $isAdmin = (mb_strtoupper($tipo, "UTF-8") === "ADMIN");
 
 /* Logout (padrão deste projeto) */
-$logoutHref = "/public/mata_mata.php?action=logout";
+$logoutHref = "/mata_mata.php?action=logout";
 
 /* HEADER PADRÃO (partial) */
 require_once __DIR__ . "/partials/app_header.php";
@@ -596,11 +596,11 @@ require_once __DIR__ . "/partials/app_header.php";
     echo json_encode([
       'csrf_token' => $csrf,
       'endpoints' => [
-        'bootstrap'  => '/public/mata_mata.php?action=bootstrap',
-        'list_games' => '/public/mata_mata.php?action=list_games',
-        'create'     => '/public/mata_mata.php?action=create',
-        'update'     => '/public/mata_mata.php?action=update',
-        'delete'     => '/public/mata_mata.php?action=delete',
+        'bootstrap'  => '/mata_mata.php?action=bootstrap',
+        'list_games' => '/mata_mata.php?action=list_games',
+        'create'     => '/mata_mata.php?action=create',
+        'update'     => '/mata_mata.php?action=update',
+        'delete'     => '/mata_mata.php?action=delete',
       ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
   ?></script>
