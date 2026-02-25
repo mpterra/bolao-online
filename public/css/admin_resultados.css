@@ -1,7 +1,5 @@
 /* =========================================================
-   admin_resultados.css — COMPLETO (ADMIN_RESULTADOS.PHP)
-   - Layout igual app.php (grupos + cards + bandeiras)
-   - Admin-only (só muda o conteúdo, visual é o mesmo)
+   admin_resultados.css — COMPLETO (HostGator)
    ========================================================= */
 
 :root{
@@ -37,7 +35,6 @@
   --ok: rgba(16,208,138,.92);
   --bad: rgba(255,140,140,.95);
 
-  /* ✅ admin accent (igual admin.css) */
   --adminA: rgba(140,120,255,.92);
   --adminB: rgba(70,220,255,.90);
 }
@@ -95,6 +92,12 @@ body::before{
   opacity:.26;
   pointer-events:none;
   animation: twinkle 9s linear infinite;
+}
+
+/* efeito visual do “levou pra cima” */
+body.did-scroll-top .app-content{
+  box-shadow: 0 0 0 2px rgba(70,220,255,.18), 0 16px 40px rgba(0,0,0,.28);
+  transition: box-shadow 220ms ease;
 }
 
 /* =========================================================
@@ -230,7 +233,6 @@ body::before{
   background: linear-gradient(90deg, rgba(140,120,255,.42), rgba(70,220,255,.24));
 }
 
-/* ✅ ADMIN ATIVO: outra cor (não verde/dourado) — igual admin.css */
 .topnav-link.is-admin.is-active{
   color: #062027;
   border-color: rgba(255,255,255,.10);
@@ -238,7 +240,6 @@ body::before{
   box-shadow: 0 16px 34px rgba(0,0,0,.22);
 }
 
-/* ✅ Fallback limpo: nesta página, "Salvar Resultados" fica ativo mesmo se o header não marcar is-active */
 body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="admin_resultados.php"]{
   color: #062027;
   border-color: rgba(255,255,255,.10);
@@ -337,8 +338,15 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   line-height: 1.45;
 }
 
+/* âncora do scroll */
+.results-top-anchor{
+  height: 1px;
+  width: 1px;
+  opacity: 0;
+}
+
 /* =========================================================
-   MENU (GRUPOS)
+   MENU
    ========================================================= */
 .menu-title{
   font-size: 12px;
@@ -385,6 +393,27 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   box-shadow: 0 16px 34px rgba(0,0,0,.22);
 }
 
+/* visual mais “admin” pras fases, mas sem mudar o padrão do site */
+.menu-link.menu-link-phase.is-active{
+  background: linear-gradient(90deg, var(--adminA), var(--adminB));
+}
+
+.menu-divider{
+  height: 1px;
+  margin: 14px 0;
+  background: rgba(255,255,255,.10);
+}
+
+.menu-empty{
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255,255,255,.16);
+  background: rgba(0,0,0,.10);
+  color: rgba(255,255,255,.72);
+  font-weight: 900;
+  font-size: 12px;
+}
+
 .badge{
   padding: 4px 10px;
   border-radius: 999px;
@@ -395,39 +424,8 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   border: 1px solid rgba(255,255,255,.12);
 }
 
-/* Botões (menu) */
-.menu-actions{
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,.10);
-}
-
-.btn-receipt{
-  width: 100%;
-  margin-top: 10px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
-  color: rgba(255,255,255,.92);
-  border-radius: 16px;
-  padding: 12px 14px;
-  cursor: pointer;
-  font-weight: 900;
-  font-size: 14px;
-  transition: 180ms ease;
-  box-shadow: 0 14px 30px rgba(0,0,0,.22);
-  display:block;
-  text-align:center;
-  text-decoration:none;
-}
-
-.btn-receipt:hover{
-  background: rgba(255,255,255,.10);
-  transform: translateY(-1px);
-  box-shadow: 0 16px 34px rgba(0,0,0,.28);
-}
-
 /* =========================================================
-   GRUPOS
+   BLOCOS (GRUPOS / FASES)
    ========================================================= */
 .group-block{
   display:none;
@@ -461,6 +459,12 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   font-size: 12px;
 }
 
+.group-pill-phase{
+  background: rgba(140,120,255,.16);
+  border: 1px solid rgba(140,120,255,.34);
+  color: rgba(245,242,255,.96);
+}
+
 .group-count{
   padding: 6px 10px;
   border-radius: 999px;
@@ -478,6 +482,10 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   color: rgba(255,255,255,.92);
 }
 
+.group-name-phase{
+  color: rgba(255,255,255,.80);
+}
+
 /* =========================================================
    JOGOS
    ========================================================= */
@@ -485,6 +493,16 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   display:flex;
   flex-direction:column;
   gap: 10px;
+}
+
+.group-rank-empty{
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px dashed rgba(255,255,255,.18);
+  background: rgba(0,0,0,.12);
+  color: rgba(255,255,255,.78);
+  font-weight: 900;
+  font-size: 12px;
 }
 
 .match-card{
@@ -587,7 +605,6 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   min-width: 0;
 }
 
-/* bandeira + fallback sigla */
 .team-flag{
   width: 40px;
   height: 40px;
@@ -787,15 +804,9 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
 }
 
 /* =========================================================
-   ✅ MOBILE <= 560px — JOGOS (IDÊNTICO AO CONCEITO DO RESULTADOS)
-   - Bandeira acima + nome abaixo
-   - Time casa / placar / time fora em coluna
-   - Tudo centralizado e simétrico
-   Cole NO FINAL do admin_resultados.css
+   MOBILE <= 560px — stack: casa / placar / fora
    ========================================================= */
 @media (max-width: 560px){
-
-  /* stack: casa / placar / fora */
   .match-body{
     padding: 12px;
     display: grid !important;
@@ -813,14 +824,12 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   .scorebox{ grid-area: score; }
   .team-away{ grid-area: away; }
 
-  /* força centralização (override do desktop) */
   .team-home,
   .team-away{
     justify-content: center !important;
     text-align: center !important;
   }
 
-  /* time vira coluna: flag em cima, nome embaixo */
   .team{
     width: 100% !important;
     display: flex !important;
@@ -877,17 +886,12 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
     border-radius: 14px !important;
   }
 
-  .x{
-    font-size: 15px !important;
-  }
+  .x{ font-size: 15px !important; }
 
-  /* ações ficam em coluna (se existir no admin_resultados) */
   .match-actions{
     flex-direction: column !important;
     align-items: stretch !important;
   }
 
-  .btn-save-one{
-    width: 100% !important;
-  }
+  .btn-save-one{ width: 100% !important; }
 }

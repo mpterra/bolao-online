@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   try { CFG = cfgEl ? JSON.parse(cfgEl.textContent || "{}") : {}; } catch (_) { CFG = {}; }
 
   const toast = document.getElementById("toast");
+  const topAnchor = document.getElementById("resultsTop");
 
   function showToast(msg) {
     if (!toast) return;
@@ -43,30 +44,59 @@ document.addEventListener("DOMContentLoaded", () => {
     return i;
   }
 
+  function smoothScrollToTop() {
+    if (!topAnchor) return;
+    topAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // “efeito visual” discreto (pra perceber que levou pra cima)
+    document.body.classList.add("did-scroll-top");
+    clearTimeout(document.body.__sst);
+    document.body.__sst = setTimeout(() => document.body.classList.remove("did-scroll-top"), 550);
+  }
+
   // =========================
-  // Menu de grupos: filtra sem scroll (igual app)
+  // Navegação: GRUPO ou FASE
   // =========================
-  function setActiveGroup(groupId) {
-    document.querySelectorAll("[data-group-block]").forEach((el) => {
-      el.classList.toggle("is-active-group", String(el.getAttribute("data-group-block")) === String(groupId));
+  function setActiveSection(type, id) {
+    const typeS = String(type || "");
+    const idS = String(id || "");
+
+    // mostra apenas o section correto
+    document.querySelectorAll("[data-section-type][data-section-id]").forEach((sec) => {
+      const t = String(sec.getAttribute("data-section-type") || "");
+      const i = String(sec.getAttribute("data-section-id") || "");
+      sec.classList.toggle("is-active-group", t === typeS && i === idS);
     });
 
-    document.querySelectorAll("[data-group-id]").forEach((el) => {
-      el.classList.toggle("is-active", String(el.getAttribute("data-group-id")) === String(groupId));
+    // marca item ativo no menu
+    document.querySelectorAll("[data-nav-type][data-nav-id]").forEach((a) => {
+      const t = String(a.getAttribute("data-nav-type") || "");
+      const i = String(a.getAttribute("data-nav-id") || "");
+      a.classList.toggle("is-active", t === typeS && i === idS);
     });
   }
 
-  document.querySelectorAll("[data-group-id]").forEach((a) => {
+  document.querySelectorAll("[data-nav-type][data-nav-id]").forEach((a) => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
-      const gid = a.getAttribute("data-group-id");
-      if (!gid) return;
-      setActiveGroup(gid);
-      showToast(`Grupo selecionado`);
+      const t = a.getAttribute("data-nav-type");
+      const i = a.getAttribute("data-nav-id");
+      if (!t || !i) return;
+
+      setActiveSection(t, i);
+      smoothScrollToTop();
+      showToast(t === "PHASE" ? "Fase selecionada" : "Grupo selecionado");
     });
   });
 
-  if (CFG && CFG.active_group_id) setActiveGroup(String(CFG.active_group_id));
+  // inicial
+  if (CFG && CFG.active && CFG.active.type && CFG.active.id !== undefined && CFG.active.id !== null) {
+    setActiveSection(String(CFG.active.type), String(CFG.active.id));
+  } else {
+    // fallback: tenta primeiro section visível
+    const first = document.querySelector("[data-section-type][data-section-id]");
+    if (first) setActiveSection(first.getAttribute("data-section-type"), first.getAttribute("data-section-id"));
+  }
 
   // =========================
   // Salvar resultado real
@@ -99,6 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.textContent = "Salvando...";
 
     try {
+      // ✅ HostGator: página na raiz do domínio
       const resp = await fetch("/admin_resultados.php?action=save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -117,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Atualiza badge de status no card sem reload
+      // Atualiza status no card
       const statusEl = rowEl.querySelector(".match-status");
       if (statusEl && json.status) {
         statusEl.textContent = String(json.status);

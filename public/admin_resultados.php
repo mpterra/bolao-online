@@ -14,7 +14,6 @@ date_default_timezone_set('America/Sao_Paulo');
 
 function require_login(): void {
     if (empty($_SESSION["usuario_id"])) {
-        // ✅ HostGator: páginas públicas na raiz do public_html
         header("Location: /index.php");
         exit;
     }
@@ -50,10 +49,8 @@ function json_out(array $payload, int $code = 200): void {
 
 /**
  * Status automático por horário do jogo:
- * - Se gols preenchidos (ambos NOT NULL) => ENCERRADO
- * - Senão:
- *    - agora < data_hora => AGENDADO
- *    - agora >= data_hora => EM_ANDAMENTO
+ * - Se gols preenchidos => ENCERRADO
+ * - Senão: agora < data_hora => AGENDADO, senão EM_ANDAMENTO
  */
 function compute_status_auto(?int $gc, ?int $gf, DateTimeImmutable $kickoff, DateTimeImmutable $now): string {
     if ($gc !== null && $gf !== null) return "ENCERRADO";
@@ -61,13 +58,7 @@ function compute_status_auto(?int $gc, ?int $gf, DateTimeImmutable $kickoff, Dat
 }
 
 /**
- * Normaliza nome do time -> slug de arquivo em /public/img/flags (SEU PADRÃO REAL).
- * Regra:
- * - pega só a 1ª opção antes de " ou "
- * - remove parênteses
- * - lower
- * - remove acentos (iconv)
- * - remove tudo que não seja [a-z0-9]
+ * Normaliza nome do time -> slug de arquivo em /img/flags
  */
 function flag_slug_from_name(string $nome): string {
     $s = trim($nome);
@@ -84,26 +75,16 @@ function flag_slug_from_name(string $nome): string {
     return $s;
 }
 
-/**
- * Algumas strings do banco/seed nunca vão bater com o filename “bonitinho”.
- * Aqui é onde você resolve a vida sem gambiarra no HTML/CSS.
- */
 function flag_slug_aliases(string $slugBase): array {
     $m = [
-        // abreviações/formatos comuns
         'reptcheca' => 'republicatcheca',
         'reptchecaouirlandaoudinamarca' => 'republicatcheca',
         'republicatchecaouirlandaoudinamarca' => 'republicatcheca',
-
         'coreiadosul' => 'coreiadosul',
         'coreiadonorte' => 'coreiadonorte',
         'estadosunidos' => 'estadosunidos',
-
-        // variações que costumam aparecer
         'mexico' => 'mexico',
         'africadosul' => 'africadosul',
-
-        // “costa do marfim” às vezes vem “cote d’ivoire”
         'cotedivoire' => 'costadomarfim',
     ];
 
@@ -124,7 +105,6 @@ function flag_url_for_team(string $teamName, string $sigla): ?string {
         if ($s !== "") $candidates[] = $s;
     }
 
-    // fallback: se alguém nomeou arquivo por sigla (não é seu caso hoje, mas não atrapalha)
     $sig = trim($sigla);
     if ($sig !== "") {
         $sig = mb_strtolower($sig, "UTF-8");
@@ -137,11 +117,24 @@ function flag_url_for_team(string $teamName, string $sigla): ?string {
     foreach ($candidates as $slug) {
         $fs = $baseDir . "/" . $slug . ".png";
         if (is_file($fs)) {
-            // ✅ HostGator: público na raiz
             return "/img/flags/" . $slug . ".png";
         }
     }
     return null;
+}
+
+/**
+ * Fases do mata-mata (padronizado com seu cadastro manual)
+ */
+function mm_fases(): array {
+    return [
+        "16_DE_FINAL"      => "16 de Final",
+        "OITAVAS"          => "Oitavas",
+        "QUARTAS"          => "Quartas",
+        "SEMI"             => "Semifinais",
+        "TERCEIRO_LUGAR"   => "3º Lugar",
+        "FINAL"            => "Final",
+    ];
 }
 
 require_login();
@@ -163,7 +156,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 
 /* =========================================================
    Endpoint JSON: salvar placar real (ADMIN)
-   - NÃO recebe status do client
    - status é calculado automaticamente
    ========================================================= */
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["action"]) && $_GET["action"] === "save") {
@@ -223,7 +215,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["action"]) && $_GET["ac
 }
 
 /* =========================================================
-   Carregamento (layout por grupos, estilo app.php)
+   Carregamento
    ========================================================= */
 try {
     $ed = $pdo->query("SELECT id, nome, ano, ativo FROM edicoes ORDER BY ativo DESC, ano DESC, id DESC");
@@ -252,6 +244,7 @@ try {
     exit;
 }
 
+/* ========= Jogos de GRUPO ========= */
 try {
     $j = $pdo->prepare("
         SELECT
@@ -282,7 +275,7 @@ try {
         ORDER BY g.codigo ASC, j.data_hora ASC, j.id ASC
     ");
     $j->execute([$edicaoId]);
-    $jogos = $j->fetchAll(PDO::FETCH_ASSOC);
+    $jogosGrupo = $j->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {
     http_response_code(500);
     echo "Erro ao carregar jogos.";
@@ -290,17 +283,83 @@ try {
 }
 
 $jogosPorGrupo = [];
-foreach ($jogos as $row) {
+foreach ($jogosGrupo as $row) {
     $gid = (int)$row["grupo_id"];
     if (!isset($jogosPorGrupo[$gid])) $jogosPorGrupo[$gid] = [];
     $jogosPorGrupo[$gid][] = $row;
 }
 
-$activeGroupId = 0;
-if (isset($_GET["grupo_id"])) $activeGroupId = (int)$_GET["grupo_id"];
-if ($activeGroupId <= 0 && count($grupos) > 0) $activeGroupId = (int)$grupos[0]["id"];
+/* ========= Jogos do MATA-MATA por fase ========= */
+$mmPhases = mm_fases();
+$mmPhaseKeys = array_keys($mmPhases);
+$mmCounts = array_fill_keys($mmPhaseKeys, 0);
+$jogosPorFase = array_fill_keys($mmPhaseKeys, []);
 
-// include do header único
+try {
+    $placeholders = implode(",", array_fill(0, count($mmPhaseKeys), "?"));
+    $params = array_merge([$edicaoId], $mmPhaseKeys);
+
+    $jm = $pdo->prepare("
+        SELECT
+            j.id,
+            j.fase,
+            j.grupo_id,
+            j.rodada,
+            j.data_hora,
+            j.status,
+            j.gols_casa,
+            j.gols_fora,
+
+            tc.id AS time_casa_id,
+            tc.nome AS time_casa_nome,
+            tc.sigla AS time_casa_sigla,
+
+            tf.id AS time_fora_id,
+            tf.nome AS time_fora_nome,
+            tf.sigla AS time_fora_sigla
+        FROM jogos j
+        INNER JOIN times tc ON tc.id = j.time_casa_id
+        INNER JOIN times tf ON tf.id = j.time_fora_id
+        WHERE j.edicao_id = ?
+          AND j.grupo_id IS NULL
+          AND j.fase IN ($placeholders)
+        ORDER BY FIELD(j.fase, " . implode(",", array_map(fn($k) => $pdo->quote($k), $mmPhaseKeys)) . "),
+                 j.data_hora ASC, j.id ASC
+    ");
+    $jm->execute($params);
+    $jogosMm = $jm->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($jogosMm as $row) {
+        $fase = (string)$row["fase"];
+        if (!isset($jogosPorFase[$fase])) continue;
+        $jogosPorFase[$fase][] = $row;
+        $mmCounts[$fase] = count($jogosPorFase[$fase]);
+    }
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo "Erro ao carregar jogos do mata-mata.";
+    exit;
+}
+
+/* ========= Seleção ativa (grupo ou fase) ========= */
+$activeType = "GROUP";
+$activeId = 0;
+
+if (isset($_GET["fase"]) && is_string($_GET["fase"]) && $_GET["fase"] !== "") {
+    $fase = (string)$_GET["fase"];
+    if (isset($mmPhases[$fase])) {
+        $activeType = "PHASE";
+        $activeId = $fase;
+    }
+}
+
+if ($activeType === "GROUP") {
+    if (isset($_GET["grupo_id"])) $activeId = (int)$_GET["grupo_id"];
+    if ((int)$activeId <= 0 && count($grupos) > 0) $activeId = (int)$grupos[0]["id"];
+    if ((int)$activeId <= 0) $activeId = 0;
+}
+
+// include do header único (HostGator: parcial na raiz /partials)
 require_once __DIR__ . "/partials/app_header.php";
 ?>
 <!DOCTYPE html>
@@ -335,40 +394,75 @@ require_once __DIR__ . "/partials/app_header.php";
                         $gid    = (int)$g["id"];
                         $codigo = (string)$g["codigo"];
                         $count  = isset($jogosPorGrupo[$gid]) ? count($jogosPorGrupo[$gid]) : 0;
-                        $active = ($gid === $activeGroupId);
+                        $active = ($activeType === "GROUP" && (string)$gid === (string)$activeId);
                     ?>
                     <a class="menu-link<?php echo $active ? " is-active" : ""; ?>"
                        href="#"
-                       data-group-id="<?php echo $gid; ?>"
+                       data-nav-type="GROUP"
+                       data-nav-id="<?php echo $gid; ?>"
                        aria-label="Grupo <?php echo strh($codigo); ?>">
                         <span>Grupo <?php echo strh($codigo); ?></span>
                         <span class="badge badge-muted"><?php echo $count; ?></span>
                     </a>
                 <?php endforeach; ?>
             </div>
+
+            <div class="menu-divider"></div>
+
+            <div class="menu-title">Mata-mata</div>
+            <div class="menu-list" id="phase-menu">
+                <?php foreach ($mmPhases as $k => $label): ?>
+                    <?php
+                        $count = isset($mmCounts[$k]) ? (int)$mmCounts[$k] : 0;
+                        if ($count <= 0) continue; // ✅ só mostra se houver jogos
+                        $active = ($activeType === "PHASE" && (string)$k === (string)$activeId);
+                    ?>
+                    <a class="menu-link menu-link-phase<?php echo $active ? " is-active" : ""; ?>"
+                       href="#"
+                       data-nav-type="PHASE"
+                       data-nav-id="<?php echo strh($k); ?>"
+                       aria-label="<?php echo strh($label); ?>">
+                        <span><?php echo strh($label); ?></span>
+                        <span class="badge badge-muted"><?php echo $count; ?></span>
+                    </a>
+                <?php endforeach; ?>
+
+                <?php
+                    $hasAnyPhase = false;
+                    foreach ($mmCounts as $c) { if ((int)$c > 0) { $hasAnyPhase = true; break; } }
+                ?>
+                <?php if (!$hasAnyPhase): ?>
+                    <div class="menu-empty">Nenhum jogo do mata-mata cadastrado.</div>
+                <?php endif; ?>
+            </div>
         </aside>
 
         <main class="app-content">
-
             <div class="content-head">
-                <h1 class="content-h1">Resultados reais por grupo</h1>
+                <h1 class="content-h1">Resultados reais</h1>
                 <p class="content-sub">
                     Preencha os dois placares para encerrar o jogo automaticamente. Deixe vazio para não encerrar.
                 </p>
             </div>
 
+            <!-- alvo do scroll suave (voltar pro topo da listagem) -->
+            <div id="resultsTop" class="results-top-anchor" aria-hidden="true"></div>
+
+            <!-- =======================
+                 BLOCO: GRUPOS
+                 ======================= -->
             <?php foreach ($grupos as $g): ?>
                 <?php
                     $gid      = (int)$g["id"];
                     $codigo   = (string)$g["codigo"];
                     $nome     = (string)($g["nome"] ?? "");
-                    $isActive = ($gid === $activeGroupId);
-
+                    $isActive = ($activeType === "GROUP" && (string)$gid === (string)$activeId);
                     $lista = $jogosPorGrupo[$gid] ?? [];
                 ?>
 
                 <section class="group-block<?php echo $isActive ? " is-active-group" : ""; ?>"
-                         data-group-block="<?php echo $gid; ?>">
+                         data-section-type="GROUP"
+                         data-section-id="<?php echo $gid; ?>">
 
                     <div class="group-head">
                         <div class="group-line">
@@ -480,6 +574,126 @@ require_once __DIR__ . "/partials/app_header.php";
                 </section>
             <?php endforeach; ?>
 
+            <!-- =======================
+                 BLOCO: MATA-MATA por FASE
+                 ======================= -->
+            <?php foreach ($mmPhases as $faseKey => $faseLabel): ?>
+                <?php
+                    $lista = $jogosPorFase[$faseKey] ?? [];
+                    $isActive = ($activeType === "PHASE" && (string)$faseKey === (string)$activeId);
+                ?>
+                <section class="group-block phase-block<?php echo $isActive ? " is-active-group" : ""; ?>"
+                         data-section-type="PHASE"
+                         data-section-id="<?php echo strh($faseKey); ?>">
+
+                    <div class="group-head">
+                        <div class="group-line">
+                            <div class="group-pill group-pill-phase"><?php echo strh($faseLabel); ?></div>
+                            <div class="group-count"><?php echo count($lista); ?> jogos</div>
+                        </div>
+                        <div class="group-name group-name-phase">Mata-mata</div>
+                    </div>
+
+                    <div class="matches">
+                        <?php if (count($lista) === 0): ?>
+                            <div class="group-rank-empty">Nenhum jogo cadastrado nesta fase.</div>
+                        <?php endif; ?>
+
+                        <?php foreach ($lista as $j): ?>
+                            <?php
+                                $jid    = (int)$j["id"];
+                                $rodada = $j["rodada"] !== null ? (int)$j["rodada"] : null;
+
+                                $kickoff = new DateTimeImmutable((string)$j["data_hora"], $tz);
+                                $gc      = $j["gols_casa"] !== null ? (int)$j["gols_casa"] : null;
+                                $gf      = $j["gols_fora"] !== null ? (int)$j["gols_fora"] : null;
+
+                                $autoStatus = compute_status_auto($gc, $gf, $kickoff, $now);
+
+                                $timeCasaNome = (string)$j["time_casa_nome"];
+                                $timeForaNome = (string)$j["time_fora_nome"];
+                                $siglaCasa    = (string)$j["time_casa_sigla"];
+                                $siglaFora    = (string)$j["time_fora_sigla"];
+
+                                $flagCasa = flag_url_for_team($timeCasaNome, $siglaCasa);
+                                $flagFora = flag_url_for_team($timeForaNome, $siglaFora);
+
+                                $whenTxt  = $kickoff->format("d/m/Y H:i");
+                                $roundTxt = $rodada !== null ? ("Jogo " . $rodada) : "";
+                            ?>
+                            <article class="match-card" data-jogo-row="<?php echo $jid; ?>">
+                                <div class="match-top">
+                                    <div class="match-when">
+                                        <span class="when"><?php echo strh($whenTxt); ?></span>
+                                        <?php if ($roundTxt !== ""): ?>
+                                            <span class="round"><?php echo strh($roundTxt); ?></span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div class="match-status status-<?php echo strh($autoStatus); ?>">
+                                        <?php echo strh($autoStatus); ?>
+                                    </div>
+                                </div>
+
+                                <div class="match-body">
+                                    <div class="team team-home">
+                                        <div class="team-name"><?php echo strh($timeCasaNome); ?></div>
+
+                                        <div class="team-flag<?php echo $flagCasa ? "" : " no-flag"; ?>">
+                                            <?php if ($flagCasa): ?>
+                                                <img src="<?php echo strh($flagCasa); ?>" alt="<?php echo strh($siglaCasa); ?>">
+                                            <?php endif; ?>
+                                            <div class="team-badge"><?php echo strh($siglaCasa); ?></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="scorebox">
+                                        <input class="score js-score"
+                                               type="number"
+                                               inputmode="numeric"
+                                               min="0" max="30" step="1"
+                                               data-field="gols_casa"
+                                               value="<?php echo $gc === null ? "" : (string)$gc; ?>"
+                                               placeholder="-" />
+
+                                        <span class="x">x</span>
+
+                                        <input class="score js-score"
+                                               type="number"
+                                               inputmode="numeric"
+                                               min="0" max="30" step="1"
+                                               data-field="gols_fora"
+                                               value="<?php echo $gf === null ? "" : (string)$gf; ?>"
+                                               placeholder="-" />
+                                    </div>
+
+                                    <div class="team team-away">
+                                        <div class="team-flag<?php echo $flagFora ? "" : " no-flag"; ?>">
+                                            <?php if ($flagFora): ?>
+                                                <img src="<?php echo strh($flagFora); ?>" alt="<?php echo strh($siglaFora); ?>">
+                                            <?php endif; ?>
+                                            <div class="team-badge"><?php echo strh($siglaFora); ?></div>
+                                        </div>
+
+                                        <div class="team-name"><?php echo strh($timeForaNome); ?></div>
+                                    </div>
+                                </div>
+
+                                <div class="match-actions">
+                                    <button type="button"
+                                            class="btn-save-one js-save-real"
+                                            data-jogo-id="<?php echo $jid; ?>">
+                                        Salvar resultado
+                                    </button>
+
+                                    <span class="save-state js-row-msg" style="display:none;"></span>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endforeach; ?>
+
             <div class="toast" id="toast"></div>
         </main>
     </div>
@@ -489,11 +703,14 @@ require_once __DIR__ . "/partials/app_header.php";
 <?php
 echo json_encode([
     "edicao_id" => $edicaoId,
-    "active_group_id" => $activeGroupId
+    "active" => [
+        "type" => $activeType,
+        "id"   => $activeId
+    ]
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 ?>
 </script>
 
-<script src="/js/admin_resultados.js"></script>
+<script src="/js/admin_resultados.js?v=<?php echo filemtime(__DIR__ . '/js/admin_resultados.js'); ?>"></script>
 </body>
 </html>
