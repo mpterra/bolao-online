@@ -15,7 +15,7 @@ if (!function_exists("strh")) {
  *  - $isAdmin (bool)
  *
  * Parâmetros:
- *  - $active: string ('apostas'|'ranking'|'admin'|'resultados_publico'|'mata_mata'|etc)
+ *  - $active: string ('apostas'|'ranking'|'admin'|'resultados'|'mata_mata'|etc)
  *  - $subtitle: string (texto pequeno abaixo do título)
  *  - $logoutHref: string (link de logout da tela atual)
  */
@@ -32,7 +32,10 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 
         <nav class="app-topnav" aria-label="Menu principal">
             <a class="topnav-link<?php echo $active === "apostas" ? " is-active" : ""; ?>"
-               href="/app.php">Apostas</a>
+               href="/app.php">Fase de Grupos</a>
+
+            <a class="topnav-link<?php echo $active === "mata_mata" ? " is-active" : ""; ?>"
+               href="/mata_mata_palpites.php">Mata-Mata</a>
 
             <a class="topnav-link<?php echo $active === "ranking" ? " is-active" : ""; ?>"
                href="/ranking.php">Ranking do Bolão</a>

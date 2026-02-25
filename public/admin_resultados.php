@@ -6,9 +6,7 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 session_start();
-
-// ✅ HostGator: arquivo em /public_html => sobe 1 nível para /home2/mauri075 e entra em /php
-require_once dirname(__DIR__) . "/php/conexao.php";
+require_once __DIR__ . "/../php/conexao.php";
 
 date_default_timezone_set('America/Sao_Paulo');
 
@@ -49,8 +47,10 @@ function json_out(array $payload, int $code = 200): void {
 
 /**
  * Status automático por horário do jogo:
- * - Se gols preenchidos => ENCERRADO
- * - Senão: agora < data_hora => AGENDADO, senão EM_ANDAMENTO
+ * - Se gols preenchidos (ambos NOT NULL) => ENCERRADO
+ * - Senão:
+ *    - agora < data_hora => AGENDADO
+ *    - agora >= data_hora => EM_ANDAMENTO
  */
 function compute_status_auto(?int $gc, ?int $gf, DateTimeImmutable $kickoff, DateTimeImmutable $now): string {
     if ($gc !== null && $gf !== null) return "ENCERRADO";
@@ -58,7 +58,13 @@ function compute_status_auto(?int $gc, ?int $gf, DateTimeImmutable $kickoff, Dat
 }
 
 /**
- * Normaliza nome do time -> slug de arquivo em /img/flags
+ * Normaliza nome do time -> slug de arquivo em /public/img/flags (SEU PADRÃO REAL).
+ * Regra:
+ * - pega só a 1ª opção antes de " ou "
+ * - remove parênteses
+ * - lower
+ * - remove acentos (iconv)
+ * - remove tudo que não seja [a-z0-9]
  */
 function flag_slug_from_name(string $nome): string {
     $s = trim($nome);
@@ -75,16 +81,23 @@ function flag_slug_from_name(string $nome): string {
     return $s;
 }
 
+/**
+ * Algumas strings do banco/seed nunca vão bater com o filename “bonitinho”.
+ * Aqui é onde você resolve a vida sem gambiarra no HTML/CSS.
+ */
 function flag_slug_aliases(string $slugBase): array {
     $m = [
         'reptcheca' => 'republicatcheca',
         'reptchecaouirlandaoudinamarca' => 'republicatcheca',
         'republicatchecaouirlandaoudinamarca' => 'republicatcheca',
+
         'coreiadosul' => 'coreiadosul',
         'coreiadonorte' => 'coreiadonorte',
         'estadosunidos' => 'estadosunidos',
+
         'mexico' => 'mexico',
         'africadosul' => 'africadosul',
+
         'cotedivoire' => 'costadomarfim',
     ];
 
@@ -97,7 +110,7 @@ function flag_slug_aliases(string $slugBase): array {
 }
 
 function flag_url_for_team(string $teamName, string $sigla): ?string {
-    $baseDir = __DIR__ . "/img/flags"; // /public_html/img/flags
+    $baseDir = __DIR__ . "/img/flags"; // /public/img/flags
     $candidates = [];
 
     $slugByName = flag_slug_from_name($teamName);
@@ -124,17 +137,42 @@ function flag_url_for_team(string $teamName, string $sigla): ?string {
 }
 
 /**
- * Fases do mata-mata (padronizado com seu cadastro manual)
+ * Labels amigáveis para fases (mata-mata).
+ * Se não bater em nenhum caso, usa o texto do banco.
  */
-function mm_fases(): array {
-    return [
-        "16_DE_FINAL"      => "16 de Final",
-        "OITAVAS"          => "Oitavas",
-        "QUARTAS"          => "Quartas",
-        "SEMI"             => "Semifinais",
-        "TERCEIRO_LUGAR"   => "3º Lugar",
-        "FINAL"            => "Final",
+function fase_label(string $fase): string {
+    $f = mb_strtoupper(trim($fase), 'UTF-8');
+    $map = [
+        '16_DE_FINAL'     => '16 de Final',
+        'DEZESSEIS'       => '16 de Final',
+        'OITAVAS'         => 'Oitavas',
+        'QUARTAS'         => 'Quartas',
+        'SEMI'            => 'Semifinal',
+        'SEMIFINAL'       => 'Semifinal',
+        'TERCEIRO_LUGAR'  => '3º Lugar',
+        'DISPUTA_3'       => '3º Lugar',
+        'FINAL'           => 'Final',
     ];
+    return $map[$f] ?? $fase;
+}
+
+function get_pdo(): PDO {
+    if (isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) return $GLOBALS['pdo'];
+
+    if (function_exists('conectar')) {
+        $p = conectar();
+        if ($p instanceof PDO) return $p;
+    }
+    if (function_exists('getConnection')) {
+        $p = getConnection();
+        if ($p instanceof PDO) return $p;
+    }
+    if (function_exists('get_pdo')) {
+        $p = \get_pdo();
+        if ($p instanceof PDO) return $p;
+    }
+
+    throw new RuntimeException("Não foi possível obter PDO. Verifique ../php/conexao.php.");
 }
 
 require_login();
@@ -147,6 +185,8 @@ $isAdmin     = (mb_strtoupper($tipoSessao, "UTF-8") === "ADMIN");
 $tz  = new DateTimeZone("America/Sao_Paulo");
 $now = new DateTimeImmutable("now", $tz);
 
+$pdo = get_pdo();
+
 /* Logout */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
     session_destroy();
@@ -156,6 +196,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 
 /* =========================================================
    Endpoint JSON: salvar placar real (ADMIN)
+   - NÃO recebe status do client
    - status é calculado automaticamente
    ========================================================= */
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["action"]) && $_GET["action"] === "save") {
@@ -215,7 +256,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["action"]) && $_GET["ac
 }
 
 /* =========================================================
-   Carregamento
+   Carregamento (menu: grupos + mata-mata por fase)
    ========================================================= */
 try {
     $ed = $pdo->query("SELECT id, nome, ano, ativo FROM edicoes ORDER BY ativo DESC, ano DESC, id DESC");
@@ -244,7 +285,7 @@ try {
     exit;
 }
 
-/* ========= Jogos de GRUPO ========= */
+/* ===== Jogos da fase de grupos (grupo_id NOT NULL) ===== */
 try {
     $j = $pdo->prepare("
         SELECT
@@ -278,7 +319,7 @@ try {
     $jogosGrupo = $j->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {
     http_response_code(500);
-    echo "Erro ao carregar jogos.";
+    echo "Erro ao carregar jogos (grupos).";
     exit;
 }
 
@@ -289,17 +330,9 @@ foreach ($jogosGrupo as $row) {
     $jogosPorGrupo[$gid][] = $row;
 }
 
-/* ========= Jogos do MATA-MATA por fase ========= */
-$mmPhases = mm_fases();
-$mmPhaseKeys = array_keys($mmPhases);
-$mmCounts = array_fill_keys($mmPhaseKeys, 0);
-$jogosPorFase = array_fill_keys($mmPhaseKeys, []);
-
+/* ===== Jogos do mata-mata (grupo_id IS NULL) agrupados por fase ===== */
 try {
-    $placeholders = implode(",", array_fill(0, count($mmPhaseKeys), "?"));
-    $params = array_merge([$edicaoId], $mmPhaseKeys);
-
-    $jm = $pdo->prepare("
+    $mm = $pdo->prepare("
         SELECT
             j.id,
             j.fase,
@@ -322,44 +355,72 @@ try {
         INNER JOIN times tf ON tf.id = j.time_fora_id
         WHERE j.edicao_id = ?
           AND j.grupo_id IS NULL
-          AND j.fase IN ($placeholders)
-        ORDER BY FIELD(j.fase, " . implode(",", array_map(fn($k) => $pdo->quote($k), $mmPhaseKeys)) . "),
-                 j.data_hora ASC, j.id ASC
+        ORDER BY
+          CASE UPPER(j.fase)
+            WHEN '16_DE_FINAL' THEN 1
+            WHEN 'DEZESSEIS' THEN 1
+            WHEN 'OITAVAS' THEN 2
+            WHEN 'QUARTAS' THEN 3
+            WHEN 'SEMI' THEN 4
+            WHEN 'SEMIFINAL' THEN 4
+            WHEN 'TERCEIRO_LUGAR' THEN 5
+            WHEN 'DISPUTA_3' THEN 5
+            WHEN 'FINAL' THEN 6
+            ELSE 99
+          END,
+          j.data_hora ASC,
+          j.id ASC
     ");
-    $jm->execute($params);
-    $jogosMm = $jm->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach ($jogosMm as $row) {
-        $fase = (string)$row["fase"];
-        if (!isset($jogosPorFase[$fase])) continue;
-        $jogosPorFase[$fase][] = $row;
-        $mmCounts[$fase] = count($jogosPorFase[$fase]);
-    }
+    $mm->execute([$edicaoId]);
+    $jogosMata = $mm->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {
     http_response_code(500);
-    echo "Erro ao carregar jogos do mata-mata.";
+    echo "Erro ao carregar jogos (mata-mata).";
     exit;
 }
 
-/* ========= Seleção ativa (grupo ou fase) ========= */
-$activeType = "GROUP";
-$activeId = 0;
+$jogosPorFase = [];
+$fasesMenu = [];
+foreach ($jogosMata as $row) {
+    $fase = (string)$row["fase"];
+    $key  = trim($fase);
+    if ($key === "") $key = "MATA_MATA";
 
-if (isset($_GET["fase"]) && is_string($_GET["fase"]) && $_GET["fase"] !== "") {
-    $fase = (string)$_GET["fase"];
-    if (isset($mmPhases[$fase])) {
-        $activeType = "PHASE";
-        $activeId = $fase;
+    if (!isset($jogosPorFase[$key])) $jogosPorFase[$key] = [];
+    $jogosPorFase[$key][] = $row;
+}
+
+foreach ($jogosPorFase as $faseKey => $lista) {
+    $fasesMenu[] = [
+        "fase" => $faseKey,
+        "label" => fase_label($faseKey),
+        "count" => count($lista),
+    ];
+}
+
+/* ===== Seleção ativa: grupo OU fase ===== */
+$activeType = "group";
+$activeKey  = "";
+
+$activeGroupId = 0;
+if (isset($_GET["grupo_id"])) $activeGroupId = (int)$_GET["grupo_id"];
+
+$activeFase = isset($_GET["fase"]) ? trim((string)$_GET["fase"]) : "";
+
+if ($activeFase !== "" && isset($jogosPorFase[$activeFase])) {
+    $activeType = "phase";
+    $activeKey  = $activeFase;
+} else {
+    if ($activeGroupId <= 0 && count($grupos) > 0) $activeGroupId = (int)$grupos[0]["id"];
+    if ($activeGroupId > 0) {
+        $activeType = "group";
+        $activeKey  = (string)$activeGroupId;
+    } else if (count($fasesMenu) > 0) {
+        $activeType = "phase";
+        $activeKey  = (string)$fasesMenu[0]["fase"];
     }
 }
 
-if ($activeType === "GROUP") {
-    if (isset($_GET["grupo_id"])) $activeId = (int)$_GET["grupo_id"];
-    if ((int)$activeId <= 0 && count($grupos) > 0) $activeId = (int)$grupos[0]["id"];
-    if ((int)$activeId <= 0) $activeId = 0;
-}
-
-// include do header único (HostGator: parcial na raiz /partials)
 require_once __DIR__ . "/partials/app_header.php";
 ?>
 <!DOCTYPE html>
@@ -386,20 +447,21 @@ require_once __DIR__ . "/partials/app_header.php";
 
     <div class="app-shell">
         <aside class="app-menu">
-            <div class="menu-title">Grupos</div>
 
+            <div class="menu-title">Grupos</div>
             <div class="menu-list" id="group-menu">
                 <?php foreach ($grupos as $g): ?>
                     <?php
                         $gid    = (int)$g["id"];
                         $codigo = (string)$g["codigo"];
                         $count  = isset($jogosPorGrupo[$gid]) ? count($jogosPorGrupo[$gid]) : 0;
-                        $active = ($activeType === "GROUP" && (string)$gid === (string)$activeId);
+
+                        $active = ($activeType === "group" && (string)$gid === $activeKey);
                     ?>
                     <a class="menu-link<?php echo $active ? " is-active" : ""; ?>"
                        href="#"
-                       data-nav-type="GROUP"
-                       data-nav-id="<?php echo $gid; ?>"
+                       data-block-type="group"
+                       data-block-key="<?php echo $gid; ?>"
                        aria-label="Grupo <?php echo strh($codigo); ?>">
                         <span>Grupo <?php echo strh($codigo); ?></span>
                         <span class="badge badge-muted"><?php echo $count; ?></span>
@@ -407,37 +469,34 @@ require_once __DIR__ . "/partials/app_header.php";
                 <?php endforeach; ?>
             </div>
 
-            <div class="menu-divider"></div>
+            <?php if (count($fasesMenu) > 0): ?>
+                <div class="menu-sep"></div>
+                <div class="menu-title">Mata-mata</div>
+                <div class="menu-list" id="phase-menu">
+                    <?php foreach ($fasesMenu as $f): ?>
+                        <?php
+                            $fase   = (string)$f["fase"];
+                            $label  = (string)$f["label"];
+                            $count  = (int)$f["count"];
+                            $active = ($activeType === "phase" && $fase === $activeKey);
+                        ?>
+                        <a class="menu-link<?php echo $active ? " is-active" : ""; ?>"
+                           href="#"
+                           data-block-type="phase"
+                           data-block-key="<?php echo strh($fase); ?>"
+                           aria-label="<?php echo strh($label); ?>">
+                            <span><?php echo strh($label); ?></span>
+                            <span class="badge badge-muted"><?php echo $count; ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
 
-            <div class="menu-title">Mata-mata</div>
-            <div class="menu-list" id="phase-menu">
-                <?php foreach ($mmPhases as $k => $label): ?>
-                    <?php
-                        $count = isset($mmCounts[$k]) ? (int)$mmCounts[$k] : 0;
-                        if ($count <= 0) continue; // ✅ só mostra se houver jogos
-                        $active = ($activeType === "PHASE" && (string)$k === (string)$activeId);
-                    ?>
-                    <a class="menu-link menu-link-phase<?php echo $active ? " is-active" : ""; ?>"
-                       href="#"
-                       data-nav-type="PHASE"
-                       data-nav-id="<?php echo strh($k); ?>"
-                       aria-label="<?php echo strh($label); ?>">
-                        <span><?php echo strh($label); ?></span>
-                        <span class="badge badge-muted"><?php echo $count; ?></span>
-                    </a>
-                <?php endforeach; ?>
-
-                <?php
-                    $hasAnyPhase = false;
-                    foreach ($mmCounts as $c) { if ((int)$c > 0) { $hasAnyPhase = true; break; } }
-                ?>
-                <?php if (!$hasAnyPhase): ?>
-                    <div class="menu-empty">Nenhum jogo do mata-mata cadastrado.</div>
-                <?php endif; ?>
-            </div>
         </aside>
 
         <main class="app-content">
+            <div id="list-top" aria-hidden="true"></div>
+
             <div class="content-head">
                 <h1 class="content-h1">Resultados reais</h1>
                 <p class="content-sub">
@@ -445,24 +504,19 @@ require_once __DIR__ . "/partials/app_header.php";
                 </p>
             </div>
 
-            <!-- alvo do scroll suave (voltar pro topo da listagem) -->
-            <div id="resultsTop" class="results-top-anchor" aria-hidden="true"></div>
-
-            <!-- =======================
-                 BLOCO: GRUPOS
-                 ======================= -->
             <?php foreach ($grupos as $g): ?>
                 <?php
                     $gid      = (int)$g["id"];
                     $codigo   = (string)$g["codigo"];
                     $nome     = (string)($g["nome"] ?? "");
-                    $isActive = ($activeType === "GROUP" && (string)$gid === (string)$activeId);
+                    $isActive = ($activeType === "group" && (string)$gid === $activeKey);
+
                     $lista = $jogosPorGrupo[$gid] ?? [];
                 ?>
 
-                <section class="group-block<?php echo $isActive ? " is-active-group" : ""; ?>"
-                         data-section-type="GROUP"
-                         data-section-id="<?php echo $gid; ?>">
+                <section class="block block-group<?php echo $isActive ? " is-active-block" : ""; ?>"
+                         data-block-type="group"
+                         data-block-key="<?php echo $gid; ?>">
 
                     <div class="group-head">
                         <div class="group-line">
@@ -574,24 +628,24 @@ require_once __DIR__ . "/partials/app_header.php";
                 </section>
             <?php endforeach; ?>
 
-            <!-- =======================
-                 BLOCO: MATA-MATA por FASE
-                 ======================= -->
-            <?php foreach ($mmPhases as $faseKey => $faseLabel): ?>
+            <?php foreach ($fasesMenu as $f): ?>
                 <?php
-                    $lista = $jogosPorFase[$faseKey] ?? [];
-                    $isActive = ($activeType === "PHASE" && (string)$faseKey === (string)$activeId);
+                    $faseKey  = (string)$f["fase"];
+                    $label    = (string)$f["label"];
+                    $lista    = $jogosPorFase[$faseKey] ?? [];
+                    $isActive = ($activeType === "phase" && $faseKey === $activeKey);
                 ?>
-                <section class="group-block phase-block<?php echo $isActive ? " is-active-group" : ""; ?>"
-                         data-section-type="PHASE"
-                         data-section-id="<?php echo strh($faseKey); ?>">
+
+                <section class="block block-phase<?php echo $isActive ? " is-active-block" : ""; ?>"
+                         data-block-type="phase"
+                         data-block-key="<?php echo strh($faseKey); ?>">
 
                     <div class="group-head">
                         <div class="group-line">
-                            <div class="group-pill group-pill-phase"><?php echo strh($faseLabel); ?></div>
+                            <div class="group-pill phase-pill"><?php echo strh($label); ?></div>
                             <div class="group-count"><?php echo count($lista); ?> jogos</div>
                         </div>
-                        <div class="group-name group-name-phase">Mata-mata</div>
+                        <div class="group-name">Mata-mata</div>
                     </div>
 
                     <div class="matches">
@@ -619,7 +673,7 @@ require_once __DIR__ . "/partials/app_header.php";
                                 $flagFora = flag_url_for_team($timeForaNome, $siglaFora);
 
                                 $whenTxt  = $kickoff->format("d/m/Y H:i");
-                                $roundTxt = $rodada !== null ? ("Jogo " . $rodada) : "";
+                                $roundTxt = $rodada !== null ? ("Rodada " . $rodada) : "";
                             ?>
                             <article class="match-card" data-jogo-row="<?php echo $jid; ?>">
                                 <div class="match-top">
@@ -702,15 +756,13 @@ require_once __DIR__ . "/partials/app_header.php";
 <script id="admin-resultados-config" type="application/json">
 <?php
 echo json_encode([
-    "edicao_id" => $edicaoId,
-    "active" => [
-        "type" => $activeType,
-        "id"   => $activeId
-    ]
+    "edicao_id"    => $edicaoId,
+    "active_type"  => $activeType,
+    "active_key"   => $activeKey,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 ?>
 </script>
 
-<script src="/js/admin_resultados.js?v=<?php echo filemtime(__DIR__ . '/js/admin_resultados.js'); ?>"></script>
+<script src="/js/admin_resultados.js"></script>
 </body>
 </html>

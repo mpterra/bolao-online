@@ -1,0 +1,90 @@
+/* mata_mata_palpites.css
+   Somente complementos específicos dessa tela. */
+
+:root{
+  --mm-select-bg: rgba(10, 16, 20, .55);
+  --mm-select-bd: rgba(255, 255, 255, .14);
+  --mm-select-bd-focus: rgba(0, 255, 170, .55);
+  --mm-select-tx: rgba(255, 255, 255, .92);
+  --mm-select-tx-muted: rgba(255, 255, 255, .72);
+}
+
+/* garante que o bloco da fase filtra igual grupo */
+.group-block[data-fase-block] { scroll-margin-top: 14px; }
+
+/* Card Top4 (reaproveita o mesmo estilo do group-rank-card do app) */
+.group-rank-card[data-top4-card="1"]{
+  margin-top: 14px;
+}
+
+/* Select bonito (combos Top4) */
+.group-rank-card .rank-select{
+  width: 100%;
+  height: 44px;
+  padding: 10px 42px 10px 12px;
+  border-radius: 14px;
+
+  border: 1px solid var(--mm-select-bd);
+  background: var(--mm-select-bg);
+  color: var(--mm-select-tx);
+
+  outline: none;
+  box-shadow: 0 10px 22px rgba(0,0,0,.18);
+  backdrop-filter: blur(10px);
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  cursor: pointer;
+
+  /* seta custom */
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255,255,255,.75) 50%),
+    linear-gradient(135deg, rgba(255,255,255,.75) 50%, transparent 50%),
+    linear-gradient(to right, rgba(255,255,255,.12), rgba(255,255,255,.0));
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%,
+    calc(100% - 38px) 50%;
+  background-size:
+    6px 6px,
+    6px 6px,
+    1px 20px;
+  background-repeat: no-repeat;
+}
+
+.group-rank-card .rank-select:hover{
+  border-color: rgba(255,255,255,.22);
+}
+
+.group-rank-card .rank-select:focus{
+  border-color: var(--mm-select-bd-focus);
+  box-shadow: 0 0 0 3px rgba(0,255,170,.14), 0 12px 26px rgba(0,0,0,.22);
+}
+
+/* labels um pouco mais “fit” */
+.group-rank-card .rank-field label{
+  color: var(--mm-select-tx-muted);
+  font-weight: 600;
+}
+
+/* grid do top4 em 2 colunas no desktop e 1 no mobile */
+.group-rank-card .group-rank-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px){
+  .group-rank-card .group-rank-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mensagens do Top4 */
+#top4State{
+  min-height: 20px;
+}
+#top4State.is-ok{ color: rgba(0,255,170,.9); }
+#top4State.is-bad{ color: rgba(255,120,120,.95); }

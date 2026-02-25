@@ -6,14 +6,10 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 session_start();
-
-// ✅ HostGator: este arquivo está em /home2/mauri075/php/
-// então conexao.php é "vizinho" (mesma pasta).
-require_once __DIR__ . "/conexao.php";
+require_once __DIR__ . "/../php/conexao.php";
 
 function require_login(): void {
     if (empty($_SESSION["usuario_id"])) {
-        // ✅ HostGator: páginas públicas na raiz do public_html
         header("Location: /index.php");
         exit;
     }
@@ -51,6 +47,10 @@ require_admin();
 ini_set('memory_limit', '512M');
 
 try {
+    if (!isset($pdo) || !($pdo instanceof PDO)) {
+        throw new RuntimeException("PDO não inicializado em conexao.php");
+    }
+
     // -----------------------------
     // Edição ativa (mesma lógica)
     // -----------------------------
@@ -93,7 +93,7 @@ try {
     }
 
     // -----------------------------
-    // SQL: Jogos + palpites (por usuário)
+    // SQL: Jogos + palpites (por usuário) - FASE DE GRUPOS
     // -----------------------------
     $sqlJogos = "
         SELECT
@@ -155,6 +155,53 @@ try {
     ";
     $stCamp = $pdo->prepare($sqlCamp);
 
+    // =========================================================
+    // ✅ ADIÇÃO: SQL TOP 4 (MATA-MATA) (por usuário)
+    // =========================================================
+    $sqlTop4 = "
+        SELECT
+            t1.nome AS primeiro_nome,
+            t2.nome AS segundo_nome,
+            t3.nome AS terceiro_nome,
+            t4.nome AS quarto_nome
+        FROM palpite_top4 pt
+        LEFT JOIN times t1 ON t1.id = pt.primeiro_time_id
+        LEFT JOIN times t2 ON t2.id = pt.segundo_time_id
+        LEFT JOIN times t3 ON t3.id = pt.terceiro_time_id
+        LEFT JOIN times t4 ON t4.id = pt.quarto_time_id
+        WHERE pt.usuario_id = :usuario_id
+          AND pt.edicao_id = :edicao_id
+        LIMIT 1
+    ";
+    $stTop4 = $pdo->prepare($sqlTop4);
+
+    // =========================================================
+    // ✅ ADIÇÃO: SQL Jogos + palpites (MATA-MATA) (por usuário)
+    // =========================================================
+    $sqlJogosMM = "
+        SELECT
+            j.fase,
+            j.data_hora,
+            j.codigo_fifa,
+            tc.nome AS casa_nome,
+            p.gols_casa,
+            tf.nome AS fora_nome,
+            p.gols_fora
+        FROM jogos j
+        INNER JOIN times tc ON tc.id = j.time_casa_id
+        INNER JOIN times tf ON tf.id = j.time_fora_id
+        LEFT JOIN palpites p
+            ON p.jogo_id = j.id
+           AND p.usuario_id = :usuario_id
+        WHERE j.edicao_id = :edicao_id
+          AND j.grupo_id IS NULL
+          AND j.fase IN ('16_DE_FINAL','OITAVAS','QUARTAS','SEMI','TERCEIRO_LUGAR','FINAL')
+        ORDER BY
+          FIELD(j.fase,'16_DE_FINAL','OITAVAS','QUARTAS','SEMI','TERCEIRO_LUGAR','FINAL'),
+          j.data_hora, j.id
+    ";
+    $stJogosMM = $pdo->prepare($sqlJogosMM);
+
     // Timestamp único do pacote
     $tsPack = date("Y-m-d_H-i");
     $folder = "apostas_{$tsPack}";
@@ -186,13 +233,32 @@ try {
         ]);
         $rowsClass = $stClass->fetchAll(PDO::FETCH_ASSOC);
 
-        // Jogos do usuário
+        // Jogos do usuário (fase de grupos)
         $stJogos->execute([
             ":edicao_id1" => $edicaoId,
             ":edicao_id2" => $edicaoId,
             ":usuario_id" => $usuarioId,
         ]);
         $rowsJogos = $stJogos->fetchAll(PDO::FETCH_ASSOC);
+
+        // =============================
+        // ✅ ADIÇÃO: Top4 do usuário
+        // =============================
+        $stTop4->execute([
+            ":usuario_id" => $usuarioId,
+            ":edicao_id"  => $edicaoId,
+        ]);
+        $rowTop4 = $stTop4->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($rowTop4)) $rowTop4 = [];
+
+        // =============================
+        // ✅ ADIÇÃO: Jogos mata-mata do usuário
+        // =============================
+        $stJogosMM->execute([
+            ":edicao_id" => $edicaoId,
+            ":usuario_id" => $usuarioId,
+        ]);
+        $rowsJogosMM = $stJogosMM->fetchAll(PDO::FETCH_ASSOC);
 
         $slug = filename_slug($usuarioNome);
         $filename = "apostas_{$slug}_id{$usuarioId}_{$tsPack}.xls";
@@ -203,13 +269,10 @@ try {
         $html .= "<html><head><meta charset='UTF-8'></head><body>";
 
         // ---------- Cabeçalho ----------
-        // Mantém a mesma quantidade de LINHAS do cabeçalho.
-        // Só transforma a linha "Usuário" em 4 colunas: Usuário | Nome | ID | Número
         $html .= "<table border='1' cellspacing='0' cellpadding='6'>";
         $html .= "<tbody>";
         $html .= "<tr><th colspan='4'>Exportação de Apostas</th></tr>";
 
-        // >>> ALTERADO: ID ao lado do nome, em células separadas
         $html .= "<tr>";
         $html .= "<td><b>Usuário</b></td>";
         $html .= "<td>" . strh($usuarioNome) . "</td>";
@@ -217,7 +280,6 @@ try {
         $html .= "<td>" . strh((string)$usuarioId) . "</td>";
         $html .= "</tr>";
 
-        // >>> ALTERADO: para manter consistência de 4 colunas sem criar novas linhas
         $html .= "<tr><td><b>Edição ID</b></td><td colspan='3'>" . strh((string)$edicaoId) . "</td></tr>";
         $html .= "<tr><td><b>Campeão</b></td><td colspan='3'>" . strh($campeaoNome) . "</td></tr>";
         $html .= "</tbody>";
@@ -257,7 +319,7 @@ try {
 
         $html .= "<br/>";
 
-        // ---------- Jogos ----------
+        // ---------- Jogos (Fase de Grupos) ----------
         $html .= "<table border='1' cellspacing='0' cellpadding='6'>";
         $html .= "<thead>";
         $html .= "<tr><th colspan='7'>Palpites de Jogos (Fase de Grupos)</th></tr>";
@@ -297,6 +359,105 @@ try {
 
             $html .= "<tr>";
             $html .= "<td>" . strh($grupo) . "</td>";
+            $html .= "<td>" . strh($dh) . "</td>";
+            $html .= "<td>" . strh($codigoFifa) . "</td>";
+            $html .= "<td>" . strh($casa) . "</td>";
+            $html .= "<td>" . strh($gcStr) . "</td>";
+            $html .= "<td>" . strh($fora) . "</td>";
+            $html .= "<td>" . strh($gfStr) . "</td>";
+            $html .= "</tr>";
+        }
+
+        $html .= "</tbody>";
+        $html .= "</table>";
+
+        // =========================================================
+        // ✅ A PARTIR DAQUI: ADIÇÕES DO MATA-MATA (abaixo do que já existe)
+        // =========================================================
+
+        $html .= "<br/>";
+        $html .= "<br/>";
+
+        // ---------- Top 4 (Mata-mata) ----------
+        $html .= "<table border='1' cellspacing='0' cellpadding='6'>";
+        $html .= "<thead>";
+        $html .= "<tr><th colspan='4'>Top 4 (Mata-mata)</th></tr>";
+        $html .= "<tr>";
+        $html .= "<th>1º</th>";
+        $html .= "<th>2º</th>";
+        $html .= "<th>3º</th>";
+        $html .= "<th>4º</th>";
+        $html .= "</tr>";
+        $html .= "</thead>";
+        $html .= "<tbody>";
+
+        $t1 = (string)($rowTop4["primeiro_nome"] ?? "");
+        $t2 = (string)($rowTop4["segundo_nome"] ?? "");
+        $t3 = (string)($rowTop4["terceiro_nome"] ?? "");
+        $t4 = (string)($rowTop4["quarto_nome"] ?? "");
+
+        $html .= "<tr>";
+        $html .= "<td>" . strh($t1) . "</td>";
+        $html .= "<td>" . strh($t2) . "</td>";
+        $html .= "<td>" . strh($t3) . "</td>";
+        $html .= "<td>" . strh($t4) . "</td>";
+        $html .= "</tr>";
+
+        $html .= "</tbody>";
+        $html .= "</table>";
+
+        $html .= "<br/>";
+
+        // ---------- Jogos (Mata-mata) ----------
+        $html .= "<table border='1' cellspacing='0' cellpadding='6'>";
+        $html .= "<thead>";
+        $html .= "<tr><th colspan='7'>Palpites de Jogos (Mata-mata)</th></tr>";
+        $html .= "<tr>";
+        $html .= "<th>Fase</th>";
+        $html .= "<th>Data/Hora</th>";
+        $html .= "<th>Código FIFA</th>";
+        $html .= "<th>Time da casa</th>";
+        $html .= "<th>Placar casa</th>";
+        $html .= "<th>Time visitante</th>";
+        $html .= "<th>Placar visitante</th>";
+        $html .= "</tr>";
+        $html .= "</thead>";
+        $html .= "<tbody>";
+
+        $faseLabel = [
+            '16_DE_FINAL' => '16 de final',
+            'OITAVAS' => 'Oitavas',
+            'QUARTAS' => 'Quartas',
+            'SEMI' => 'Semifinal',
+            'TERCEIRO_LUGAR' => '3º lugar',
+            'FINAL' => 'Final',
+        ];
+
+        foreach ($rowsJogosMM as $r) {
+            $fase = (string)($r["fase"] ?? "");
+            $faseOut = isset($faseLabel[$fase]) ? $faseLabel[$fase] : $fase;
+
+            $dhRaw = (string)($r["data_hora"] ?? "");
+            $dh = $dhRaw;
+            $ts2 = strtotime($dhRaw);
+            if ($ts2 !== false) $dh = date("d/m/Y H:i", $ts2);
+
+            $codigoFifaRaw = $r["codigo_fifa"] ?? "";
+            $codigoFifa = "";
+            if ($codigoFifaRaw !== null) {
+                $codigoFifa = trim((string)$codigoFifaRaw);
+            }
+
+            $casa = (string)($r["casa_nome"] ?? "");
+            $fora = (string)($r["fora_nome"] ?? "");
+
+            $gc = $r["gols_casa"] ?? null;
+            $gf = $r["gols_fora"] ?? null;
+            $gcStr = ($gc === null) ? "" : (string)(int)$gc;
+            $gfStr = ($gf === null) ? "" : (string)(int)$gf;
+
+            $html .= "<tr>";
+            $html .= "<td>" . strh($faseOut) . "</td>";
             $html .= "<td>" . strh($dh) . "</td>";
             $html .= "<td>" . strh($codigoFifa) . "</td>";
             $html .= "<td>" . strh($casa) . "</td>";

@@ -1,6 +1,8 @@
-/* =========================================================
-   admin_resultados.css — COMPLETO (HostGator)
-   ========================================================= */
+/* /public/css/admin_resultados.css — COMPLETO (ADMIN_RESULTADOS.PHP)
+   - Layout igual app.php (menu + cards + bandeiras)
+   - Agora com: Grupos + Mata-mata por fase
+   - Ao clicar no menu: scroll suave (JS) para o topo da listagem
+*/
 
 :root{
   --bg0:#071a1f;
@@ -92,12 +94,6 @@ body::before{
   opacity:.26;
   pointer-events:none;
   animation: twinkle 9s linear infinite;
-}
-
-/* efeito visual do “levou pra cima” */
-body.did-scroll-top .app-content{
-  box-shadow: 0 0 0 2px rgba(70,220,255,.18), 0 16px 40px rgba(0,0,0,.28);
-  transition: box-shadow 220ms ease;
 }
 
 /* =========================================================
@@ -338,11 +334,22 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   line-height: 1.45;
 }
 
-/* âncora do scroll */
-.results-top-anchor{
+/* âncora do scroll (JS) */
+#list-top{
   height: 1px;
   width: 1px;
-  opacity: 0;
+  overflow: hidden;
+  scroll-margin-top: 120px;
+}
+
+@keyframes pulseTop{
+  0% { box-shadow: 0 0 0 0 rgba(70,220,255,.00); }
+  50%{ box-shadow: 0 0 0 10px rgba(70,220,255,.10); }
+  100%{ box-shadow: 0 0 0 0 rgba(70,220,255,.00); }
+}
+#list-top.is-scroll-pulse{
+  border-radius: 999px;
+  animation: pulseTop 420ms ease-out both;
 }
 
 /* =========================================================
@@ -354,6 +361,12 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   margin-bottom: 10px;
   letter-spacing: .35px;
   text-transform: uppercase;
+}
+
+.menu-sep{
+  margin: 14px 0 12px;
+  height: 1px;
+  background: rgba(255,255,255,.10);
 }
 
 .menu-list{
@@ -393,27 +406,6 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   box-shadow: 0 16px 34px rgba(0,0,0,.22);
 }
 
-/* visual mais “admin” pras fases, mas sem mudar o padrão do site */
-.menu-link.menu-link-phase.is-active{
-  background: linear-gradient(90deg, var(--adminA), var(--adminB));
-}
-
-.menu-divider{
-  height: 1px;
-  margin: 14px 0;
-  background: rgba(255,255,255,.10);
-}
-
-.menu-empty{
-  padding: 10px 10px;
-  border-radius: 14px;
-  border: 1px dashed rgba(255,255,255,.16);
-  background: rgba(0,0,0,.10);
-  color: rgba(255,255,255,.72);
-  font-weight: 900;
-  font-size: 12px;
-}
-
 .badge{
   padding: 4px 10px;
   border-radius: 999px;
@@ -425,9 +417,9 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
 }
 
 /* =========================================================
-   BLOCOS (GRUPOS / FASES)
+   BLOCOS (GRUPO/FASE)
    ========================================================= */
-.group-block{
+.block{
   display:none;
   padding: 12px;
   border-radius: 22px;
@@ -435,7 +427,7 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   background: rgba(0,0,0,.10);
   margin-bottom: 12px;
 }
-.group-block.is-active-group{ display:block; }
+.block.is-active-block{ display:block; }
 
 .group-head{ margin-bottom: 10px; }
 
@@ -459,7 +451,7 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   font-size: 12px;
 }
 
-.group-pill-phase{
+.group-pill.phase-pill{
   background: rgba(140,120,255,.16);
   border: 1px solid rgba(140,120,255,.34);
   color: rgba(245,242,255,.96);
@@ -482,10 +474,6 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   color: rgba(255,255,255,.92);
 }
 
-.group-name-phase{
-  color: rgba(255,255,255,.80);
-}
-
 /* =========================================================
    JOGOS
    ========================================================= */
@@ -493,16 +481,6 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   display:flex;
   flex-direction:column;
   gap: 10px;
-}
-
-.group-rank-empty{
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px dashed rgba(255,255,255,.18);
-  background: rgba(0,0,0,.12);
-  color: rgba(255,255,255,.78);
-  font-weight: 900;
-  font-size: 12px;
 }
 
 .match-card{
@@ -768,6 +746,8 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   }
 
   .user-chip-name{ max-width: 55vw; }
+
+  #list-top{ scroll-margin-top: 180px; }
 }
 
 @media (max-width: 560px){
@@ -801,10 +781,12 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   .scorebox{ width: 150px; }
   .score{ width: 56px; height: 42px; line-height: 42px; }
   .toast{ min-width: calc(100% - 20px); }
+
+  #list-top{ scroll-margin-top: 200px; }
 }
 
 /* =========================================================
-   MOBILE <= 560px — stack: casa / placar / fora
+   ✅ MOBILE <= 560px — JOGOS (stack)
    ========================================================= */
 @media (max-width: 560px){
   .match-body{
@@ -886,12 +868,16 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
     border-radius: 14px !important;
   }
 
-  .x{ font-size: 15px !important; }
+  .x{
+    font-size: 15px !important;
+  }
 
   .match-actions{
     flex-direction: column !important;
     align-items: stretch !important;
   }
 
-  .btn-save-one{ width: 100% !important; }
+  .btn-save-one{
+    width: 100% !important;
+  }
 }

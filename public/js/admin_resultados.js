@@ -1,3 +1,4 @@
+// /public/js/admin_resultados.js
 document.addEventListener("DOMContentLoaded", () => {
   "use strict";
   if (window.__BOLAO_ADMIN_RESULTADOS_INIT__ === true) return;
@@ -8,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   try { CFG = cfgEl ? JSON.parse(cfgEl.textContent || "{}") : {}; } catch (_) { CFG = {}; }
 
   const toast = document.getElementById("toast");
-  const topAnchor = document.getElementById("resultsTop");
+  const listTop = document.getElementById("list-top");
 
   function showToast(msg) {
     if (!toast) return;
@@ -44,58 +45,62 @@ document.addEventListener("DOMContentLoaded", () => {
     return i;
   }
 
-  function smoothScrollToTop() {
-    if (!topAnchor) return;
-    topAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
-
-    // “efeito visual” discreto (pra perceber que levou pra cima)
-    document.body.classList.add("did-scroll-top");
-    clearTimeout(document.body.__sst);
-    document.body.__sst = setTimeout(() => document.body.classList.remove("did-scroll-top"), 550);
+  function scrollToListTop() {
+    if (!listTop) return;
+    try {
+      listTop.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (_) {
+      window.scrollTo(0, 0);
+    }
+    listTop.classList.add("is-scroll-pulse");
+    clearTimeout(listTop.__pulse);
+    listTop.__pulse = setTimeout(() => listTop.classList.remove("is-scroll-pulse"), 450);
   }
 
   // =========================
-  // Navegação: GRUPO ou FASE
+  // Menu: grupos + fases (mata-mata)
+  // Filtra sem reload; após clique, sobe suavemente ao topo da listagem
   // =========================
-  function setActiveSection(type, id) {
-    const typeS = String(type || "");
-    const idS = String(id || "");
+  function setActiveBlock(type, key) {
+    const t = String(type || "");
+    const k = String(key || "");
 
-    // mostra apenas o section correto
-    document.querySelectorAll("[data-section-type][data-section-id]").forEach((sec) => {
-      const t = String(sec.getAttribute("data-section-type") || "");
-      const i = String(sec.getAttribute("data-section-id") || "");
-      sec.classList.toggle("is-active-group", t === typeS && i === idS);
+    document.querySelectorAll("[data-block-type][data-block-key]").forEach((el) => {
+      const et = String(el.getAttribute("data-block-type") || "");
+      const ek = String(el.getAttribute("data-block-key") || "");
+      el.classList.toggle("is-active-block", et === t && ek === k);
     });
 
-    // marca item ativo no menu
-    document.querySelectorAll("[data-nav-type][data-nav-id]").forEach((a) => {
-      const t = String(a.getAttribute("data-nav-type") || "");
-      const i = String(a.getAttribute("data-nav-id") || "");
-      a.classList.toggle("is-active", t === typeS && i === idS);
+    document.querySelectorAll("[data-block-type][data-block-key].menu-link").forEach((el) => {
+      const et = String(el.getAttribute("data-block-type") || "");
+      const ek = String(el.getAttribute("data-block-key") || "");
+      el.classList.toggle("is-active", et === t && ek === k);
     });
   }
 
-  document.querySelectorAll("[data-nav-type][data-nav-id]").forEach((a) => {
+  document.querySelectorAll(".menu-link[data-block-type][data-block-key]").forEach((a) => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
-      const t = a.getAttribute("data-nav-type");
-      const i = a.getAttribute("data-nav-id");
-      if (!t || !i) return;
+      const type = a.getAttribute("data-block-type");
+      const key = a.getAttribute("data-block-key");
+      if (!type || !key) return;
 
-      setActiveSection(t, i);
-      smoothScrollToTop();
-      showToast(t === "PHASE" ? "Fase selecionada" : "Grupo selecionado");
+      setActiveBlock(type, key);
+      scrollToListTop();
+
+      if (type === "group") showToast("Grupo selecionado");
+      else showToast("Fase selecionada");
     });
   });
 
-  // inicial
-  if (CFG && CFG.active && CFG.active.type && CFG.active.id !== undefined && CFG.active.id !== null) {
-    setActiveSection(String(CFG.active.type), String(CFG.active.id));
+  if (CFG && CFG.active_type && CFG.active_key !== undefined) {
+    setActiveBlock(String(CFG.active_type), String(CFG.active_key));
   } else {
-    // fallback: tenta primeiro section visível
-    const first = document.querySelector("[data-section-type][data-section-id]");
-    if (first) setActiveSection(first.getAttribute("data-section-type"), first.getAttribute("data-section-id"));
+    // fallback: primeiro bloco visível
+    const first = document.querySelector("[data-block-type][data-block-key]");
+    if (first) {
+      setActiveBlock(first.getAttribute("data-block-type"), first.getAttribute("data-block-key"));
+    }
   }
 
   // =========================
@@ -129,7 +134,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.textContent = "Salvando...";
 
     try {
-      // ✅ HostGator: página na raiz do domínio
       const resp = await fetch("/admin_resultados.php?action=save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,7 +152,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Atualiza status no card
       const statusEl = rowEl.querySelector(".match-status");
       if (statusEl && json.status) {
         statusEl.textContent = String(json.status);
@@ -157,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       rowMsg(rowEl, "Salvo.", true);
       showToast("Resultado salvo");
-    } catch (e) {
+    } catch (_) {
       rowMsg(rowEl, "Erro de rede ao salvar.", false);
       showToast("Erro de rede");
     } finally {
