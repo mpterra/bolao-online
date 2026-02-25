@@ -932,3 +932,43 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+// ============================
+// POPUP JOGOS DO DIA
+// ============================
+
+async function carregarJogosDoDia() {
+  try {
+    const res = await fetch("/jogos_do_dia.php");
+    const jogos = await res.json();
+
+    if (!jogos || jogos.length === 0) return;
+
+    const lista = document.getElementById("popupLista");
+    lista.innerHTML = "";
+
+    jogos.forEach(j => {
+      const div = document.createElement("div");
+      div.style.marginBottom = "10px";
+      div.innerHTML = `
+        <strong>Grupo ${j.grupo}</strong><br>
+        ${j.casa} x ${j.fora}<br>
+        ${new Date(j.data_hora).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})}
+      `;
+      lista.appendChild(div);
+    });
+
+    document.getElementById("popupJogos").style.display = "flex";
+
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function fecharPopup(){
+  document.getElementById("popupJogos").style.display = "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(carregarJogosDoDia, 800);
+});

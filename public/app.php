@@ -7,8 +7,50 @@ ini_set('display_startup_errors', '1');
 
 session_start();
 
-// ✅ HostGator: app.php está em /public_html => sobe 1 nível e entra em /php
-require_once dirname(__DIR__) . "/php/conexao.php";
+/*
+|--------------------------------------------------------------------------
+| ✅ AUTO-BASE (SEM FICAR TROCANDO LINKS ENTRE LOCAL/HOST)
+|--------------------------------------------------------------------------
+| Suporta dois layouts:
+| 1) app.php dentro de /public  (ex: /bolao-da-copa/public/app.php)
+| 2) app.php na raiz           (ex: /app.php) com assets em /public/*
+|--------------------------------------------------------------------------
+*/
+$SCRIPT_DIR = str_replace('\\', '/', (string)dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+$WEB_BASE = rtrim($SCRIPT_DIR, '/');
+if ($WEB_BASE === '/') $WEB_BASE = '';
+
+$IS_ROOT_LAYOUT = is_dir(__DIR__ . '/public') && is_file(__DIR__ . '/public/css/app.css');
+
+// assets (css/js/img) podem estar:
+// - no mesmo diretório do app.php (layout /public)
+// - dentro de /public (layout raiz)
+$ASSET_FS_BASE  = $IS_ROOT_LAYOUT ? (__DIR__ . '/public') : __DIR__;
+$ASSET_WEB_BASE = $IS_ROOT_LAYOUT
+	? (($WEB_BASE === '' ? '' : $WEB_BASE) . '/public')
+	: ($WEB_BASE === '' ? '' : $WEB_BASE);
+
+// páginas públicas (index/app/campeao) ficam:
+// - no mesmo diretório do app.php
+$PAGE_WEB_BASE = ($WEB_BASE === '' ? '' : $WEB_BASE);
+
+// pasta /php fica:
+// - irmã de /public (layout /public -> /bolao-da-copa/php)
+// - dentro da raiz (layout raiz -> /php)
+if (preg_match('#/public$#', $WEB_BASE)) {
+	$PHP_WEB_BASE = preg_replace('#/public$#', '', $WEB_BASE) . '/php';
+} else {
+	$PHP_WEB_BASE = ($WEB_BASE === '' ? '' : $WEB_BASE) . '/php';
+}
+
+// require conexao.php (fs) em ambos os layouts
+$CONEXAO_PATH_1 = __DIR__ . "/../php/conexao.php";
+$CONEXAO_PATH_2 = __DIR__ . "/php/conexao.php";
+if (is_file($CONEXAO_PATH_1)) {
+	require_once $CONEXAO_PATH_1;
+} else {
+	require_once $CONEXAO_PATH_2;
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -44,10 +86,9 @@ function json_response(array $data, int $code = 200): void {
 	exit;
 }
 
-function require_login(): void {
+function require_login(string $loginUrl): void {
 	if (empty($_SESSION["usuario_id"])) {
-		// ✅ HostGator: login na raiz
-		header("Location: /index.php");
+		header("Location: " . $loginUrl);
 		exit;
 	}
 }
@@ -91,16 +132,17 @@ function flag_slug(string $nome): string {
 
 /**
  * Retorna URL pública da bandeira se existir no disco, senão null.
- * Pasta: /public_html/img/flags/{slug}.png
+ * Pasta web: {ASSET_WEB_BASE}/img/flags/{slug}.png
+ * Pasta fs : {ASSET_FS_BASE}/img/flags/{slug}.png
  */
-function flag_url(string $teamName): ?string {
+function flag_url(string $teamName, string $assetFsBase, string $assetWebBase): ?string {
 	$slug = flag_slug($teamName);
 	if ($slug === "") return null;
 
-	$fsPath = __DIR__ . "/img/flags/" . $slug . ".png"; // app.php está em /public_html
+	$fsPath = rtrim($assetFsBase, "/") . "/img/flags/" . $slug . ".png";
 	if (is_file($fsPath)) {
-		// ✅ HostGator: sem /bolao-da-copa/public
-		return "/img/flags/" . $slug . ".png";
+		$webBase = ($assetWebBase === "" ? "" : $assetWebBase);
+		return $webBase . "/img/flags/" . $slug . ".png";
 	}
 	return null;
 }
@@ -217,7 +259,21 @@ function lock_reason_for_game(
 	return null;
 }
 
-require_login();
+/*
+|--------------------------------------------------------------------------
+| URLs padrão (sem hardcode /bolao-da-copa/...)
+|--------------------------------------------------------------------------
+*/
+$LOGIN_URL   = ($PAGE_WEB_BASE === "" ? "" : $PAGE_WEB_BASE) . "/index.php";
+$APP_URL     = ($PAGE_WEB_BASE === "" ? "" : $PAGE_WEB_BASE) . "/app.php";
+$CHAMP_URL   = ($PAGE_WEB_BASE === "" ? "" : $PAGE_WEB_BASE) . "/campeao.php";
+$LOGOUT_URL  = $APP_URL . "?action=logout";
+
+$SAVE_GAMES_URL      = $APP_URL . "?action=save";
+$SAVE_GROUP_RANK_URL = $APP_URL . "?action=save_group_rank";
+$RECIBO_URL          = ($PHP_WEB_BASE === "" ? "" : $PHP_WEB_BASE) . "/recibo.php?action=pdf";
+
+require_login($LOGIN_URL);
 
 $usuarioId   = (int)($_SESSION["usuario_id"] ?? 0);
 $usuarioNome = isset($_SESSION["usuario_nome"]) ? (string)$_SESSION["usuario_nome"] : "Apostador";
@@ -237,7 +293,7 @@ $lockCache = [];
 --------------------------- */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 	session_destroy();
-	header("Location: /index.php");
+	header("Location: " . $LOGIN_URL);
 	exit;
 }
 
@@ -649,7 +705,7 @@ require_once __DIR__ . "/partials/app_header.php";
 	<meta charset="UTF-8" />
 	<title>Bolão da Copa - Palpites</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-	<link rel="stylesheet" href="/css/app.css?v=<?php echo filemtime(__DIR__ . '/css/app.css'); ?>">
+	<link rel="stylesheet" href="<?php echo strh($ASSET_WEB_BASE . "/css/app.css?v=" . (string)@filemtime($ASSET_FS_BASE . "/css/app.css")); ?>">
 </head>
 <body>
 
@@ -661,7 +717,7 @@ require_once __DIR__ . "/partials/app_header.php";
 			$isAdmin,
 			"apostas",
 			"Fase de Grupos • Palpites",
-			"/app.php?action=logout"
+			$LOGOUT_URL
 		);
 	?>
 
@@ -689,7 +745,7 @@ require_once __DIR__ . "/partials/app_header.php";
 				<?php endforeach; ?>
 
 				<a class="menu-link menu-link-champion"
-				   href="/campeao.php"
+				   href="<?php echo strh($CHAMP_URL); ?>"
 				   title="Escolher o campeão">
 					<span class="menu-link-text">Quem será o campeão</span>
 					<span class="badge badge-champion">★</span>
@@ -702,7 +758,7 @@ require_once __DIR__ . "/partials/app_header.php";
 					<span class="kbd">Ctrl</span><span class="kbd">↵</span>
 				</button>
 
-				<button class="btn-receipt" id="btnRecibo" type="button" data-receipt-url="/php/recibo.php">
+				<button class="btn-receipt" id="btnRecibo" type="button" data-receipt-url="<?php echo strh($RECIBO_URL); ?>">
 					Recibo
 				</button>
 
@@ -793,8 +849,8 @@ require_once __DIR__ . "/partials/app_header.php";
 									$pcVal = ($pc === null) ? "" : (string)(int)$pc;
 									$pfVal = ($pf === null) ? "" : (string)(int)$pf;
 
-									$flagCasa = flag_url($casa);
-									$flagFora = flag_url($fora);
+									$flagCasa = flag_url($casa, $ASSET_FS_BASE, $ASSET_WEB_BASE);
+									$flagFora = flag_url($fora, $ASSET_FS_BASE, $ASSET_WEB_BASE);
 									?>
 									<article class="match-card <?php echo $isLocked ? "is-locked" : ""; ?>"
 											 data-jogo-id="<?php echo $jid; ?>"
@@ -963,7 +1019,7 @@ require_once __DIR__ . "/partials/app_header.php";
 											Próximo <span class="muted">(Grupo <?php echo strh((string)$prox); ?>)</span>
 										</button>
 									<?php else: ?>
-										<button class="btn-next-group btn-go-champion" type="button" data-champion-url="/campeao.php">
+										<button class="btn-next-group btn-go-champion" type="button" data-champion-url="<?php echo strh($CHAMP_URL); ?>">
 											Quem será o campeão <span class="muted">(salva antes)</span>
 										</button>
 									<?php endif; ?>
@@ -994,14 +1050,22 @@ require_once __DIR__ . "/partials/app_header.php";
 		"logical_day_rule" => "00:00-04:59 pertence ao dia anterior",
 	],
 	"endpoints" => [
-		// ✅ HostGator: app.php na raiz do public_html
-		"save_games" => "/app.php?action=save",
-		"save_group_rank" => "/app.php?action=save_group_rank",
-		"receipt_url" => "/php/recibo.php?action=pdf",
+		"save_games" => $SAVE_GAMES_URL,
+		"save_group_rank" => $SAVE_GROUP_RANK_URL,
+		"receipt_url" => $RECIBO_URL,
 	],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
 </script>
 
-<script src="/js/app.js"></script>
+<script src="<?php echo strh($ASSET_WEB_BASE . "/js/app.js"); ?>"></script>
+
+<div id="popupJogos" class="popup-overlay" style="display:none;">
+  <div class="popup-card">
+    <h2>Jogos de Hoje</h2>
+    <div id="popupLista"></div>
+    <button onclick="fecharPopup()">Fechar</button>
+  </div>
+</div>
+
 </body>
 </html>
