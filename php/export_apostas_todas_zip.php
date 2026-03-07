@@ -176,7 +176,8 @@ try {
     $stTop4 = $pdo->prepare($sqlTop4);
 
     // =========================================================
-    // ✅ ADIÇÃO: SQL Jogos + palpites (MATA-MATA) (por usuário)
+    // ✅ ALTERAÇÃO: SQL Jogos + palpites (MATA-MATA) (por usuário)
+    //    Inclui o time selecionado pelo apostador para "passa em caso de empate"
     // =========================================================
     $sqlJogosMM = "
         SELECT
@@ -186,13 +187,16 @@ try {
             tc.nome AS casa_nome,
             p.gols_casa,
             tf.nome AS fora_nome,
-            p.gols_fora
+            p.gols_fora,
+            tp.nome AS passa_nome
         FROM jogos j
         INNER JOIN times tc ON tc.id = j.time_casa_id
         INNER JOIN times tf ON tf.id = j.time_fora_id
         LEFT JOIN palpites p
             ON p.jogo_id = j.id
            AND p.usuario_id = :usuario_id
+        LEFT JOIN times tp
+            ON tp.id = p.passa_time_id
         WHERE j.edicao_id = :edicao_id
           AND j.grupo_id IS NULL
           AND j.fase IN ('16_DE_FINAL','OITAVAS','QUARTAS','SEMI','TERCEIRO_LUGAR','FINAL')
@@ -242,7 +246,7 @@ try {
         $rowsJogos = $stJogos->fetchAll(PDO::FETCH_ASSOC);
 
         // =============================
-        // ✅ ADIÇÃO: Top4 do usuário
+        // ✅ Top4 do usuário
         // =============================
         $stTop4->execute([
             ":usuario_id" => $usuarioId,
@@ -252,7 +256,7 @@ try {
         if (!is_array($rowTop4)) $rowTop4 = [];
 
         // =============================
-        // ✅ ADIÇÃO: Jogos mata-mata do usuário
+        // ✅ Jogos mata-mata do usuário
         // =============================
         $stJogosMM->execute([
             ":edicao_id" => $edicaoId,
@@ -372,7 +376,7 @@ try {
         $html .= "</table>";
 
         // =========================================================
-        // ✅ A PARTIR DAQUI: ADIÇÕES DO MATA-MATA (abaixo do que já existe)
+        // ✅ A PARTIR DAQUI: ADIÇÕES DO MATA-MATA
         // =========================================================
 
         $html .= "<br/>";
@@ -409,9 +413,10 @@ try {
         $html .= "<br/>";
 
         // ---------- Jogos (Mata-mata) ----------
+        // ✅ Coluna extra: "Quem passa (se empate)" = tp.nome (palpites.passa_time_id)
         $html .= "<table border='1' cellspacing='0' cellpadding='6'>";
         $html .= "<thead>";
-        $html .= "<tr><th colspan='7'>Palpites de Jogos (Mata-mata)</th></tr>";
+        $html .= "<tr><th colspan='8'>Palpites de Jogos (Mata-mata)</th></tr>";
         $html .= "<tr>";
         $html .= "<th>Fase</th>";
         $html .= "<th>Data/Hora</th>";
@@ -420,6 +425,7 @@ try {
         $html .= "<th>Placar casa</th>";
         $html .= "<th>Time visitante</th>";
         $html .= "<th>Placar visitante</th>";
+        $html .= "<th>Quem passa (se empate)</th>";
         $html .= "</tr>";
         $html .= "</thead>";
         $html .= "<tbody>";
@@ -456,6 +462,15 @@ try {
             $gcStr = ($gc === null) ? "" : (string)(int)$gc;
             $gfStr = ($gf === null) ? "" : (string)(int)$gf;
 
+            $passaEmpate = "";
+            if ($gc !== null && $gf !== null) {
+                $igc = (int)$gc;
+                $igf = (int)$gf;
+                if ($igc === $igf) {
+                    $passaEmpate = trim((string)($r["passa_nome"] ?? ""));
+                }
+            }
+
             $html .= "<tr>";
             $html .= "<td>" . strh($faseOut) . "</td>";
             $html .= "<td>" . strh($dh) . "</td>";
@@ -464,6 +479,7 @@ try {
             $html .= "<td>" . strh($gcStr) . "</td>";
             $html .= "<td>" . strh($fora) . "</td>";
             $html .= "<td>" . strh($gfStr) . "</td>";
+            $html .= "<td>" . strh($passaEmpate) . "</td>";
             $html .= "</tr>";
         }
 

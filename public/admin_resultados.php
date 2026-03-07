@@ -614,16 +614,20 @@ require_once __DIR__ . "/partials/app_header.php";
                                 </div>
 
                                 <div class="match-actions">
-                                    <button type="button"
-                                            class="btn-save-one js-save-real"
-                                            data-jogo-id="<?php echo $jid; ?>">
-                                        Salvar resultado
-                                    </button>
-
                                     <span class="save-state js-row-msg" style="display:none;"></span>
                                 </div>
                             </article>
                         <?php endforeach; ?>
+                    </div>
+
+                    <div class="block-actions">
+                        <button type="button"
+                                class="btn-save-block js-save-block"
+                                data-block-type="group"
+                                data-block-key="<?php echo $gid; ?>">
+                            Salvar grupo
+                        </button>
+                        <span class="block-save-state js-block-msg" style="display:none;"></span>
                     </div>
                 </section>
             <?php endforeach; ?>
@@ -734,16 +738,20 @@ require_once __DIR__ . "/partials/app_header.php";
                                 </div>
 
                                 <div class="match-actions">
-                                    <button type="button"
-                                            class="btn-save-one js-save-real"
-                                            data-jogo-id="<?php echo $jid; ?>">
-                                        Salvar resultado
-                                    </button>
-
                                     <span class="save-state js-row-msg" style="display:none;"></span>
                                 </div>
                             </article>
                         <?php endforeach; ?>
+                    </div>
+
+                    <div class="block-actions">
+                        <button type="button"
+                                class="btn-save-block js-save-block"
+                                data-block-type="phase"
+                                data-block-key="<?php echo strh($faseKey); ?>">
+                            Salvar fase
+                        </button>
+                        <span class="block-save-state js-block-msg" style="display:none;"></span>
                     </div>
                 </section>
             <?php endforeach; ?>
@@ -759,6 +767,9 @@ echo json_encode([
     "edicao_id"    => $edicaoId,
     "active_type"  => $activeType,
     "active_key"   => $activeKey,
+    "endpoints"    => [
+        "save" => "/admin_resultados.php?action=save",
+    ],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 ?>
 </script>

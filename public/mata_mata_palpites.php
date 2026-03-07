@@ -10,29 +10,6 @@ require_once __DIR__ . "/../php/conexao.php";
 
 date_default_timezone_set('America/Sao_Paulo');
 
-/*
-|--------------------------------------------------------------------------
-| mata_mata_palpites.php — BOLÃO DA COPA (APOSTAS — MATA-MATA)
-|--------------------------------------------------------------------------
-| - Irmã gêmea do app.php (layout/UX)
-| - Menu lateral por FASE (filtra)
-| - Exibe jogos do mata-mata cadastrados pelo admin:
-|     jogos.grupo_id IS NULL
-| - Botões de fase só ativos se houver jogos naquela fase
-| - Salva placares em palpites (UPSERT por usuario_id + jogo_id)
-| - Após existirem jogos da SEMI, libera TOP 4 (palpite_top4)
-|   ✅ Top 4 APENAS entre os times da semifinal
-|--------------------------------------------------------------------------
-|
-| ✅ REGRA DE BLOQUEIO (DIA LÓGICO — igual app.php, mas para mata-mata):
-| - Jogo passado (data_hora <= agora): bloqueado
-| - Dia lógico:
-|     * 00:00–04:59 pertence ao dia anterior
-|     * >= 05:00 pertence ao mesmo dia
-| - 1h antes do primeiro jogo do dia lógico bloqueia aquele dia lógico todo.
-|--------------------------------------------------------------------------
-*/
-
 function json_response(array $data, int $code = 200): void {
 	http_response_code($code);
 	header("Content-Type: application/json; charset=utf-8");
@@ -210,7 +187,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 	exit;
 }
 
-/* API salvar palpites (placares) */
+/* API salvar palpites (placares + quem passa no empate) */
 if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") json_response(["ok" => false, "message" => "Método inválido."], 405);
 
@@ -224,17 +201,26 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	$normalized = [];
 	foreach ($items as $it) {
 		$jogoId = isset($it["jogo_id"]) ? (int)$it["jogo_id"] : 0;
+
 		$gc = $it["gols_casa"] ?? null;
 		$gf = $it["gols_fora"] ?? null;
 
 		$gc = ($gc === "" || $gc === null) ? null : (int)$gc;
 		$gf = ($gf === "" || $gf === null) ? null : (int)$gf;
 
+		$passa = $it["passa_time_id"] ?? null;
+		$passa = ($passa === "" || $passa === null) ? null : (int)$passa;
+
 		if ($jogoId <= 0) continue;
 		if ($gc === null || $gf === null) continue;
 		if ($gc < 0 || $gc > 99 || $gf < 0 || $gf > 99) continue;
 
-		$normalized[] = ["jogo_id" => $jogoId, "gols_casa" => $gc, "gols_fora" => $gf];
+		$normalized[] = [
+			"jogo_id" => $jogoId,
+			"gols_casa" => $gc,
+			"gols_fora" => $gf,
+			"passa_time_id" => $passa,
+		];
 	}
 	if (count($normalized) === 0) json_response(["ok" => false, "message" => "Preencha os placares antes de salvar."], 422);
 
@@ -246,7 +232,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		$in = implode(',', array_fill(0, count($ph), '?'));
 
 		$sqlCheck = "
-			SELECT j.id, j.data_hora
+			SELECT j.id, j.data_hora, j.time_casa_id, j.time_fora_id
 			FROM jogos j
 			WHERE j.id = ?
 			  AND j.edicao_id = ?
@@ -257,11 +243,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		$stCheck = $pdo->prepare($sqlCheck);
 
 		$sqlUpsert = "
-			INSERT INTO palpites (usuario_id, jogo_id, gols_casa, gols_fora)
-			VALUES (:usuario_id, :jogo_id, :gols_casa, :gols_fora)
+			INSERT INTO palpites (usuario_id, jogo_id, gols_casa, gols_fora, passa_time_id)
+			VALUES (:usuario_id, :jogo_id, :gols_casa, :gols_fora, :passa_time_id)
 			ON DUPLICATE KEY UPDATE
 			  gols_casa = VALUES(gols_casa),
 			  gols_fora = VALUES(gols_fora),
+			  passa_time_id = VALUES(passa_time_id),
 			  atualizado_em = CURRENT_TIMESTAMP
 		";
 		$stUpsert = $pdo->prepare($sqlUpsert);
@@ -288,11 +275,35 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 				continue;
 			}
 
+			$timeCasaId = (int)($game["time_casa_id"] ?? 0);
+			$timeForaId = (int)($game["time_fora_id"] ?? 0);
+
+			$gc = (int)$row["gols_casa"];
+			$gf = (int)$row["gols_fora"];
+			$empate = ($gc === $gf);
+
+			$passa = $row["passa_time_id"];
+			$passaInt = ($passa === null) ? 0 : (int)$passa;
+
+			if ($empate) {
+				if ($passaInt <= 0) {
+					$blocked[] = ["jogo_id" => (int)$row["jogo_id"], "reason" => "Empate: escolha quem passa."];
+					continue;
+				}
+				if ($passaInt !== $timeCasaId && $passaInt !== $timeForaId) {
+					$blocked[] = ["jogo_id" => (int)$row["jogo_id"], "reason" => "Empate: escolha um dos dois times do jogo."];
+					continue;
+				}
+			} else {
+				$passa = null;
+			}
+
 			$stUpsert->execute([
 				":usuario_id" => $usuarioId,
 				":jogo_id"    => (int)$row["jogo_id"],
-				":gols_casa"  => (int)$row["gols_casa"],
-				":gols_fora"  => (int)$row["gols_fora"],
+				":gols_casa"  => $gc,
+				":gols_fora"  => $gf,
+				":passa_time_id" => $passa,
 			]);
 			$saved++;
 		}
@@ -435,7 +446,8 @@ try {
 			tf.sigla AS fora_sigla,
 			j.zebra_time_id,
 			p.gols_casa AS palpite_casa,
-			p.gols_fora AS palpite_fora
+			p.gols_fora AS palpite_fora,
+			p.passa_time_id AS palpite_passa_time_id
 		FROM jogos j
 		INNER JOIN times tc ON tc.id = j.time_casa_id
 		INNER JOIN times tf ON tf.id = j.time_fora_id
@@ -573,17 +585,12 @@ require_once __DIR__ . "/partials/app_header.php";
 			</div>
 
 			<div class="menu-actions">
-				<button class="btn-save-all" id="btnSalvarTudo" type="button">
-					Salvar tudo
-					<span class="kbd">Ctrl</span><span class="kbd">↵</span>
-				</button>
-
 				<button class="btn-receipt" id="btnRecibo" type="button" data-receipt-url="/php/recibo_mata_mata.php">
 					Recibo
 				</button>
 
 				<div class="hint">
-					Dica: preencha os placares e salve. Você também pode salvar jogo a jogo.
+					Os palpites do mata-mata salvam automaticamente ao preencher placar e ao escolher quem passa.
 					<?php if ($lockNowLogicalDayAt instanceof DateTimeImmutable): ?>
 						<br>
 						<small>
@@ -593,7 +600,7 @@ require_once __DIR__ . "/partials/app_header.php";
 					<?php endif; ?>
 					<?php if ($top4Enabled): ?>
 						<br><br>
-						<small><strong>Top 4 liberado</strong> (semifinal cadastrada).</small>
+						<small><strong>Top 4 liberado</strong> (semifinal cadastrada) e com salvamento automático.</small>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -655,6 +662,12 @@ require_once __DIR__ . "/partials/app_header.php";
 
 									$flagCasa = flag_url($casa);
 									$flagFora = flag_url($fora);
+
+									$homeId = (int)$j["time_casa_id"];
+									$awayId = (int)$j["time_fora_id"];
+
+									$passDb = $j["palpite_passa_time_id"] ?? null;
+									$passDbVal = ($passDb === null) ? 0 : (int)$passDb;
 									?>
 									<article class="match-card <?php echo $isLocked ? "is-locked" : ""; ?>"
 											 data-jogo-id="<?php echo $jid; ?>"
@@ -662,6 +675,9 @@ require_once __DIR__ . "/partials/app_header.php";
 											 data-when="<?php echo strh($dh); ?>"
 											 data-home="<?php echo strh($casa); ?>"
 											 data-away="<?php echo strh($fora); ?>"
+											 data-home-id="<?php echo (int)$homeId; ?>"
+											 data-away-id="<?php echo (int)$awayId; ?>"
+											 data-pass-team-id="<?php echo (int)$passDbVal; ?>"
 											 data-fifa="<?php echo strh($codigoFifa); ?>"
 											 data-locked="<?php echo $isLocked ? "1" : "0"; ?>">
 										<div class="match-top">
@@ -726,9 +742,15 @@ require_once __DIR__ . "/partials/app_header.php";
 										</div>
 
 										<div class="match-actions">
-											<button class="btn-save-one" type="button" title="Salvar este jogo" <?php echo $isLocked ? "disabled" : ""; ?>>
-												<?php echo $isLocked ? "Bloqueado" : "Salvar"; ?>
+											<button class="btn-pass" type="button" title="Escolher quem passa" <?php echo $isLocked ? "disabled" : ""; ?> style="display:none;">
+												Quem passa?
 											</button>
+
+											<div class="pass-chooser" style="display:none;">
+												<button type="button" class="pass-choice" data-pass="home"><?php echo strh($casa); ?></button>
+												<button type="button" class="pass-choice" data-pass="away"><?php echo strh($fora); ?></button>
+											</div>
+
 											<div class="save-state" aria-live="polite">
 												<?php if ($isLocked): ?>
 													<span class="lock-reason"><?php echo strh($lockReason); ?></span>
@@ -802,7 +824,6 @@ require_once __DIR__ . "/partials/app_header.php";
 										</div>
 
 										<div class="group-rank-actions">
-											<button class="btn-rank-save" id="btnTop4Save" type="button">Salvar Top 4</button>
 											<div class="rank-state" id="top4State" aria-live="polite"></div>
 										</div>
 									<?php endif; ?>

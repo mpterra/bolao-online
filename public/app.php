@@ -449,7 +449,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 	$pos2 = isset($picks["2"]) ? (int)$picks["2"] : 0;
 	$pos3 = isset($picks["3"]) ? (int)$picks["3"] : 0;
 
-	// Seu banco exige NOT NULL e FK -> não aceita 0
 	if ($pos1 <= 0 || $pos2 <= 0 || $pos3 <= 0) {
 		json_response([
 			"ok" => false,
@@ -472,7 +471,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 			json_response(["ok" => false, "message" => "Grupo inválido."], 422);
 		}
 
-		// valida times pertencem ao grupo
 		$ids = [$pos1, $pos2, $pos3];
 		$in = implode(',', array_fill(0, count($ids), '?'));
 
@@ -595,7 +593,6 @@ try {
 		$jogosPorGrupo[$gc][] = $j;
 	}
 
-	// mapa: grupo -> próximo/anteriores grupos com jogos
 	$codigos = array_map(static fn($g) => (string)$g["codigo"], $grupos);
 
 	$temJogos = [];
@@ -631,7 +628,6 @@ try {
 		$prevGrupo[$c] = $prev;
 	}
 
-	// Times por grupo (para os combobox 1º/2º/3º)
 	$timesPorGrupoId = [];
 	if (count($grupos) > 0) {
 		$grupoIds = array_map(static fn($g) => (int)$g["id"], $grupos);
@@ -659,8 +655,7 @@ try {
 		}
 	}
 
-	// Picks salvos (palpite_grupo_classificacao)
-	$picksPorGrupoId = []; // [grupo_id => [1=>time_id,2=>time_id,3=>time_id]]
+	$picksPorGrupoId = [];
 	if (count($grupos) > 0) {
 		$grupoIds = array_map(static fn($g) => (int)$g["id"], $grupos);
 		$in = implode(',', array_fill(0, count($grupoIds), '?'));
@@ -726,6 +721,13 @@ require_once __DIR__ . "/partials/app_header.php";
 			<div class="menu-title">Grupos</div>
 
 			<div class="menu-list" id="menuGrupos">
+				<a class="menu-link menu-link-champion"
+				   href="<?php echo strh($CHAMP_URL); ?>"
+				   title="Escolher o campeão">
+					<span class="menu-link-text">Quem será o campeão</span>
+					<span class="badge badge-champion">★</span>
+				</a>
+
 				<?php foreach ($grupos as $g): ?>
 					<?php
 					$codigo = (string)$g["codigo"];
@@ -743,27 +745,15 @@ require_once __DIR__ . "/partials/app_header.php";
 						<?php endif; ?>
 					</a>
 				<?php endforeach; ?>
-
-				<a class="menu-link menu-link-champion"
-				   href="<?php echo strh($CHAMP_URL); ?>"
-				   title="Escolher o campeão">
-					<span class="menu-link-text">Quem será o campeão</span>
-					<span class="badge badge-champion">★</span>
-				</a>
 			</div>
 
 			<div class="menu-actions">
-				<button class="btn-save-all" id="btnSalvarTudo" type="button">
-					Salvar tudo
-					<span class="kbd">Ctrl</span><span class="kbd">↵</span>
-				</button>
-
 				<button class="btn-receipt" id="btnRecibo" type="button" data-receipt-url="<?php echo strh($RECIBO_URL); ?>">
 					Recibo
 				</button>
 
 				<div class="hint">
-					Dica: preencha os placares e salve. Você também pode salvar jogo a jogo.
+					Os placares e a classificação do grupo salvam automaticamente.
 					<?php if ($lockNowLogicalDayAt instanceof DateTimeImmutable): ?>
 						<br>
 						<small>
@@ -925,9 +915,6 @@ require_once __DIR__ . "/partials/app_header.php";
 										</div>
 
 										<div class="match-actions">
-											<button class="btn-save-one" type="button" title="Salvar este jogo" <?php echo $isLocked ? "disabled" : ""; ?>>
-												<?php echo $isLocked ? "Bloqueado" : "Salvar"; ?>
-											</button>
 											<div class="save-state" aria-live="polite">
 												<?php if ($isLocked): ?>
 													<span class="lock-reason"><?php echo strh($lockReason); ?></span>
@@ -998,7 +985,7 @@ require_once __DIR__ . "/partials/app_header.php";
 									</div>
 
 									<div class="group-rank-actions">
-										<button class="btn-rank-save" type="button">Salvar classificação</button>
+										<button class="btn-group-save" type="button">Salvar grupo</button>
 										<div class="rank-state" aria-live="polite"></div>
 									</div>
 								<?php endif; ?>
@@ -1020,7 +1007,7 @@ require_once __DIR__ . "/partials/app_header.php";
 										</button>
 									<?php else: ?>
 										<button class="btn-next-group btn-go-champion" type="button" data-champion-url="<?php echo strh($CHAMP_URL); ?>">
-											Quem será o campeão <span class="muted">(salva antes)</span>
+											Quem será o campeão <span class="muted">(continuar)</span>
 										</button>
 									<?php endif; ?>
 								</div>
@@ -1069,3 +1056,4 @@ require_once __DIR__ . "/partials/app_header.php";
 
 </body>
 </html>
+

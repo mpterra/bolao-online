@@ -321,6 +321,79 @@ create table if not exists ranking (
 ) engine=innodb;
 
 
+CREATE TABLE `palpite_top4` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `edicao_id` SMALLINT UNSIGNED NOT NULL,
+  `usuario_id` BIGINT UNSIGNED NOT NULL,
+
+  `primeiro_time_id` SMALLINT UNSIGNED NOT NULL,
+  `segundo_time_id`  SMALLINT UNSIGNED NOT NULL,
+  `terceiro_time_id` SMALLINT UNSIGNED NOT NULL,
+  `quarto_time_id`   SMALLINT UNSIGNED NOT NULL,
+
+  `criado_em` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `atualizado_em` TIMESTAMP NOT NULL 
+      DEFAULT CURRENT_TIMESTAMP 
+      ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+
+  UNIQUE KEY `uk_pt4_unico` (`usuario_id`, `edicao_id`),
+
+  KEY `idx_pt4_edicao` (`edicao_id`),
+  KEY `idx_pt4_usuario` (`usuario_id`),
+
+  KEY `idx_pt4_time1` (`primeiro_time_id`),
+  KEY `idx_pt4_time2` (`segundo_time_id`),
+  KEY `idx_pt4_time3` (`terceiro_time_id`),
+  KEY `idx_pt4_time4` (`quarto_time_id`),
+
+  CONSTRAINT `fk_pt4_edicao`
+    FOREIGN KEY (`edicao_id`)
+    REFERENCES `edicoes` (`id`)
+    ON DELETE CASCADE,
+
+  CONSTRAINT `fk_pt4_usuario`
+    FOREIGN KEY (`usuario_id`)
+    REFERENCES `usuarios` (`id`)
+    ON DELETE CASCADE,
+
+  CONSTRAINT `fk_pt4_time1`
+    FOREIGN KEY (`primeiro_time_id`)
+    REFERENCES `times` (`id`),
+
+  CONSTRAINT `fk_pt4_time2`
+    FOREIGN KEY (`segundo_time_id`)
+    REFERENCES `times` (`id`),
+
+  CONSTRAINT `fk_pt4_time3`
+    FOREIGN KEY (`terceiro_time_id`)
+    REFERENCES `times` (`id`),
+
+  CONSTRAINT `fk_pt4_time4`
+    FOREIGN KEY (`quarto_time_id`)
+    REFERENCES `times` (`id`),
+
+  CONSTRAINT `chk_pt4_times_distintos`
+    CHECK (
+      `primeiro_time_id` <> `segundo_time_id` AND
+      `primeiro_time_id` <> `terceiro_time_id` AND
+      `primeiro_time_id` <> `quarto_time_id` AND
+      `segundo_time_id`  <> `terceiro_time_id` AND
+      `segundo_time_id`  <> `quarto_time_id` AND
+      `terceiro_time_id` <> `quarto_time_id`
+    )
+
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;
+
+  ALTER TABLE palpites
+  ADD COLUMN passa_time_id SMALLINT UNSIGNED NULL AFTER gols_fora,
+  ADD KEY idx_palpites_passa (passa_time_id),
+  ADD CONSTRAINT fk_palpites_passa
+    FOREIGN KEY (passa_time_id) REFERENCES times(id);
+
 
 
 -- =========================================================

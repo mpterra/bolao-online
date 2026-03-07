@@ -263,16 +263,17 @@ final class SimplePdf {
 
 		$this->y -= 36;
 
-		// Cabeçalho 4 colunas (Courier)
+		// Cabeçalho 5 colunas (Courier)
 		$this->ensureSpace(18);
 
 		$hdr =
 			pdf_col("Quando", 12, 'L') . "  " .
-			pdf_col("Seleção Casa", 22, 'L') . "  " .
+			pdf_col("Seleção Casa", 16, 'L') . "  " .
 			pdf_col("Palpite", 8, 'C') . "  " .
-			pdf_col("Seleção Fora", 22, 'L');
+			pdf_col("Seleção Fora", 16, 'L') . "  " .
+			pdf_col("Quem passa", 14, 'L');
 
-		$this->textRawWin1252($left + 12, $this->y, "F2", 10, $hdr);
+		$this->textRawWin1252($left + 12, $this->y, "F2", 9, $hdr);
 
 		$this->y -= 12;
 
@@ -283,18 +284,19 @@ final class SimplePdf {
 		$this->y -= 10;
 	}
 
-	public function row(string $when, string $home, string $away, string $score): void {
+	public function row(string $when, string $home, string $score, string $away, string $passa): void {
 		$this->ensureSpace(14);
 
 		$left = $this->marginL;
 
 		$line =
 			pdf_col($when, 12, 'L') . "  " .
-			pdf_col($home, 22, 'L') . "  " .
+			pdf_col($home, 16, 'L') . "  " .
 			pdf_col($score !== "" ? $score : "—", 8, 'C') . "  " .
-			pdf_col($away, 22, 'L');
+			pdf_col($away, 16, 'L') . "  " .
+			pdf_col($passa !== "" ? $passa : "—", 14, 'L');
 
-		$this->textRawWin1252($left + 12, $this->y, "F2", 10, $line);
+		$this->textRawWin1252($left + 12, $this->y, "F2", 9, $line);
 		$this->y -= 12;
 	}
 
@@ -418,13 +420,17 @@ try {
 			tc.nome AS casa_nome,
 			tf.nome AS fora_nome,
 			p.gols_casa AS palpite_casa,
-			p.gols_fora AS palpite_fora
+			p.gols_fora AS palpite_fora,
+			p.passa_time_id,
+			tp.nome AS passa_nome
 		FROM jogos j
 		INNER JOIN times tc ON tc.id = j.time_casa_id
 		INNER JOIN times tf ON tf.id = j.time_fora_id
 		LEFT JOIN palpites p
 			ON p.jogo_id = j.id
 		   AND p.usuario_id = :usuario_id
+		LEFT JOIN times tp
+			ON tp.id = p.passa_time_id
 		WHERE j.edicao_id = :edicao_id
 		  AND j.grupo_id IS NULL
 		  AND j.fase IN ('16_DE_FINAL','OITAVAS','QUARTAS','SEMI','TERCEIRO_LUGAR','FINAL')
@@ -450,7 +456,9 @@ try {
 	];
 
 	$map = [];
-	foreach (array_keys($labels) as $k) $map[$k] = [];
+	foreach (array_keys($labels) as $k) {
+		$map[$k] = [];
+	}
 
 	foreach ($rows as $r) {
 		$f = (string)($r["fase"] ?? "");
@@ -471,7 +479,7 @@ try {
 
 	// Seção Top 4
 	$pdf->sectionTitle("Top 4 do Torneio");
-	$pdf->footerNote(" "); // 1 linha em branco (mesmo padrão do recibo de grupos)
+	$pdf->footerNote(" ");
 
 	$hasTop4 = (
 		trim($top4["1"]) !== "" ||
@@ -505,16 +513,24 @@ try {
 
 			$pc = $r["palpite_casa"] ?? null;
 			$pf = $r["palpite_fora"] ?? null;
+			$passaNome = trim((string)($r["passa_nome"] ?? ""));
 
-			$score = ($pc === null || $pf === null) ? "—" : ((int)$pc . "x" . (int)$pf);
+			$score = ($pc === null || $pf === null)
+				? "—"
+				: ((int)$pc . "x" . (int)$pf);
 
-			$pdf->row($when, $home, $away, $score);
+			$quemPassa = "—";
+			if ($pc !== null && $pf !== null && (int)$pc === (int)$pf && $passaNome !== "") {
+				$quemPassa = $passaNome;
+			}
+
+			$pdf->row($when, $home, $score, $away, $quemPassa);
 		}
 
 		$pdf->footerNote(" ");
 	}
 
-	$pdf->footerNote("Obs.: placares “—” indicam jogo sem palpite preenchido.");
+	$pdf->footerNote("Obs.: placares “—” indicam jogo sem palpite preenchido. Em caso de empate, a coluna “Quem passa” mostra a seleção escolhida.");
 	$pdf->output("recibo_mata_mata.pdf");
 
 } catch (Throwable $e) {

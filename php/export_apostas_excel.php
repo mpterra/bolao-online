@@ -195,6 +195,8 @@ try {
 
     // =========================================================
     // 5) Jogos + placares apostados (Mata-mata)
+    //    ✅ Inclui o time selecionado pelo apostador para "passa em caso de empate":
+    //       palpites.passa_time_id -> times (tp) -> passa_nome
     // =========================================================
     $sqlJogosMM = "
         SELECT
@@ -204,13 +206,15 @@ try {
             tc.nome AS casa_nome,
             p.gols_casa,
             tf.nome AS fora_nome,
-            p.gols_fora
+            p.gols_fora,
+            tp.nome AS passa_nome
         FROM jogos j
         INNER JOIN times tc ON tc.id = j.time_casa_id
         INNER JOIN times tf ON tf.id = j.time_fora_id
         LEFT JOIN palpites p
             ON p.jogo_id = j.id
            AND p.usuario_id = :usuario_id
+        LEFT JOIN times tp ON tp.id = p.passa_time_id
         WHERE j.edicao_id = :edicao_id
           AND j.grupo_id IS NULL
           AND j.fase IN ('16_DE_FINAL','OITAVAS','QUARTAS','SEMI','TERCEIRO_LUGAR','FINAL')
@@ -384,10 +388,11 @@ try {
     echo "<br/>";
 
     // ---------- Tabela: Jogos (Mata-mata) ----------
+    // ✅ Coluna "Quem passa (se empate)" = time selecionado pelo apostador (palpites.passa_time_id).
     echo "<table border='1' cellspacing='0' cellpadding='6'>";
     echo "<thead>";
     echo "<tr>";
-    echo "<th colspan='7'>Palpites de Jogos (Mata-mata)</th>";
+    echo "<th colspan='8'>Palpites de Jogos (Mata-mata)</th>";
     echo "</tr>";
     echo "<tr>";
     echo "<th>Fase</th>";
@@ -397,6 +402,7 @@ try {
     echo "<th>Placar casa</th>";
     echo "<th>Time visitante</th>";
     echo "<th>Placar visitante</th>";
+    echo "<th>Quem passa (se empate)</th>";
     echo "</tr>";
     echo "</thead>";
     echo "<tbody>";
@@ -433,6 +439,16 @@ try {
         $gcStr = ($gc === null) ? "" : (string)(int)$gc;
         $gfStr = ($gf === null) ? "" : (string)(int)$gf;
 
+        // ✅ Mostra o time escolhido PELO APOSTADOR quando o palpite for empate
+        $passaEmpate = "";
+        if ($gc !== null && $gf !== null) {
+            $igc = (int)$gc;
+            $igf = (int)$gf;
+            if ($igc === $igf) {
+                $passaEmpate = trim((string)($r["passa_nome"] ?? ""));
+            }
+        }
+
         echo "<tr>";
         echo "<td>" . strh($faseOut) . "</td>";
         echo "<td>" . strh($dh) . "</td>";
@@ -441,6 +457,7 @@ try {
         echo "<td>" . strh($gcStr) . "</td>";
         echo "<td>" . strh($fora) . "</td>";
         echo "<td>" . strh($gfStr) . "</td>";
+        echo "<td>" . strh($passaEmpate) . "</td>";
         echo "</tr>";
     }
 

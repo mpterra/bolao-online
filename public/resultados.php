@@ -89,6 +89,66 @@ function classify_user_pick(?int $realGc, ?int $realGf, ?int $pickGc, ?int $pick
 }
 
 /**
+ * Classifica se o usuário acertou QUEM PASSA no mata-mata.
+ *
+ * Regras:
+ * - Se não houver placar real => PENDENTE
+ * - Se não houver palpite => SEM_PALPITE
+ * - Se o placar real definir classificado no tempo normal:
+ *      casa vence => passa casa
+ *      fora vence => passa fora
+ * - Se o placar real for empate, esta tela não tem um campo explícito do classificado real;
+ *   então retorna PENDENTE_PASSA
+ * - Para o palpite:
+ *      vitória casa => palpite passa casa
+ *      vitória fora => palpite passa fora
+ *      empate => usa palpite_passa_time_id
+ */
+function classify_knockout_pass_pick(
+    ?int $realGc,
+    ?int $realGf,
+    ?int $pickGc,
+    ?int $pickGf,
+    ?int $pickPassaTimeId,
+    int $homeId,
+    int $awayId
+): string {
+    if ($realGc === null || $realGf === null) {
+        return "PENDENTE";
+    }
+
+    if ($pickGc === null || $pickGf === null) {
+        return "SEM_PALPITE";
+    }
+
+    $realPassaTimeId = null;
+    if ($realGc > $realGf) {
+        $realPassaTimeId = $homeId;
+    } elseif ($realGf > $realGc) {
+        $realPassaTimeId = $awayId;
+    } else {
+        return "PENDENTE_PASSA";
+    }
+
+    $pickPassaResolved = null;
+    if ($pickGc > $pickGf) {
+        $pickPassaResolved = $homeId;
+    } elseif ($pickGf > $pickGc) {
+        $pickPassaResolved = $awayId;
+    } else {
+        $pickPassaResolved = $pickPassaTimeId;
+    }
+
+    if ($pickPassaResolved === null || (int)$pickPassaResolved <= 0) {
+        return "SEM_PALPITE_PASSA";
+    }
+
+    return ((int)$pickPassaResolved === (int)$realPassaTimeId)
+        ? "ACERTOU_QUEM_PASSA"
+        : "ERROU_QUEM_PASSA";
+}
+
+/**
  * Normaliza nome do time -> slug de arquivo em /public/img/flags (seu padrão real).
  */
 function flag_slug_from_name(string $nome): string {
@@ -157,6 +217,43 @@ function flag_url_for_team(string $teamName, string $sigla): ?string {
     return null;
 }
 
+function phases_knockout(): array {
+    return [
+        '16_DE_FINAL'    => '16 de final',
+        'OITAVAS'        => 'Oitavas',
+        'QUARTAS'        => 'Quartas',
+        'SEMI'           => 'Semifinal',
+        'TERCEIRO_LUGAR' => '3º lugar',
+        'FINAL'          => 'Final',
+    ];
+}
+
+function format_pick_text_with_passa(
+    ?int $pickGc,
+    ?int $pickGf,
+    ?int $pickPassaTimeId,
+    int $homeId,
+    int $awayId,
+    string $homeName,
+    string $awayName
+): string {
+    if ($pickGc === null || $pickGf === null) {
+        return "—";
+    }
+
+    $txt = $pickGc . " x " . $pickGf;
+
+    if ($pickGc === $pickGf && $pickPassaTimeId !== null) {
+        if ($pickPassaTimeId === $homeId) {
+            $txt .= " (passa " . $homeName . ")";
+        } elseif ($pickPassaTimeId === $awayId) {
+            $txt .= " (passa " . $awayName . ")";
+        }
+    }
+
+    return $txt;
+}
+
 require_login();
 
 $usuarioId   = (int)($_SESSION["usuario_id"] ?? 0);
@@ -177,10 +274,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 
 /* =========================================================
    Carregamento: edição ativa -> grupos -> jogos + palpite do usuário
+                edição ativa -> mata-mata -> jogos + palpite do usuário
    ========================================================= */
 try {
     $edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
-    if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
+    if ($edicaoId <= 0) {
+        throw new RuntimeException("Nenhuma edição ativa.");
+    }
 
     $stG = $pdo->prepare("SELECT id, codigo, nome FROM grupos WHERE edicao_id = ? ORDER BY codigo ASC, id ASC");
     $stG->execute([$edicaoId]);
@@ -202,12 +302,15 @@ try {
 
             tc.nome  AS time_casa_nome,
             tc.sigla AS time_casa_sigla,
+            tc.id    AS time_casa_id,
 
             tf.nome  AS time_fora_nome,
             tf.sigla AS time_fora_sigla,
+            tf.id    AS time_fora_id,
 
             p.gols_casa AS palpite_casa,
-            p.gols_fora AS palpite_fora
+            p.gols_fora AS palpite_fora,
+            p.passa_time_id AS palpite_passa_time_id
         FROM jogos j
         INNER JOIN grupos g ON g.id = j.grupo_id
         INNER JOIN times tc ON tc.id = j.time_casa_id
@@ -226,6 +329,48 @@ try {
     ]);
     $jogos = $stJ->fetchAll(PDO::FETCH_ASSOC);
 
+    $stMM = $pdo->prepare("
+        SELECT
+            j.id,
+            j.fase,
+            j.grupo_id,
+            j.rodada,
+            j.data_hora,
+            j.status,
+            j.gols_casa,
+            j.gols_fora,
+            j.codigo_fifa,
+
+            tc.nome  AS time_casa_nome,
+            tc.sigla AS time_casa_sigla,
+            tc.id    AS time_casa_id,
+
+            tf.nome  AS time_fora_nome,
+            tf.sigla AS time_fora_sigla,
+            tf.id    AS time_fora_id,
+
+            p.gols_casa AS palpite_casa,
+            p.gols_fora AS palpite_fora,
+            p.passa_time_id AS palpite_passa_time_id
+        FROM jogos j
+        INNER JOIN times tc ON tc.id = j.time_casa_id
+        INNER JOIN times tf ON tf.id = j.time_fora_id
+        LEFT JOIN palpites p
+               ON p.jogo_id = j.id
+              AND p.usuario_id = :uid
+        WHERE j.edicao_id = :eid
+          AND j.grupo_id IS NULL
+          AND j.fase IN ('16_DE_FINAL','OITAVAS','QUARTAS','SEMI','TERCEIRO_LUGAR','FINAL')
+        ORDER BY FIELD(j.fase,'16_DE_FINAL','OITAVAS','QUARTAS','SEMI','TERCEIRO_LUGAR','FINAL'),
+                 j.data_hora ASC,
+                 j.id ASC
+    ");
+    $stMM->execute([
+        ":uid" => $usuarioId,
+        ":eid" => $edicaoId,
+    ]);
+    $jogosMataMata = $stMM->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (Throwable $e) {
     http_response_code(500);
     echo "Erro ao carregar resultados.";
@@ -235,13 +380,31 @@ try {
 $jogosPorGrupo = [];
 foreach ($jogos as $row) {
     $gid = (int)$row["grupo_id"];
-    if (!isset($jogosPorGrupo[$gid])) $jogosPorGrupo[$gid] = [];
+    if (!isset($jogosPorGrupo[$gid])) {
+        $jogosPorGrupo[$gid] = [];
+    }
     $jogosPorGrupo[$gid][] = $row;
 }
 
+$jogosPorFase = [];
+foreach (array_keys(phases_knockout()) as $faseCode) {
+    $jogosPorFase[$faseCode] = [];
+}
+foreach ($jogosMataMata as $row) {
+    $fase = (string)$row["fase"];
+    if (!isset($jogosPorFase[$fase])) {
+        $jogosPorFase[$fase] = [];
+    }
+    $jogosPorFase[$fase][] = $row;
+}
+
 $activeGroupId = 0;
-if (isset($_GET["grupo_id"])) $activeGroupId = (int)$_GET["grupo_id"];
-if ($activeGroupId <= 0 && count($grupos) > 0) $activeGroupId = (int)$grupos[0]["id"];
+if (isset($_GET["grupo_id"])) {
+    $activeGroupId = (int)$_GET["grupo_id"];
+}
+if ($activeGroupId <= 0 && count($grupos) > 0) {
+    $activeGroupId = (int)$grupos[0]["id"];
+}
 
 /* HEADER PADRÃO (partial) - arquivo em /public_html/partials */
 require_once __DIR__ . "/partials/app_header.php";
@@ -291,11 +454,27 @@ require_once __DIR__ . "/partials/app_header.php";
                 <?php endforeach; ?>
             </div>
 
+            <div class="menu-title" style="margin-top:18px;">Mata-mata</div>
+
+            <div class="menu-list">
+                <?php foreach (phases_knockout() as $faseCode => $faseLabel): ?>
+                    <?php $count = count($jogosPorFase[$faseCode] ?? []); ?>
+                    <a class="menu-link<?php echo $count > 0 ? "" : " is-disabled"; ?>"
+                       href="<?php echo $count > 0 ? '#fase-' . strh($faseCode) : '#'; ?>"
+                       <?php echo $count > 0 ? "" : "aria-disabled='true' tabindex='-1'"; ?>>
+                        <span><?php echo strh($faseLabel); ?></span>
+                        <span class="badge<?php echo $count > 0 ? "" : " badge-muted"; ?>"><?php echo (int)$count; ?></span>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+
             <div class="menu-actions">
                 <div class="hint">
                     Aqui você confere o <strong>placar real</strong> e o <strong>seu palpite</strong>.
                     <br>
                     <small>Legenda: <strong>✔ Placar</strong>, <strong>✓ Resultado</strong>, <strong>— Pendente</strong>, <strong>× Errou</strong>.</small>
+                    <br><br>
+                    <small>No mata-mata, se o seu palpite foi empate e você escolheu quem passa, isso também aparece no texto do palpite.</small>
                 </div>
             </div>
         </aside>
@@ -343,7 +522,9 @@ require_once __DIR__ . "/partials/app_header.php";
                                 $rodada = $j["rodada"] !== null ? (int)$j["rodada"] : null;
 
                                 $kickoff = dt_from_mysql((string)$j["data_hora"]);
-                                if (!$kickoff) $kickoff = new DateTimeImmutable("1970-01-01 00:00:00", $tz);
+                                if (!$kickoff) {
+                                    $kickoff = new DateTimeImmutable("1970-01-01 00:00:00", $tz);
+                                }
 
                                 $realGc  = $j["gols_casa"] !== null ? (int)$j["gols_casa"] : null;
                                 $realGf  = $j["gols_fora"] !== null ? (int)$j["gols_fora"] : null;
@@ -385,6 +566,145 @@ require_once __DIR__ . "/partials/app_header.php";
                                     <div class="badges">
                                         <span class="badge-status status-<?php echo strh($autoStatus); ?>"><?php echo strh($autoStatus); ?></span>
                                         <span class="badge-pick pick-<?php echo strh($pickClass); ?>"><?php echo strh($pickClass); ?></span>
+                                    </div>
+                                </div>
+
+                                <div class="match-body">
+                                    <div class="team team-home">
+                                        <div class="team-name"><?php echo strh($timeCasaNome); ?></div>
+
+                                        <div class="team-flag<?php echo $flagCasa ? "" : " no-flag"; ?>">
+                                            <?php if ($flagCasa): ?>
+                                                <img src="<?php echo strh($flagCasa); ?>" alt="<?php echo strh($siglaCasa); ?>">
+                                            <?php endif; ?>
+                                            <div class="team-badge"><?php echo strh($siglaCasa); ?></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="midbox">
+                                        <div class="score-compare">
+                                            <div class="score-col">
+                                                <div class="score-label">Real</div>
+                                                <div class="score-val"><?php echo strh($realTxt); ?></div>
+                                            </div>
+
+                                            <div class="score-sep"></div>
+
+                                            <div class="score-col">
+                                                <div class="score-label">Seu palpite</div>
+                                                <div class="score-val"><?php echo strh($pickTxt); ?></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="team team-away">
+                                        <div class="team-flag<?php echo $flagFora ? "" : " no-flag"; ?>">
+                                            <?php if ($flagFora): ?>
+                                                <img src="<?php echo strh($flagFora); ?>" alt="<?php echo strh($siglaFora); ?>">
+                                            <?php endif; ?>
+                                            <div class="team-badge"><?php echo strh($siglaFora); ?></div>
+                                        </div>
+
+                                        <div class="team-name"><?php echo strh($timeForaNome); ?></div>
+                                    </div>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endforeach; ?>
+
+            <div class="content-head" style="margin-top:28px;">
+                <h1 class="content-h1">Resultados do mata-mata</h1>
+                <p class="content-sub">
+                    Mostra o placar real (quando existir) e o seu palpite para cada jogo do mata-mata.
+                </p>
+            </div>
+
+            <?php foreach (phases_knockout() as $faseCode => $faseLabel): ?>
+                <?php $lista = $jogosPorFase[$faseCode] ?? []; ?>
+
+                <section class="group-block" id="fase-<?php echo strh($faseCode); ?>">
+                    <div class="group-head">
+                        <div class="group-line">
+                            <div class="group-pill"><?php echo strh($faseLabel); ?></div>
+                            <div class="group-count"><?php echo count($lista); ?> jogos</div>
+                        </div>
+                    </div>
+
+                    <div class="matches">
+                        <?php if (count($lista) === 0): ?>
+                            <div class="empty">Nenhum jogo cadastrado nesta fase.</div>
+                        <?php endif; ?>
+
+                        <?php foreach ($lista as $j): ?>
+                            <?php
+                                $jid = (int)$j["id"];
+
+                                $kickoff = dt_from_mysql((string)$j["data_hora"]);
+                                if (!$kickoff) {
+                                    $kickoff = new DateTimeImmutable("1970-01-01 00:00:00", $tz);
+                                }
+
+                                $realGc  = $j["gols_casa"] !== null ? (int)$j["gols_casa"] : null;
+                                $realGf  = $j["gols_fora"] !== null ? (int)$j["gols_fora"] : null;
+
+                                $pickGc  = $j["palpite_casa"] !== null ? (int)$j["palpite_casa"] : null;
+                                $pickGf  = $j["palpite_fora"] !== null ? (int)$j["palpite_fora"] : null;
+                                $pickPassaTimeId = $j["palpite_passa_time_id"] !== null ? (int)$j["palpite_passa_time_id"] : null;
+
+                                $autoStatus = compute_status_auto($realGc, $realGf, $kickoff, $now);
+                                $pickClass  = classify_user_pick($realGc, $realGf, $pickGc, $pickGf);
+
+                                $timeCasaNome = (string)$j["time_casa_nome"];
+                                $timeForaNome = (string)$j["time_fora_nome"];
+                                $siglaCasa    = (string)$j["time_casa_sigla"];
+                                $siglaFora    = (string)$j["time_fora_sigla"];
+                                $timeCasaId   = (int)$j["time_casa_id"];
+                                $timeForaId   = (int)$j["time_fora_id"];
+
+                                $passClass = classify_knockout_pass_pick(
+                                    $realGc,
+                                    $realGf,
+                                    $pickGc,
+                                    $pickGf,
+                                    $pickPassaTimeId,
+                                    $timeCasaId,
+                                    $timeForaId
+                                );
+
+                                $flagCasa = flag_url_for_team($timeCasaNome, $siglaCasa);
+                                $flagFora = flag_url_for_team($timeForaNome, $siglaFora);
+
+                                $whenTxt = $kickoff->format("d/m/Y H:i");
+                                $realTxt = ($realGc === null || $realGf === null) ? "—" : ($realGc . " x " . $realGf);
+                                $pickTxt = format_pick_text_with_passa(
+                                    $pickGc,
+                                    $pickGf,
+                                    $pickPassaTimeId,
+                                    $timeCasaId,
+                                    $timeForaId,
+                                    $timeCasaNome,
+                                    $timeForaNome
+                                );
+
+                                $fifaTxt = isset($j["codigo_fifa"]) ? trim((string)$j["codigo_fifa"]) : "";
+                            ?>
+                            <article class="match-card" data-jogo-id="<?php echo $jid; ?>">
+                                <div class="match-top">
+                                    <div class="match-when">
+                                        <span class="when"><?php echo strh($whenTxt); ?></span>
+                                        <?php if ($fifaTxt !== ""): ?>
+                                            <span class="round">FIFA <?php echo strh($fifaTxt); ?></span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div class="badges">
+                                        <span class="badge-status status-<?php echo strh($autoStatus); ?>"><?php echo strh($autoStatus); ?></span>
+                                        <span class="badge-pick pick-<?php echo strh($pickClass); ?>"><?php echo strh($pickClass); ?></span>
+                                        <?php if ($passClass !== "PENDENTE"): ?>
+                                            <span class="badge-pick pick-<?php echo strh($passClass); ?>"><?php echo strh($passClass); ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
 

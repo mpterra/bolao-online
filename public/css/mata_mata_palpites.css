@@ -88,3 +88,58 @@
 }
 #top4State.is-ok{ color: rgba(0,255,170,.9); }
 #top4State.is-bad{ color: rgba(255,120,120,.95); }
+
+/* =========================
+   ✅ NOVO (mínimo): botão "Quem passa?" + chooser
+   ========================= */
+
+.match-actions{
+  position: relative;
+}
+
+/* botão extra fica no mesmo “nível” visual do salvar (sem criar cardzão) */
+.match-actions .btn-pass{
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(10, 16, 20, .30);
+  color: rgba(255,255,255,.88);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.match-actions .btn-pass:hover{
+  border-color: rgba(255,255,255,.22);
+}
+
+.match-actions .btn-pass:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* chooser compacto, aparece abaixo dos botões dentro do actions */
+.match-actions .pass-chooser{
+  margin-top: 8px;
+  display: none;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.match-actions .pass-chooser .pass-choice{
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(10, 16, 20, .35);
+  color: rgba(255,255,255,.92);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.match-actions .pass-chooser .pass-choice:hover{
+  border-color: rgba(0,255,170,.55);
+}
