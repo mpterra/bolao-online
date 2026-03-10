@@ -37,7 +37,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 		[
 			"key"   => "por_dia",
 			"label" => "Por Dia",
-			"href"  => "/jogos_por_dia.php",
+			"href"  => "/palpites_por_dia.php",
 		],
 		[
 			"key"   => "ranking",
