@@ -320,6 +320,43 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
 .app-menu{ padding: 14px; }
 .app-content{ padding: 16px; min-height: 360px; }
 
+.menu-view-switch{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.12);
+}
+
+.menu-view-btn{
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 40px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.84);
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 12px;
+  transition: 180ms ease;
+}
+
+.menu-view-btn:hover{
+  background: rgba(255,255,255,.08);
+  transform: translateY(-1px);
+}
+
+.menu-view-btn.is-active{
+  color: #062027;
+  border-color: rgba(255,255,255,.10);
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 12px 28px rgba(0,0,0,.22);
+}
+
 .content-head{ margin-bottom: 12px; }
 
 .content-h1{
@@ -368,6 +405,9 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   height: 1px;
   background: rgba(255,255,255,.10);
 }
+
+.menu-panel{ display:none; }
+.menu-panel.is-active{ display:block; }
 
 .menu-list{
   display:flex;
@@ -457,6 +497,12 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   color: rgba(245,242,255,.96);
 }
 
+.group-pill.day-pill{
+  background: rgba(70,220,255,.14);
+  border: 1px solid rgba(70,220,255,.28);
+  color: rgba(230,250,255,.98);
+}
+
 .group-count{
   padding: 6px 10px;
   border-radius: 999px;
@@ -532,6 +578,16 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   border-radius: 999px;
   border: 1px solid rgba(140,120,255,.34);
   background: rgba(140,120,255,.18);
+}
+
+.context-chip{
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(230,250,255,.98);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(70,220,255,.28);
+  background: rgba(70,220,255,.14);
 }
 
 .match-status{
@@ -650,12 +706,21 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   background: rgba(255,255,255,.12);
 }
 
+.score.is-invalid{
+  border-color: rgba(255,140,140,.62);
+  box-shadow: 0 0 0 4px rgba(255,140,140,.12);
+  background: rgba(90,0,0,.18);
+}
+
 .score::-webkit-outer-spin-button,
 .score::-webkit-inner-spin-button{
   -webkit-appearance: none;
   margin: 0;
 }
-.score[type="number"]{ -moz-appearance: textfield; }
+.score[type="number"]{
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
 
 .x{
   font-weight: 900;
@@ -765,12 +830,17 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
   .app-menu{ padding: 12px; }
   .app-content{ padding: 14px; }
 
+  .menu-view-switch{
+    margin-bottom: 12px;
+  }
+
   .match-body{
     grid-template-columns: 1fr 150px 1fr;
     gap: 10px;
   }
 
   .team-name{
+    line-clamp: 2;
     white-space: normal;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -840,6 +910,7 @@ body[data-page="admin_resultados"] .app-topnav a.topnav-link.is-admin[href*="adm
     font-weight: 900 !important;
     text-align: center !important;
 
+    line-clamp: 2 !important;
     white-space: normal !important;
     overflow: hidden !important;
     display: -webkit-box !important;

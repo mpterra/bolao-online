@@ -18,6 +18,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const toast = document.getElementById("toast");
   const listTop = document.getElementById("list-top");
+  const modeButtons = Array.from(document.querySelectorAll(".js-view-mode[data-view-mode-target]"));
+  const modePanels = Array.from(document.querySelectorAll(".menu-panel[data-view-mode-panel]"));
+  const rowTimers = new WeakMap();
+
+  const selectionByMode = {
+    group: null,
+    day: null
+  };
+
+  let currentMode = "group";
 
   function showToast(msg, isError = false) {
     if (!toast) return;
@@ -32,40 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
     toast.__t = setTimeout(() => {
       toast.classList.remove("is-open");
     }, 1900);
-  }
-
-  function rowMsg(rowEl, text, ok) {
-    const msg = rowEl ? rowEl.querySelector(".js-row-msg") : null;
-    if (!msg) return;
-
-    msg.style.display = "inline";
-    msg.textContent = text;
-    msg.classList.remove("ok", "err");
-    msg.classList.add(ok ? "ok" : "err");
-
-    clearTimeout(msg.__t);
-    msg.__t = setTimeout(() => {
-      msg.style.display = "none";
-      msg.textContent = "";
-      msg.classList.remove("ok", "err");
-    }, 1600);
-  }
-
-  function blockMsg(blockEl, text, ok) {
-    const msg = blockEl ? blockEl.querySelector(".js-block-msg") : null;
-    if (!msg) return;
-
-    msg.style.display = "inline";
-    msg.textContent = text;
-    msg.classList.remove("ok", "err");
-    msg.classList.add(ok ? "ok" : "err");
-
-    clearTimeout(msg.__t);
-    msg.__t = setTimeout(() => {
-      msg.style.display = "none";
-      msg.textContent = "";
-      msg.classList.remove("ok", "err");
-    }, 2200);
   }
 
   function setRowSaving(rowEl, state, text) {
@@ -198,9 +174,47 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 450);
   }
 
+  function getModeForType(type) {
+    return String(type || "") === "day" ? "day" : "group";
+  }
+
+  function getMenuSelectorForMode(mode) {
+    if (mode === "day") {
+      return '.menu-panel[data-view-mode-panel="day"] .menu-link[data-block-type="day"][data-block-key]';
+    }
+
+    return '.menu-panel[data-view-mode-panel="group"] .menu-link[data-block-type][data-block-key]';
+  }
+
+  function findFirstSelection(mode) {
+    const first = document.querySelector(getMenuSelectorForMode(mode));
+    if (!first) return null;
+
+    return {
+      type: String(first.getAttribute("data-block-type") || ""),
+      key: String(first.getAttribute("data-block-key") || "")
+    };
+  }
+
+  function hasBlock(type, key) {
+    return !!document.querySelector(
+      '.block[data-block-type="' + String(type || "") + '"][data-block-key="' + String(key || "") + '"]'
+    );
+  }
+
+  function rememberSelection(type, key) {
+    const mode = getModeForType(type);
+    selectionByMode[mode] = {
+      type: String(type || ""),
+      key: String(key || "")
+    };
+  }
+
   function setActiveBlock(type, key) {
     const t = String(type || "");
     const k = String(key || "");
+
+    rememberSelection(t, k);
 
     document.querySelectorAll(".block[data-block-type][data-block-key]").forEach((el) => {
       const et = String(el.getAttribute("data-block-type") || "");
@@ -215,6 +229,75 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function setActiveMode(mode, { silentToast = false, scroll = false } = {}) {
+    const nextMode = mode === "day" ? "day" : "group";
+    currentMode = nextMode;
+
+    document.body.setAttribute("data-view-mode", nextMode);
+
+    modeButtons.forEach((btn) => {
+      const btnMode = String(btn.getAttribute("data-view-mode-target") || "");
+      btn.classList.toggle("is-active", btnMode === nextMode);
+      btn.setAttribute("aria-pressed", btnMode === nextMode ? "true" : "false");
+    });
+
+    modePanels.forEach((panel) => {
+      const panelMode = String(panel.getAttribute("data-view-mode-panel") || "");
+      panel.classList.toggle("is-active", panelMode === nextMode);
+    });
+
+    let target = selectionByMode[nextMode];
+    if (!target || !hasBlock(target.type, target.key)) {
+      target = findFirstSelection(nextMode);
+      if (target) rememberSelection(target.type, target.key);
+    }
+
+    if (target) {
+      setActiveBlock(target.type, target.key);
+    }
+
+    if (scroll) {
+      scrollToListTop();
+    }
+
+    if (!silentToast) {
+      showToast(nextMode === "day" ? "Visualizando por dia" : "Visualizando por grupo");
+    }
+  }
+
+  function getLinkedRows(rowEl) {
+    if (!rowEl) return [];
+
+    const jogoId = String(rowEl.getAttribute("data-jogo-row") || "");
+    if (jogoId === "") return [];
+
+    return Array.from(document.querySelectorAll('.match-card[data-jogo-row="' + jogoId + '"]'));
+  }
+
+  function syncLinkedRowValues(sourceRowEl) {
+    if (!sourceRowEl) return;
+
+    const sourceCasa = sourceRowEl.querySelector('input[data-field="gols_casa"]');
+    const sourceFora = sourceRowEl.querySelector('input[data-field="gols_fora"]');
+    if (!sourceCasa || !sourceFora) return;
+
+    const casaInvalid = sourceCasa.classList.contains("is-invalid");
+    const foraInvalid = sourceFora.classList.contains("is-invalid");
+
+    getLinkedRows(sourceRowEl).forEach((rowEl) => {
+      if (rowEl === sourceRowEl) return;
+
+      const inCasa = rowEl.querySelector('input[data-field="gols_casa"]');
+      const inFora = rowEl.querySelector('input[data-field="gols_fora"]');
+      if (!inCasa || !inFora) return;
+
+      inCasa.value = sourceCasa.value;
+      inFora.value = sourceFora.value;
+      markInvalid(inCasa, casaInvalid);
+      markInvalid(inFora, foraInvalid);
+    });
+  }
+
   document.querySelectorAll(".menu-link[data-block-type][data-block-key]").forEach((a) => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
@@ -223,22 +306,45 @@ document.addEventListener("DOMContentLoaded", () => {
       const key = a.getAttribute("data-block-key");
       if (!type || !key) return;
 
+      setActiveMode(getModeForType(type), { silentToast: true });
       setActiveBlock(type, key);
       scrollToListTop();
 
       if (type === "group") showToast("Grupo selecionado");
-      else showToast("Fase selecionada");
+      else if (type === "phase") showToast("Fase selecionada");
+      else showToast("Dia selecionado");
+    });
+  });
+
+  modeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const mode = String(btn.getAttribute("data-view-mode-target") || "group");
+      setActiveMode(mode, { silentToast: false, scroll: true });
     });
   });
 
   if (CFG && CFG.active_type && CFG.active_key !== undefined) {
-    setActiveBlock(String(CFG.active_type), String(CFG.active_key));
-  } else {
-    const first = document.querySelector(".block[data-block-type][data-block-key]");
-    if (first) {
-      setActiveBlock(first.getAttribute("data-block-type"), first.getAttribute("data-block-key"));
+    rememberSelection(String(CFG.active_type), String(CFG.active_key));
+  }
+
+  if (!selectionByMode.group) {
+    const firstGroupSelection = findFirstSelection("group");
+    if (firstGroupSelection) {
+      rememberSelection(firstGroupSelection.type, firstGroupSelection.key);
     }
   }
+
+  if (!selectionByMode.day) {
+    const firstDaySelection = findFirstSelection("day");
+    if (firstDaySelection) {
+      rememberSelection(firstDaySelection.type, firstDaySelection.key);
+    }
+  }
+
+  setActiveMode(
+    CFG && CFG.active_mode ? String(CFG.active_mode) : getModeForType(CFG && CFG.active_type ? CFG.active_type : "group"),
+    { silentToast: true }
+  );
 
   async function savePayload(payload) {
     const resp = await fetch(ENDPOINT_SAVE, {
@@ -268,6 +374,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     statusEl.textContent = String(status);
     statusEl.className = "match-status status-" + String(status);
+  }
+
+  function applySavedResult(jogoId, golsCasa, golsFora, status) {
+    const rows = Array.from(document.querySelectorAll('.match-card[data-jogo-row="' + String(jogoId) + '"]'));
+
+    rows.forEach((rowEl) => {
+      const inCasa = rowEl.querySelector('input[data-field="gols_casa"]');
+      const inFora = rowEl.querySelector('input[data-field="gols_fora"]');
+
+      if (inCasa) {
+        inCasa.value = golsCasa === null || golsCasa === undefined ? "" : String(golsCasa);
+        markInvalid(inCasa, false);
+      }
+
+      if (inFora) {
+        inFora.value = golsFora === null || golsFora === undefined ? "" : String(golsFora);
+        markInvalid(inFora, false);
+      }
+
+      applySavedStatus(rowEl, status);
+    });
   }
 
   function getRowPayload(rowEl) {
@@ -325,7 +452,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       setRowSaving(rowEl, "saving", "Salvando...");
       const json = await savePayload(parsed.payload);
-      applySavedStatus(rowEl, json.status || "");
+      applySavedResult(parsed.payload.jogo_id, json.gols_casa, json.gols_fora, json.status || "");
       setRowSaving(rowEl, "ok", "Salvo.");
       if (!silentToast) showToast("Resultado salvo");
       return json;
@@ -389,7 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       for (const item of validRows) {
         const json = await savePayload(item.payload);
-        applySavedStatus(item.rowEl, json.status || "");
+        applySavedResult(item.payload.jogo_id, json.gols_casa, json.gols_fora, json.status || "");
         setRowSaving(item.rowEl, "ok", "Salvo.");
       }
 
@@ -402,14 +529,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const rowTimers = new WeakMap();
-
   document.querySelectorAll(".match-card[data-jogo-row]").forEach((rowEl) => {
     const inputs = Array.from(rowEl.querySelectorAll(".js-score"));
 
     inputs.forEach((inp) => {
       inp.addEventListener("input", () => {
         sanitizeScoreInput(inp);
+        syncLinkedRowValues(rowEl);
 
         const current = rowTimers.get(rowEl);
         if (current) clearTimeout(current);
@@ -423,6 +549,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       inp.addEventListener("blur", () => {
         sanitizeScoreInput(inp);
+        syncLinkedRowValues(rowEl);
       });
 
       inp.addEventListener("keydown", (e) => {
@@ -430,6 +557,7 @@ document.addEventListener("DOMContentLoaded", () => {
           e.preventDefault();
           const current = rowTimers.get(rowEl);
           if (current) clearTimeout(current);
+          syncLinkedRowValues(rowEl);
           saveRow(rowEl, { silentToast: false }).catch(() => {});
         }
       });

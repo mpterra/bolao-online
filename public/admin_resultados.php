@@ -156,6 +156,166 @@ function fase_label(string $fase): string {
     return $map[$f] ?? $fase;
 }
 
+function logical_cup_day(DateTimeImmutable $dt): string {
+    $hour = (int)$dt->format('H');
+    if ($hour >= 0 && $hour < 5) {
+        return $dt->sub(new DateInterval('P1D'))->format('Y-m-d');
+    }
+    return $dt->format('Y-m-d');
+}
+
+function fmt_day_menu_label(string $ymd): string {
+    $dt = DateTimeImmutable::createFromFormat('Y-m-d', $ymd, new DateTimeZone('America/Sao_Paulo'));
+    if (!$dt) return $ymd;
+
+    $dias = [
+        'Sun' => 'Dom',
+        'Mon' => 'Seg',
+        'Tue' => 'Ter',
+        'Wed' => 'Qua',
+        'Thu' => 'Qui',
+        'Fri' => 'Sex',
+        'Sat' => 'Sáb',
+    ];
+
+    $dw = $dias[$dt->format('D')] ?? $dt->format('D');
+    return $dw . ' • ' . $dt->format('d/m');
+}
+
+function fmt_day_title(string $ymd): string {
+    $dt = DateTimeImmutable::createFromFormat('Y-m-d', $ymd, new DateTimeZone('America/Sao_Paulo'));
+    if (!$dt) return $ymd;
+
+    $meses = [
+        1 => 'janeiro', 2 => 'fevereiro', 3 => 'março', 4 => 'abril',
+        5 => 'maio', 6 => 'junho', 7 => 'julho', 8 => 'agosto',
+        9 => 'setembro', 10 => 'outubro', 11 => 'novembro', 12 => 'dezembro',
+    ];
+
+    $dias = [
+        'Sun' => 'Domingo',
+        'Mon' => 'Segunda',
+        'Tue' => 'Terça',
+        'Wed' => 'Quarta',
+        'Thu' => 'Quinta',
+        'Fri' => 'Sexta',
+        'Sat' => 'Sábado',
+    ];
+
+    $dw = $dias[$dt->format('D')] ?? $dt->format('D');
+    $mes = $meses[(int)$dt->format('n')] ?? $dt->format('m');
+
+    return $dw . ', ' . $dt->format('d') . ' de ' . $mes;
+}
+
+function jogo_context_label(array $j): string {
+    $grupoId = isset($j['grupo_id']) ? (int)$j['grupo_id'] : 0;
+    if ($grupoId > 0) {
+        $grupoCodigo = trim((string)($j['grupo_codigo'] ?? ''));
+        return $grupoCodigo !== '' ? ('Grupo ' . $grupoCodigo) : 'Fase de grupos';
+    }
+
+    $fase = trim((string)($j['fase'] ?? ''));
+    return $fase !== '' ? fase_label($fase) : 'Mata-mata';
+}
+
+function render_match_cards(array $lista, DateTimeZone $tz, DateTimeImmutable $now, bool $showContext = false): void {
+    if (count($lista) === 0) {
+        echo '<div class="group-rank-empty">Nenhum jogo cadastrado neste bloco.</div>';
+        return;
+    }
+
+    foreach ($lista as $j) {
+        $jid    = (int)$j['id'];
+        $rodada = $j['rodada'] !== null ? (int)$j['rodada'] : null;
+
+        $kickoff = new DateTimeImmutable((string)$j['data_hora'], $tz);
+        $gc      = $j['gols_casa'] !== null ? (int)$j['gols_casa'] : null;
+        $gf      = $j['gols_fora'] !== null ? (int)$j['gols_fora'] : null;
+
+        $autoStatus = compute_status_auto($gc, $gf, $kickoff, $now);
+
+        $timeCasaNome = (string)$j['time_casa_nome'];
+        $timeForaNome = (string)$j['time_fora_nome'];
+        $siglaCasa    = (string)$j['time_casa_sigla'];
+        $siglaFora    = (string)$j['time_fora_sigla'];
+
+        $flagCasa = flag_url_for_team($timeCasaNome, $siglaCasa);
+        $flagFora = flag_url_for_team($timeForaNome, $siglaFora);
+
+        $whenTxt    = $kickoff->format('d/m/Y H:i');
+        $roundTxt   = $rodada !== null ? ('Rodada ' . $rodada) : '';
+        $contextTxt = $showContext ? jogo_context_label($j) : '';
+        ?>
+        <article class="match-card" data-jogo-row="<?php echo $jid; ?>">
+            <div class="match-top">
+                <div class="match-when">
+                    <span class="when"><?php echo strh($whenTxt); ?></span>
+                    <?php if ($contextTxt !== ''): ?>
+                        <span class="context-chip"><?php echo strh($contextTxt); ?></span>
+                    <?php endif; ?>
+                    <?php if ($roundTxt !== ''): ?>
+                        <span class="round"><?php echo strh($roundTxt); ?></span>
+                    <?php endif; ?>
+                </div>
+
+                <div class="match-status status-<?php echo strh($autoStatus); ?>">
+                    <?php echo strh($autoStatus); ?>
+                </div>
+            </div>
+
+            <div class="match-body">
+                <div class="team team-home">
+                    <div class="team-name"><?php echo strh($timeCasaNome); ?></div>
+
+                    <div class="team-flag<?php echo $flagCasa ? '' : ' no-flag'; ?>">
+                        <?php if ($flagCasa): ?>
+                            <img src="<?php echo strh($flagCasa); ?>" alt="<?php echo strh($siglaCasa); ?>">
+                        <?php endif; ?>
+                        <div class="team-badge"><?php echo strh($siglaCasa); ?></div>
+                    </div>
+                </div>
+
+                <div class="scorebox">
+                    <input class="score js-score"
+                           type="number"
+                           inputmode="numeric"
+                           min="0" max="30" step="1"
+                           data-field="gols_casa"
+                           value="<?php echo $gc === null ? '' : (string)$gc; ?>"
+                           placeholder="-" />
+
+                    <span class="x">x</span>
+
+                    <input class="score js-score"
+                           type="number"
+                           inputmode="numeric"
+                           min="0" max="30" step="1"
+                           data-field="gols_fora"
+                           value="<?php echo $gf === null ? '' : (string)$gf; ?>"
+                           placeholder="-" />
+                </div>
+
+                <div class="team team-away">
+                    <div class="team-flag<?php echo $flagFora ? '' : ' no-flag'; ?>">
+                        <?php if ($flagFora): ?>
+                            <img src="<?php echo strh($flagFora); ?>" alt="<?php echo strh($siglaFora); ?>">
+                        <?php endif; ?>
+                        <div class="team-badge"><?php echo strh($siglaFora); ?></div>
+                    </div>
+
+                    <div class="team-name"><?php echo strh($timeForaNome); ?></div>
+                </div>
+            </div>
+
+            <div class="match-actions">
+                <span class="save-state js-row-msg" style="display:none;"></span>
+            </div>
+        </article>
+        <?php
+    }
+}
+
 function get_pdo(): PDO {
     if (isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) return $GLOBALS['pdo'];
 
@@ -398,26 +558,71 @@ foreach ($jogosPorFase as $faseKey => $lista) {
     ];
 }
 
+$todosJogos = array_merge($jogosGrupo, $jogosMata);
+usort($todosJogos, static function (array $a, array $b): int {
+    $cmp = strcmp((string)$a['data_hora'], (string)$b['data_hora']);
+    if ($cmp !== 0) return $cmp;
+    return ((int)$a['id']) <=> ((int)$b['id']);
+});
+
+$jogosPorDia = [];
+$diasMenu = [];
+foreach ($todosJogos as $row) {
+    $kickoff = new DateTimeImmutable((string)$row['data_hora'], $tz);
+    $dayKey = logical_cup_day($kickoff);
+
+    if (!isset($jogosPorDia[$dayKey])) $jogosPorDia[$dayKey] = [];
+    $jogosPorDia[$dayKey][] = $row;
+}
+
+foreach ($jogosPorDia as $dayKey => $lista) {
+    $diasMenu[] = [
+        'day' => $dayKey,
+        'label' => fmt_day_menu_label($dayKey),
+        'title' => fmt_day_title($dayKey),
+        'count' => count($lista),
+    ];
+}
+
 /* ===== Seleção ativa: grupo OU fase ===== */
 $activeType = "group";
 $activeKey  = "";
+$activeMode = 'group';
 
 $activeGroupId = 0;
 if (isset($_GET["grupo_id"])) $activeGroupId = (int)$_GET["grupo_id"];
 
 $activeFase = isset($_GET["fase"]) ? trim((string)$_GET["fase"]) : "";
+$activeDay  = isset($_GET['dia']) ? trim((string)$_GET['dia']) : '';
+$viewMode   = isset($_GET['view']) ? mb_strtolower(trim((string)$_GET['view']), 'UTF-8') : '';
 
-if ($activeFase !== "" && isset($jogosPorFase[$activeFase])) {
-    $activeType = "phase";
-    $activeKey  = $activeFase;
+if ($viewMode === 'day' && count($diasMenu) > 0) {
+    if ($activeDay === '' || !isset($jogosPorDia[$activeDay])) {
+        $activeDay = (string)$diasMenu[0]['day'];
+    }
+
+    $activeMode = 'day';
+    $activeType = 'day';
+    $activeKey  = $activeDay;
 } else {
-    if ($activeGroupId <= 0 && count($grupos) > 0) $activeGroupId = (int)$grupos[0]["id"];
-    if ($activeGroupId > 0) {
-        $activeType = "group";
-        $activeKey  = (string)$activeGroupId;
-    } else if (count($fasesMenu) > 0) {
+    $activeMode = 'group';
+
+    if ($activeFase !== "" && isset($jogosPorFase[$activeFase])) {
         $activeType = "phase";
-        $activeKey  = (string)$fasesMenu[0]["fase"];
+        $activeKey  = $activeFase;
+    } else {
+        if ($activeGroupId <= 0 && count($grupos) > 0) $activeGroupId = (int)$grupos[0]["id"];
+        if ($activeGroupId > 0) {
+            $activeType = "group";
+            $activeKey  = (string)$activeGroupId;
+        } else if (count($fasesMenu) > 0) {
+            $activeType = "phase";
+            $activeKey  = (string)$fasesMenu[0]["fase"];
+        } else if (count($diasMenu) > 0) {
+            $activeMode = 'day';
+            $activeType = 'day';
+            $activeKey  = (string)$diasMenu[0]['day'];
+        }
     }
 }
 
@@ -448,49 +653,86 @@ require_once __DIR__ . "/partials/app_header.php";
     <div class="app-shell">
         <aside class="app-menu">
 
-            <div class="menu-title">Grupos</div>
-            <div class="menu-list" id="group-menu">
-                <?php foreach ($grupos as $g): ?>
-                    <?php
-                        $gid    = (int)$g["id"];
-                        $codigo = (string)$g["codigo"];
-                        $count  = isset($jogosPorGrupo[$gid]) ? count($jogosPorGrupo[$gid]) : 0;
-
-                        $active = ($activeType === "group" && (string)$gid === $activeKey);
-                    ?>
-                    <a class="menu-link<?php echo $active ? " is-active" : ""; ?>"
-                       href="#"
-                       data-block-type="group"
-                       data-block-key="<?php echo $gid; ?>"
-                       aria-label="Grupo <?php echo strh($codigo); ?>">
-                        <span>Grupo <?php echo strh($codigo); ?></span>
-                        <span class="badge badge-muted"><?php echo $count; ?></span>
-                    </a>
-                <?php endforeach; ?>
+            <div class="menu-view-switch" aria-label="Alternar visualização">
+                <button type="button"
+                        class="menu-view-btn js-view-mode<?php echo $activeMode === 'group' ? ' is-active' : ''; ?>"
+                        data-view-mode-target="group">
+                    Por grupos
+                </button>
+                <button type="button"
+                        class="menu-view-btn js-view-mode<?php echo $activeMode === 'day' ? ' is-active' : ''; ?>"
+                        data-view-mode-target="day">
+                    Por dias
+                </button>
             </div>
 
-            <?php if (count($fasesMenu) > 0): ?>
-                <div class="menu-sep"></div>
-                <div class="menu-title">Mata-mata</div>
-                <div class="menu-list" id="phase-menu">
-                    <?php foreach ($fasesMenu as $f): ?>
+            <div class="menu-panel<?php echo $activeMode === 'group' ? ' is-active' : ''; ?>" data-view-mode-panel="group">
+                <div class="menu-title">Grupos</div>
+                <div class="menu-list" id="group-menu">
+                    <?php foreach ($grupos as $g): ?>
                         <?php
-                            $fase   = (string)$f["fase"];
-                            $label  = (string)$f["label"];
-                            $count  = (int)$f["count"];
-                            $active = ($activeType === "phase" && $fase === $activeKey);
+                            $gid    = (int)$g["id"];
+                            $codigo = (string)$g["codigo"];
+                            $count  = isset($jogosPorGrupo[$gid]) ? count($jogosPorGrupo[$gid]) : 0;
+
+                            $active = ($activeType === "group" && (string)$gid === $activeKey);
                         ?>
                         <a class="menu-link<?php echo $active ? " is-active" : ""; ?>"
                            href="#"
-                           data-block-type="phase"
-                           data-block-key="<?php echo strh($fase); ?>"
+                           data-block-type="group"
+                           data-block-key="<?php echo $gid; ?>"
+                           aria-label="Grupo <?php echo strh($codigo); ?>">
+                            <span>Grupo <?php echo strh($codigo); ?></span>
+                            <span class="badge badge-muted"><?php echo $count; ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php if (count($fasesMenu) > 0): ?>
+                    <div class="menu-sep"></div>
+                    <div class="menu-title">Mata-mata</div>
+                    <div class="menu-list" id="phase-menu">
+                        <?php foreach ($fasesMenu as $f): ?>
+                            <?php
+                                $fase   = (string)$f["fase"];
+                                $label  = (string)$f["label"];
+                                $count  = (int)$f["count"];
+                                $active = ($activeType === "phase" && $fase === $activeKey);
+                            ?>
+                            <a class="menu-link<?php echo $active ? " is-active" : ""; ?>"
+                               href="#"
+                               data-block-type="phase"
+                               data-block-key="<?php echo strh($fase); ?>"
+                               aria-label="<?php echo strh($label); ?>">
+                                <span><?php echo strh($label); ?></span>
+                                <span class="badge badge-muted"><?php echo $count; ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="menu-panel<?php echo $activeMode === 'day' ? ' is-active' : ''; ?>" data-view-mode-panel="day">
+                <div class="menu-title">Dias da Copa</div>
+                <div class="menu-list" id="day-menu">
+                    <?php foreach ($diasMenu as $d): ?>
+                        <?php
+                            $day    = (string)$d['day'];
+                            $label  = (string)$d['label'];
+                            $count  = (int)$d['count'];
+                            $active = ($activeType === 'day' && $day === $activeKey);
+                        ?>
+                        <a class="menu-link<?php echo $active ? ' is-active' : ''; ?>"
+                           href="#"
+                           data-block-type="day"
+                           data-block-key="<?php echo strh($day); ?>"
                            aria-label="<?php echo strh($label); ?>">
                             <span><?php echo strh($label); ?></span>
                             <span class="badge badge-muted"><?php echo $count; ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
+            </div>
 
         </aside>
 
@@ -515,6 +757,7 @@ require_once __DIR__ . "/partials/app_header.php";
                 ?>
 
                 <section class="block block-group<?php echo $isActive ? " is-active-block" : ""; ?>"
+                         data-view-mode="group"
                          data-block-type="group"
                          data-block-key="<?php echo $gid; ?>">
 
@@ -529,95 +772,7 @@ require_once __DIR__ . "/partials/app_header.php";
                     </div>
 
                     <div class="matches">
-                        <?php if (count($lista) === 0): ?>
-                            <div class="group-rank-empty">Nenhum jogo cadastrado neste grupo.</div>
-                        <?php endif; ?>
-
-                        <?php foreach ($lista as $j): ?>
-                            <?php
-                                $jid    = (int)$j["id"];
-                                $rodada = $j["rodada"] !== null ? (int)$j["rodada"] : null;
-
-                                $kickoff = new DateTimeImmutable((string)$j["data_hora"], $tz);
-                                $gc      = $j["gols_casa"] !== null ? (int)$j["gols_casa"] : null;
-                                $gf      = $j["gols_fora"] !== null ? (int)$j["gols_fora"] : null;
-
-                                $autoStatus = compute_status_auto($gc, $gf, $kickoff, $now);
-
-                                $timeCasaNome = (string)$j["time_casa_nome"];
-                                $timeForaNome = (string)$j["time_fora_nome"];
-                                $siglaCasa    = (string)$j["time_casa_sigla"];
-                                $siglaFora    = (string)$j["time_fora_sigla"];
-
-                                $flagCasa = flag_url_for_team($timeCasaNome, $siglaCasa);
-                                $flagFora = flag_url_for_team($timeForaNome, $siglaFora);
-
-                                $whenTxt  = $kickoff->format("d/m/Y H:i");
-                                $roundTxt = $rodada !== null ? ("Rodada " . $rodada) : "";
-                            ?>
-                            <article class="match-card" data-jogo-row="<?php echo $jid; ?>">
-                                <div class="match-top">
-                                    <div class="match-when">
-                                        <span class="when"><?php echo strh($whenTxt); ?></span>
-                                        <?php if ($roundTxt !== ""): ?>
-                                            <span class="round"><?php echo strh($roundTxt); ?></span>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <div class="match-status status-<?php echo strh($autoStatus); ?>">
-                                        <?php echo strh($autoStatus); ?>
-                                    </div>
-                                </div>
-
-                                <div class="match-body">
-                                    <div class="team team-home">
-                                        <div class="team-name"><?php echo strh($timeCasaNome); ?></div>
-
-                                        <div class="team-flag<?php echo $flagCasa ? "" : " no-flag"; ?>">
-                                            <?php if ($flagCasa): ?>
-                                                <img src="<?php echo strh($flagCasa); ?>" alt="<?php echo strh($siglaCasa); ?>">
-                                            <?php endif; ?>
-                                            <div class="team-badge"><?php echo strh($siglaCasa); ?></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="scorebox">
-                                        <input class="score js-score"
-                                               type="number"
-                                               inputmode="numeric"
-                                               min="0" max="30" step="1"
-                                               data-field="gols_casa"
-                                               value="<?php echo $gc === null ? "" : (string)$gc; ?>"
-                                               placeholder="-" />
-
-                                        <span class="x">x</span>
-
-                                        <input class="score js-score"
-                                               type="number"
-                                               inputmode="numeric"
-                                               min="0" max="30" step="1"
-                                               data-field="gols_fora"
-                                               value="<?php echo $gf === null ? "" : (string)$gf; ?>"
-                                               placeholder="-" />
-                                    </div>
-
-                                    <div class="team team-away">
-                                        <div class="team-flag<?php echo $flagFora ? "" : " no-flag"; ?>">
-                                            <?php if ($flagFora): ?>
-                                                <img src="<?php echo strh($flagFora); ?>" alt="<?php echo strh($siglaFora); ?>">
-                                            <?php endif; ?>
-                                            <div class="team-badge"><?php echo strh($siglaFora); ?></div>
-                                        </div>
-
-                                        <div class="team-name"><?php echo strh($timeForaNome); ?></div>
-                                    </div>
-                                </div>
-
-                                <div class="match-actions">
-                                    <span class="save-state js-row-msg" style="display:none;"></span>
-                                </div>
-                            </article>
-                        <?php endforeach; ?>
+                        <?php render_match_cards($lista, $tz, $now); ?>
                     </div>
 
                     <div class="block-actions">
@@ -641,6 +796,7 @@ require_once __DIR__ . "/partials/app_header.php";
                 ?>
 
                 <section class="block block-phase<?php echo $isActive ? " is-active-block" : ""; ?>"
+                         data-view-mode="group"
                          data-block-type="phase"
                          data-block-key="<?php echo strh($faseKey); ?>">
 
@@ -653,95 +809,7 @@ require_once __DIR__ . "/partials/app_header.php";
                     </div>
 
                     <div class="matches">
-                        <?php if (count($lista) === 0): ?>
-                            <div class="group-rank-empty">Nenhum jogo cadastrado nesta fase.</div>
-                        <?php endif; ?>
-
-                        <?php foreach ($lista as $j): ?>
-                            <?php
-                                $jid    = (int)$j["id"];
-                                $rodada = $j["rodada"] !== null ? (int)$j["rodada"] : null;
-
-                                $kickoff = new DateTimeImmutable((string)$j["data_hora"], $tz);
-                                $gc      = $j["gols_casa"] !== null ? (int)$j["gols_casa"] : null;
-                                $gf      = $j["gols_fora"] !== null ? (int)$j["gols_fora"] : null;
-
-                                $autoStatus = compute_status_auto($gc, $gf, $kickoff, $now);
-
-                                $timeCasaNome = (string)$j["time_casa_nome"];
-                                $timeForaNome = (string)$j["time_fora_nome"];
-                                $siglaCasa    = (string)$j["time_casa_sigla"];
-                                $siglaFora    = (string)$j["time_fora_sigla"];
-
-                                $flagCasa = flag_url_for_team($timeCasaNome, $siglaCasa);
-                                $flagFora = flag_url_for_team($timeForaNome, $siglaFora);
-
-                                $whenTxt  = $kickoff->format("d/m/Y H:i");
-                                $roundTxt = $rodada !== null ? ("Rodada " . $rodada) : "";
-                            ?>
-                            <article class="match-card" data-jogo-row="<?php echo $jid; ?>">
-                                <div class="match-top">
-                                    <div class="match-when">
-                                        <span class="when"><?php echo strh($whenTxt); ?></span>
-                                        <?php if ($roundTxt !== ""): ?>
-                                            <span class="round"><?php echo strh($roundTxt); ?></span>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <div class="match-status status-<?php echo strh($autoStatus); ?>">
-                                        <?php echo strh($autoStatus); ?>
-                                    </div>
-                                </div>
-
-                                <div class="match-body">
-                                    <div class="team team-home">
-                                        <div class="team-name"><?php echo strh($timeCasaNome); ?></div>
-
-                                        <div class="team-flag<?php echo $flagCasa ? "" : " no-flag"; ?>">
-                                            <?php if ($flagCasa): ?>
-                                                <img src="<?php echo strh($flagCasa); ?>" alt="<?php echo strh($siglaCasa); ?>">
-                                            <?php endif; ?>
-                                            <div class="team-badge"><?php echo strh($siglaCasa); ?></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="scorebox">
-                                        <input class="score js-score"
-                                               type="number"
-                                               inputmode="numeric"
-                                               min="0" max="30" step="1"
-                                               data-field="gols_casa"
-                                               value="<?php echo $gc === null ? "" : (string)$gc; ?>"
-                                               placeholder="-" />
-
-                                        <span class="x">x</span>
-
-                                        <input class="score js-score"
-                                               type="number"
-                                               inputmode="numeric"
-                                               min="0" max="30" step="1"
-                                               data-field="gols_fora"
-                                               value="<?php echo $gf === null ? "" : (string)$gf; ?>"
-                                               placeholder="-" />
-                                    </div>
-
-                                    <div class="team team-away">
-                                        <div class="team-flag<?php echo $flagFora ? "" : " no-flag"; ?>">
-                                            <?php if ($flagFora): ?>
-                                                <img src="<?php echo strh($flagFora); ?>" alt="<?php echo strh($siglaFora); ?>">
-                                            <?php endif; ?>
-                                            <div class="team-badge"><?php echo strh($siglaFora); ?></div>
-                                        </div>
-
-                                        <div class="team-name"><?php echo strh($timeForaNome); ?></div>
-                                    </div>
-                                </div>
-
-                                <div class="match-actions">
-                                    <span class="save-state js-row-msg" style="display:none;"></span>
-                                </div>
-                            </article>
-                        <?php endforeach; ?>
+                        <?php render_match_cards($lista, $tz, $now); ?>
                     </div>
 
                     <div class="block-actions">
@@ -750,6 +818,43 @@ require_once __DIR__ . "/partials/app_header.php";
                                 data-block-type="phase"
                                 data-block-key="<?php echo strh($faseKey); ?>">
                             Salvar fase
+                        </button>
+                        <span class="block-save-state js-block-msg" style="display:none;"></span>
+                    </div>
+                </section>
+            <?php endforeach; ?>
+
+            <?php foreach ($diasMenu as $d): ?>
+                <?php
+                    $dayKey   = (string)$d['day'];
+                    $title    = (string)$d['title'];
+                    $lista    = $jogosPorDia[$dayKey] ?? [];
+                    $isActive = ($activeType === 'day' && $dayKey === $activeKey);
+                ?>
+
+                <section class="block block-day<?php echo $isActive ? ' is-active-block' : ''; ?>"
+                         data-view-mode="day"
+                         data-block-type="day"
+                         data-block-key="<?php echo strh($dayKey); ?>">
+
+                    <div class="group-head">
+                        <div class="group-line">
+                            <div class="group-pill day-pill"><?php echo strh($title); ?></div>
+                            <div class="group-count"><?php echo count($lista); ?> jogos</div>
+                        </div>
+                        <div class="group-name">Jogos do dia</div>
+                    </div>
+
+                    <div class="matches">
+                        <?php render_match_cards($lista, $tz, $now, true); ?>
+                    </div>
+
+                    <div class="block-actions">
+                        <button type="button"
+                                class="btn-save-block js-save-block"
+                                data-block-type="day"
+                                data-block-key="<?php echo strh($dayKey); ?>">
+                            Salvar dia
                         </button>
                         <span class="block-save-state js-block-msg" style="display:none;"></span>
                     </div>
@@ -765,6 +870,7 @@ require_once __DIR__ . "/partials/app_header.php";
 <?php
 echo json_encode([
     "edicao_id"    => $edicaoId,
+    "active_mode"  => $activeMode,
     "active_type"  => $activeType,
     "active_key"   => $activeKey,
     "endpoints"    => [
