@@ -320,6 +320,43 @@ body::before{
 .app-menu{ padding: 14px; }
 .app-content{ padding: 16px; min-height: 360px; }
 
+.menu-view-switch{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.12);
+}
+
+.menu-view-btn{
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 40px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.84);
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 12px;
+  transition: 180ms ease;
+}
+
+.menu-view-btn:hover{
+  background: rgba(255,255,255,.08);
+  transform: translateY(-1px);
+}
+
+.menu-view-btn.is-active{
+  color: #062027;
+  border-color: rgba(255,255,255,.10);
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 12px 28px rgba(0,0,0,.22);
+}
+
 .content-head{ margin-bottom: 12px; }
 
 .content-h1{
@@ -332,6 +369,24 @@ body::before{
   color: rgba(255,255,255,.74);
   font-size: 12px;
   line-height: 1.45;
+}
+
+#list-top{
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  scroll-margin-top: 120px;
+}
+
+@keyframes pulseTop{
+  0% { box-shadow: 0 0 0 0 rgba(70,220,255,.00); }
+  50%{ box-shadow: 0 0 0 10px rgba(70,220,255,.10); }
+  100%{ box-shadow: 0 0 0 0 rgba(70,220,255,.00); }
+}
+
+#list-top.is-scroll-pulse{
+  border-radius: 999px;
+  animation: pulseTop 420ms ease-out both;
 }
 
 /* =========================================================
@@ -351,6 +406,9 @@ body::before{
   flex-direction:column;
   gap: 10px;
 }
+
+.menu-panel{ display:none; }
+.menu-panel.is-active{ display:block; }
 
 .menu-link{
   padding: 12px;
@@ -561,6 +619,12 @@ body::before{
   font-weight: 900;
   font-size: 12px;
   letter-spacing: .2px;
+}
+
+.group-pill.day-pill{
+  background: rgba(70,220,255,.14);
+  border-color: rgba(70,220,255,.28);
+  color: rgba(230,250,255,.98);
 }
 
 .group-count{
@@ -1110,6 +1174,8 @@ body::before{
   .app-menu{ padding: 12px; }
   .app-content{ padding: 14px; }
 
+  .menu-view-switch{ margin-bottom: 12px; }
+
   .menu-link{ padding: 11px 12px; }
 
   .topnav-link{
@@ -1206,6 +1272,8 @@ body::before{
   }
 
   .toast{ min-width: calc(100% - 20px); }
+
+  #list-top{ scroll-margin-top: 200px; }
 
   .group-nav{ flex-direction: column; }
   .btn-prev-group,
