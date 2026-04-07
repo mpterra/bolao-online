@@ -12,70 +12,116 @@ document.addEventListener("DOMContentLoaded", () => {
     CFG = {};
   }
 
-  const groupMenu = document.getElementById("group-menu");
-  const groupBlocks = Array.from(document.querySelectorAll("[data-group-block]"));
+  const modeButtons = Array.from(document.querySelectorAll(".menu-view-btn[data-view-mode]"));
+  const menuPanels = Array.from(document.querySelectorAll(".menu-panel[data-menu-panel]"));
+  const modeHeads = Array.from(document.querySelectorAll(".content-head[data-content-mode]"));
+  const menuLinks = Array.from(document.querySelectorAll(".app-menu .menu-link[data-mode][data-block-type][data-block-key]"));
+  const blocks = Array.from(document.querySelectorAll(".group-block[data-view-mode][data-block-type][data-block-key]"));
 
-  const knockoutLinks = Array.from(
-    document.querySelectorAll('.app-menu a.menu-link[href^="#fase-"]')
-  );
-  const knockoutBlocks = Array.from(document.querySelectorAll('[id^="fase-"]'));
+  const state = {
+    mode: CFG && CFG.active_mode ? String(CFG.active_mode) : "group",
+    selected: {
+      group: {
+        type: CFG && CFG.active_mode === "group" ? String(CFG.active_type || "") : "",
+        key: CFG && CFG.active_mode === "group" ? String(CFG.active_key || "") : "",
+      },
+      day: {
+        type: CFG && CFG.active_mode === "day" ? String(CFG.active_type || "day") : "day",
+        key: CFG && CFG.active_mode === "day" ? String(CFG.active_key || "") : "",
+      },
+    },
+  };
 
-  function setActiveGroup(groupId) {
-    const gid = String(groupId || "");
+  if (state.mode !== "group" && state.mode !== "day") {
+    state.mode = "group";
+  }
 
-    groupBlocks.forEach((b) => {
-      const id = b.getAttribute("data-group-block");
-      if (id === gid) b.classList.add("is-active-group");
-      else b.classList.remove("is-active-group");
+  function normalize(str) {
+    return String(str || "");
+  }
+
+  function firstEnabledLinkForMode(mode) {
+    return menuLinks.find((a) => {
+      if (normalize(a.dataset.mode) !== normalize(mode)) return false;
+      if (a.classList.contains("is-disabled")) return false;
+      if (a.getAttribute("aria-disabled") === "true") return false;
+      return true;
+    }) || null;
+  }
+
+  function showMode(mode) {
+    state.mode = mode;
+
+    modeButtons.forEach((btn) => {
+      btn.classList.toggle("is-active", normalize(btn.dataset.viewMode) === mode);
     });
 
-    if (groupMenu) {
-      const links = Array.from(groupMenu.querySelectorAll(".menu-link"));
-      links.forEach((a) => {
-        const id = a.getAttribute("data-group-id");
-        if (id === gid) a.classList.add("is-active");
-        else a.classList.remove("is-active");
-      });
+    menuPanels.forEach((panel) => {
+      panel.classList.toggle("is-active", normalize(panel.dataset.menuPanel) === mode);
+    });
+
+    modeHeads.forEach((head) => {
+      head.classList.toggle("is-active", normalize(head.dataset.contentMode) === mode);
+    });
+  }
+
+  function setActiveBlock(mode, type, key) {
+    const m = normalize(mode);
+    const t = normalize(type);
+    const k = normalize(key);
+
+    blocks.forEach((block) => {
+      const match =
+        normalize(block.dataset.viewMode) === m &&
+        normalize(block.dataset.blockType) === t &&
+        normalize(block.dataset.blockKey) === k;
+      block.classList.toggle("is-active-group", match);
+    });
+
+    menuLinks.forEach((a) => {
+      const match =
+        normalize(a.dataset.mode) === m &&
+        normalize(a.dataset.blockType) === t &&
+        normalize(a.dataset.blockKey) === k;
+      a.classList.toggle("is-active", match);
+    });
+
+    state.selected[m] = { type: t, key: k };
+  }
+
+  function ensureSelectionForMode(mode) {
+    const m = normalize(mode);
+    const saved = state.selected[m] || { type: "", key: "" };
+
+    const hasSaved = blocks.some((block) => {
+      return (
+        normalize(block.dataset.viewMode) === m &&
+        normalize(block.dataset.blockType) === normalize(saved.type) &&
+        normalize(block.dataset.blockKey) === normalize(saved.key)
+      );
+    });
+
+    if (hasSaved && saved.type && saved.key) {
+      setActiveBlock(m, saved.type, saved.key);
+      return;
+    }
+
+    const first = firstEnabledLinkForMode(m);
+    if (first) {
+      setActiveBlock(m, first.dataset.blockType, first.dataset.blockKey);
     }
   }
 
-  function setActiveKnockout(targetId) {
-    const tid = String(targetId || "").replace(/^#/, "");
-    if (!tid) return;
-
-    knockoutBlocks.forEach((block) => {
-      if (block.id === tid) {
-        block.classList.add("is-active-group");
-        block.scrollIntoView({ behavior: "smooth", block: "start" });
-      } else {
-        block.classList.remove("is-active-group");
-      }
+  modeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const mode = normalize(btn.dataset.viewMode);
+      if (!mode || mode === state.mode) return;
+      showMode(mode);
+      ensureSelectionForMode(mode);
     });
+  });
 
-    knockoutLinks.forEach((a) => {
-      const href = (a.getAttribute("href") || "").replace(/^#/, "");
-      if (href === tid) a.classList.add("is-active");
-      else a.classList.remove("is-active");
-    });
-  }
-
-  if (groupMenu) {
-    groupMenu.addEventListener("click", (ev) => {
-      const a = ev.target.closest("a.menu-link");
-      if (!a) return;
-
-      if (a.classList.contains("is-disabled") || a.getAttribute("aria-disabled") === "true") {
-        ev.preventDefault();
-        return;
-      }
-
-      ev.preventDefault();
-      const gid = a.getAttribute("data-group-id");
-      if (gid) setActiveGroup(gid);
-    });
-  }
-
-  knockoutLinks.forEach((a) => {
+  menuLinks.forEach((a) => {
     a.addEventListener("click", (ev) => {
       if (a.classList.contains("is-disabled") || a.getAttribute("aria-disabled") === "true") {
         ev.preventDefault();
@@ -83,18 +129,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       ev.preventDefault();
+      const mode = normalize(a.dataset.mode);
+      const type = normalize(a.dataset.blockType);
+      const key = normalize(a.dataset.blockKey);
+      if (!mode || !type || !key) return;
 
-      const href = a.getAttribute("href") || "";
-      if (!href || href === "#") return;
-
-      setActiveKnockout(href);
+      if (state.mode !== mode) {
+        showMode(mode);
+      }
+      setActiveBlock(mode, type, key);
     });
   });
 
-  const initial = CFG && CFG.active_group_id ? String(CFG.active_group_id) : null;
-  if (initial) {
-    setActiveGroup(initial);
-  } else if (groupBlocks.length > 0) {
-    setActiveGroup(groupBlocks[0].getAttribute("data-group-block"));
-  }
+  showMode(state.mode);
+  ensureSelectionForMode(state.mode);
 });
