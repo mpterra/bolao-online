@@ -366,29 +366,37 @@ body::before{
   display:grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  padding: 6px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.12);
 }
 
 .menu-view-btn{
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
-  color: rgba(255,255,255,.88);
-  border-radius: 12px;
-  min-height: 38px;
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 40px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.84);
   font-weight: 900;
+  font-size: 12px;
   cursor: pointer;
   transition: 180ms ease;
 }
 
 .menu-view-btn:hover{
-  background: rgba(255,255,255,.10);
+  background: rgba(255,255,255,.08);
+  transform: translateY(-1px);
 }
 
 .menu-view-btn.is-active{
   color: #062027;
   border-color: rgba(255,255,255,.10);
   background: linear-gradient(90deg, var(--green), var(--gold));
-  box-shadow: 0 14px 30px rgba(0,0,0,.22);
+  box-shadow: 0 12px 28px rgba(0,0,0,.22);
 }
 
 .menu-panel{
