@@ -15,7 +15,7 @@ if (!function_exists("strh")) {
  *  - $isAdmin (bool)
  *
  * Parâmetros:
- *  - $active: string ('apostas'|'ranking'|'admin'|'resultados_publico'|'mata_mata'|'por_dia'|etc)
+ *  - $active: string ('apostas'|'ranking'|'admin'|'resultados_publico'|'mata_mata'|etc)
  *  - $subtitle: string
  *  - $logoutHref: string
  */
@@ -33,11 +33,6 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			"key"   => "mata_mata",
 			"label" => "Mata-Mata",
 			"href"  => "/mata_mata_palpites.php",
-		],
-		[
-			"key"   => "por_dia",
-			"label" => "Por Dia",
-			"href"  => "/palpites_por_dia.php",
 		],
 		[
 			"key"   => "ranking",
