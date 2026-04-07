@@ -880,6 +880,6 @@ echo json_encode([
 ?>
 </script>
 
-<script src="/js/admin_resultados.js"></script>
+<script src="/js/admin_resultados.js?v=<?php echo filemtime(__DIR__ . '/js/admin_resultados.js'); ?>"></script>
 </body>
 </html>
