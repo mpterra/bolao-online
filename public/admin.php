@@ -88,6 +88,9 @@ require_once __DIR__ . "/partials/app_header.php";
             <div class="menu-title">Ações</div>
 
             <div class="menu-actions menu-actions-tight">
+                <a class="btn-receipt" href="/php/export_participantes_excel.php">
+                    Baixar participantes (Excel)
+                </a>
                 <a class="btn-receipt" href="/php/export_apostas_todas_zip.php">
                     Baixar todas apostas
                 </a>
