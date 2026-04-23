@@ -22,17 +22,14 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-require_once __DIR__ . "/conexao.php";
-require_once __DIR__ . "/smtp_mailer.php";
-
-// Carrega config de e-mail
-$mailConfig = require __DIR__ . "/../config/mail.php";
-
 // ── Apenas POST ──────────────────────────────────────────
 if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
-    header("Location: /esqueci_senha.php");
-    exit;
+  header("Location: /esqueci_senha.php");
+  exit;
 }
+
+require_once __DIR__ . "/conexao.php";
+require_once __DIR__ . "/smtp_mailer.php";
 
 // ── Helpers ──────────────────────────────────────────────
 function redirect_reset(string $msg, string $type = "info", string $dest = "/esqueci_senha.php"): never {
@@ -46,6 +43,14 @@ function build_base_url(): string {
     $host  = $_SERVER["HTTP_HOST"] ?? "bolaodothiago.com.br";
     return $proto . "://" . $host;
 }
+
+$mailConfigPath = __DIR__ . "/../config/mail.php";
+if (!is_file($mailConfigPath)) {
+  error_log("[esqueci_senha] Arquivo de configuração SMTP ausente em: " . $mailConfigPath);
+  redirect_reset("Serviço de e-mail ainda não está configurado no servidor.", "error");
+}
+
+$mailConfig = require $mailConfigPath;
 
 // ── Validação básica ─────────────────────────────────────
 $email = trim((string)($_POST["email"] ?? ""));
