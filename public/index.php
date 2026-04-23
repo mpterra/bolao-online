@@ -81,3 +81,4 @@ if (!in_array($flashType, $allowed, true)) $flashType = "";
 <script src="/js/index.js"></script>
 </body>
 </html>
+
