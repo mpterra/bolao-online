@@ -11,9 +11,9 @@ declare(strict_types=1);
 */
 
 return [
-    "host"       => "smtp.titan.email",
-    "port"       => 587,
-    "encryption" => "tls",           // tls | ssl | none
+    "host"       => "mail.bolaodothiago.com.br",
+    "port"       => 465,
+    "encryption" => "ssl",           // tls | ssl | none
     "username"   => "admin@bolaodothiago.com.br",
     "password"   => "Eng%3571Hawaii",
     "from_email" => "admin@bolaodothiago.com.br",

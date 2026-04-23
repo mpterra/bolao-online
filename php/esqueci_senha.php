@@ -45,9 +45,9 @@ function build_base_url(): string {
 }
 
 $defaultMailConfig = [
-  "host"       => "smtp.titan.email",
-  "port"       => 587,
-  "encryption" => "tls",
+  "host"       => "mail.bolaodothiago.com.br",
+  "port"       => 465,
+  "encryption" => "ssl",
   "username"   => "admin@bolaodothiago.com.br",
   "password"   => "Eng%3571Hawaii",
   "from_email" => "admin@bolaodothiago.com.br",
