@@ -306,6 +306,18 @@ body::before{
 /* =========================================================
    LINK CADASTRO
    ========================================================= */
+.reset-subtitle{
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.reset-subtitle--error{
+  color: #ff6b6b;
+}
+
 .cadastro-link{
   margin-top: 10px;
   font-size: 13px;

@@ -73,6 +73,11 @@ if (!in_array($flashType, $allowed, true)) $flashType = "";
                 <a href="/cadastro.php">Cadastre-se</a>
             </p>
 
+            <p class="cadastro-link">
+                Esqueceu a senha?
+                <a href="/esqueci_senha.php">Recuperar acesso</a>
+            </p>
+
         </form>
     </div>
 
