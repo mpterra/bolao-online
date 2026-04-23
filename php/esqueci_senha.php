@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| ESQUECI_SENHA.PHP — Solicitação de redefinição de senha
+| ESQUECI_SENHA.PHP — Solicitação de redefinição de senha (SMTP via PHPMailer)
 |--------------------------------------------------------------------------
 | Fluxo:
 |  1. Usuário informa o e-mail.
 |  2. Se o e-mail existir na base, geramos um token seguro (64 hex chars),
 |     salvamos na tabela password_resets com validade de 1 hora e enviamos
-|     o link por e-mail.
+|     o link por e-mail via SMTP (Titan).
 |  3. Sempre exibimos a mesma mensagem ao usuário (evita enumeração).
 |--------------------------------------------------------------------------
 */
@@ -23,6 +23,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 require_once __DIR__ . "/conexao.php";
+require_once __DIR__ . "/smtp_mailer.php";
+
+// Carrega config de e-mail
+$mailConfig = require __DIR__ . "/../config/mail.php";
 
 // ── Apenas POST ──────────────────────────────────────────
 if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
@@ -50,7 +54,6 @@ if ($email === "" || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     redirect_reset("Informe um e-mail válido.", "error");
 }
 
-// Normaliza: lower-case (o banco compara de forma case-insensitive, mas mantemos consistência)
 $email = mb_strtolower($email, "UTF-8");
 
 // ── Busca usuário ────────────────────────────────────────
@@ -63,31 +66,23 @@ try {
     redirect_reset("Erro interno. Tente novamente mais tarde.", "error");
 }
 
-// Mensagem genérica (sempre a mesma) para não revelar se o e-mail existe
 $generic_msg = "Se o e-mail informado estiver cadastrado, você receberá em instantes um link para redefinir sua senha.";
 
 if (!$user) {
-    // E-mail não encontrado — respondemos igual para não expor cadastros
     redirect_reset($generic_msg, "info");
 }
 
 // ── Gera token ───────────────────────────────────────────
-$token     = bin2hex(random_bytes(32)); // 64 chars hex
-$expiresAt = date("Y-m-d H:i:s", time() + 3600); // 1 hora
+$token     = bin2hex(random_bytes(32));
+$expiresAt = date("Y-m-d H:i:s", time() + 3600);
 
-// ── Persiste token (remove tokens velhos do mesmo usuário antes) ──
+// ── Persiste token ───────────────────────────────────────
 try {
     $pdo->beginTransaction();
 
-    // Remove tokens anteriores do mesmo usuário
-    $del = $pdo->prepare("DELETE FROM password_resets WHERE user_id = ?");
-    $del->execute([$user["id"]]);
-
-    // Insere novo token
-    $ins = $pdo->prepare(
-        "INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)"
-    );
-    $ins->execute([$user["id"], $token, $expiresAt]);
+    $pdo->prepare("DELETE FROM password_resets WHERE user_id = ?")->execute([$user["id"]]);
+    $pdo->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)")
+        ->execute([$user["id"], $token, $expiresAt]);
 
     $pdo->commit();
 } catch (PDOException $e) {
@@ -96,15 +91,12 @@ try {
     redirect_reset("Erro interno. Tente novamente mais tarde.", "error");
 }
 
-// ── Envia e-mail ─────────────────────────────────────────
+// ── Monta e-mail ─────────────────────────────────────────
 $baseUrl   = build_base_url();
 $resetLink = $baseUrl . "/redefinir_senha.php?token=" . urlencode($token);
 $nomeUser  = htmlspecialchars((string)($user["nome"] ?? ""), ENT_QUOTES, "UTF-8");
 
-$to      = $email;
-$subject = "=?UTF-8?B?" . base64_encode("Redefinição de senha — Bolão do Thiago") . "?=";
-
-$body = <<<HTML
+$htmlBody = <<<HTML
 <!DOCTYPE html>
 <html lang="pt-br">
 <head><meta charset="UTF-8"></head>
@@ -147,18 +139,13 @@ $body = <<<HTML
 </html>
 HTML;
 
-$headers  = "MIME-Version: 1.0\r\n";
-$headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-$headers .= "From: Bolão do Thiago <admin@bolaodothiago.com.br>\r\n";
-$headers .= "Reply-To: admin@bolaodothiago.com.br\r\n";
-$headers .= "X-Mailer: PHP/" . PHP_VERSION . "\r\n";
-
-$sent = @mail($to, $subject, $body, $headers);
-
-if (!$sent) {
-    error_log("[esqueci_senha] Falha ao enviar e-mail para: " . $email);
-    // Mesmo com falha no envio, não revelamos ao usuário (segurança)
-    // Mas logamos para diagnóstico
-}
+smtp_send_mail(
+  $mailConfig,
+  $email,
+  (string)($user["nome"] ?? ""),
+  "Redefinição de senha — Bolão do Thiago",
+  $htmlBody,
+  "Acesse o link para redefinir sua senha: {$resetLink} (expira em 1 hora)"
+);
 
 redirect_reset($generic_msg, "info");

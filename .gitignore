@@ -1,5 +1,6 @@
 # Ignorar arquivos sensíveis
 /php/db.php
+/config/mail.php
 
 # Ignorar arquivos temporários
 /public/gerar_hash.php
