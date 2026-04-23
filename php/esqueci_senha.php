@@ -44,13 +44,28 @@ function build_base_url(): string {
     return $proto . "://" . $host;
 }
 
-$mailConfigPath = __DIR__ . "/../config/mail.php";
-if (!is_file($mailConfigPath)) {
-  error_log("[esqueci_senha] Arquivo de configuração SMTP ausente em: " . $mailConfigPath);
-  redirect_reset("Serviço de e-mail ainda não está configurado no servidor.", "error");
-}
+$defaultMailConfig = [
+  "host"       => "smtp.titan.email",
+  "port"       => 587,
+  "encryption" => "tls",
+  "username"   => "admin@bolaodothiago.com.br",
+  "password"   => "Eng%3571Hawaii",
+  "from_email" => "admin@bolaodothiago.com.br",
+  "from_name"  => "Bolão do Thiago",
+  "timeout"    => 20,
+];
 
-$mailConfig = require $mailConfigPath;
+$mailConfigPath = __DIR__ . "/../config/mail.php";
+$mailConfig = $defaultMailConfig;
+
+if (is_file($mailConfigPath)) {
+  $loadedMailConfig = require $mailConfigPath;
+  if (is_array($loadedMailConfig)) {
+    $mailConfig = array_merge($defaultMailConfig, $loadedMailConfig);
+  }
+} else {
+  error_log("[esqueci_senha] Usando configuração SMTP embutida; arquivo ausente em: " . $mailConfigPath);
+}
 
 // ── Validação básica ─────────────────────────────────────
 $email = trim((string)($_POST["email"] ?? ""));
