@@ -67,6 +67,38 @@ if (is_file($mailConfigPath)) {
   error_log("[esqueci_senha] Usando configuração SMTP embutida; arquivo ausente em: " . $mailConfigPath);
 }
 
+$smtpAttempts = [];
+$smtpAttempts[] = $mailConfig;
+
+// Fallbacks práticos para contas Titan/cPanel sem exigir mudança manual a cada teste.
+$smtpAttempts[] = array_merge($mailConfig, [
+  "host" => "smtp.titan.email",
+  "port" => 465,
+  "encryption" => "ssl",
+]);
+$smtpAttempts[] = array_merge($mailConfig, [
+  "host" => "smtp.titan.email",
+  "port" => 587,
+  "encryption" => "tls",
+]);
+$smtpAttempts[] = array_merge($mailConfig, [
+  "host" => "mail.bolaodothiago.com.br",
+  "port" => 587,
+  "encryption" => "tls",
+]);
+
+// Remove tentativas duplicadas (mesmo host/porta/criptografia).
+$smtpUnique = [];
+$seen = [];
+foreach ($smtpAttempts as $cfg) {
+  $key = strtolower((string)($cfg['host'] ?? '')) . '|' . (string)($cfg['port'] ?? '') . '|' . strtolower((string)($cfg['encryption'] ?? ''));
+  if (isset($seen[$key])) {
+    continue;
+  }
+  $seen[$key] = true;
+  $smtpUnique[] = $cfg;
+}
+
 // ── Validação básica ─────────────────────────────────────
 $email = trim((string)($_POST["email"] ?? ""));
 
@@ -159,13 +191,29 @@ $htmlBody = <<<HTML
 </html>
 HTML;
 
-smtp_send_mail(
-  $mailConfig,
-  $email,
-  (string)($user["nome"] ?? ""),
-  "Redefinição de senha — Bolão do Thiago",
-  $htmlBody,
-  "Acesse o link para redefinir sua senha: {$resetLink} (expira em 1 hora)"
-);
+$sent = false;
+$smtpDebug = [];
+
+foreach ($smtpUnique as $cfg) {
+  $sent = smtp_send_mail(
+    $cfg,
+    $email,
+    (string)($user["nome"] ?? ""),
+    "Redefinição de senha — Bolão do Thiago",
+    $htmlBody,
+    "Acesse o link para redefinir sua senha: {$resetLink} (expira em 1 hora)"
+  );
+
+  if ($sent) {
+    error_log("[esqueci_senha] E-mail enviado com sucesso via {$cfg['host']}:{$cfg['port']} ({$cfg['encryption']})");
+    break;
+  }
+
+  $smtpDebug[] = ($cfg['host'] ?? '') . ':' . ($cfg['port'] ?? '') . ' (' . ($cfg['encryption'] ?? '') . ') => ' . smtp_get_last_error();
+}
+
+if (!$sent) {
+  error_log('[esqueci_senha] Falha em todas as tentativas SMTP: ' . implode(' || ', $smtpDebug));
+}
 
 redirect_reset($generic_msg, "info");

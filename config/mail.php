@@ -17,6 +17,6 @@ return [
     "username"   => "admin@bolaodothiago.com.br",
     "password"   => "Eng%3571Hawaii",
     "from_email" => "admin@bolaodothiago.com.br",
-    "from_name"  => "Bolão do Thiago",
+    "from_name"  => "Thiago do Bolão",
     "timeout"    => 20,
 ];

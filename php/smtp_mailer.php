@@ -1,8 +1,22 @@
 <?php
 declare(strict_types=1);
 
+$GLOBALS['SMTP_LAST_ERROR'] = '';
+
+function smtp_set_last_error(string $message): void
+{
+    $GLOBALS['SMTP_LAST_ERROR'] = $message;
+}
+
+function smtp_get_last_error(): string
+{
+    return (string)($GLOBALS['SMTP_LAST_ERROR'] ?? '');
+}
+
 function smtp_send_mail(array $config, string $toEmail, string $toName, string $subject, string $htmlBody, string $textBody): bool
 {
+    smtp_set_last_error('');
+
     $host = trim((string)($config['host'] ?? ''));
     $port = (int)($config['port'] ?? 0);
     $encryption = strtolower(trim((string)($config['encryption'] ?? 'tls')));
@@ -13,7 +27,9 @@ function smtp_send_mail(array $config, string $toEmail, string $toName, string $
     $timeout = (int)($config['timeout'] ?? 20);
 
     if ($host === '' || $port <= 0 || $username === '' || $password === '' || $fromEmail === '') {
-        error_log('[smtp_mailer] Configuração SMTP incompleta.');
+        $msg = '[smtp_mailer] Configuração SMTP incompleta.';
+        smtp_set_last_error($msg);
+        error_log($msg);
         return false;
     }
 
@@ -27,7 +43,9 @@ function smtp_send_mail(array $config, string $toEmail, string $toName, string $
     );
 
     if (!is_resource($socket)) {
-        error_log('[smtp_mailer] Falha na conexão SMTP: ' . $errorString . ' (' . $errorNumber . ')');
+        $msg = '[smtp_mailer] Falha na conexão SMTP: ' . $errorString . ' (' . $errorNumber . ')';
+        smtp_set_last_error($msg);
+        error_log($msg);
         return false;
     }
 
@@ -66,7 +84,9 @@ function smtp_send_mail(array $config, string $toEmail, string $toName, string $
         smtp_expect($socket, [250]);
         smtp_command($socket, 'QUIT', [221]);
     } catch (Throwable $e) {
-        error_log('[smtp_mailer] Erro SMTP: ' . $e->getMessage());
+        $msg = '[smtp_mailer] Erro SMTP: ' . $e->getMessage();
+        smtp_set_last_error($msg);
+        error_log($msg);
         fclose($socket);
         return false;
     }
