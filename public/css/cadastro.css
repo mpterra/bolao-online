@@ -72,6 +72,24 @@
   background: rgba(255,255,255,.12);
 }
 
+.input-group input.is-invalid,
+.input-group input.is-invalid:focus{
+  border-color: rgba(255,107,107,.88);
+  box-shadow:
+    0 0 0 4px rgba(255,107,107,.16),
+    0 10px 22px rgba(0,0,0,.25);
+  background: rgba(255,107,107,.10);
+}
+
+.input-group input.is-valid,
+.input-group input.is-valid:focus{
+  border-color: rgba(16,208,138,.78);
+  box-shadow:
+    0 0 0 4px rgba(16,208,138,.14),
+    0 10px 22px rgba(0,0,0,.25);
+  background: rgba(16,208,138,.08);
+}
+
 .input-group label{
   position: absolute;
   left: 14px;

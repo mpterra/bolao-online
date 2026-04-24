@@ -437,6 +437,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const v1 = senha.value || "";
       const v2 = confirmar.value || "";
 
+      confirmar.classList.remove("is-invalid", "is-valid");
+
       if (v2.length === 0) {
         confirmar.setCustomValidity("");
         return true;
@@ -444,10 +446,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (v1 !== v2) {
         confirmar.setCustomValidity("As senhas não coincidem.");
+        confirmar.classList.add("is-invalid");
         return false;
       }
 
       confirmar.setCustomValidity("");
+      confirmar.classList.add("is-valid");
       return true;
     }
 
