@@ -64,13 +64,18 @@ $telefone = trim((string)($_POST["telefone"] ?? ""));
 $cidade   = trim((string)($_POST["cidade"] ?? ""));
 $estado   = strtoupper(trim((string)($_POST["estado"] ?? "")));
 $senha    = (string)($_POST["senha"] ?? "");
+$confirmarSenha = (string)($_POST["confirmar_senha"] ?? "");
 
 // Campo atual do banco: "nome" deve receber Nome + Sobrenome
 $nomeCompleto = trim($nome . " " . $sobrenome);
 $nomeCompleto = preg_replace('/\s+/', ' ', $nomeCompleto) ?? $nomeCompleto;
 
-if ($nome === "" || $sobrenome === "" || $email === "" || $telefone === "" || $cidade === "" || $estado === "" || $senha === "") {
+if ($nome === "" || $sobrenome === "" || $email === "" || $telefone === "" || $cidade === "" || $estado === "" || $senha === "" || $confirmarSenha === "") {
     fail("Preencha todos os campos.");
+}
+
+if ($senha !== $confirmarSenha) {
+    fail("As senhas não coincidem.");
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {

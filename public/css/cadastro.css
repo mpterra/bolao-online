@@ -35,6 +35,11 @@
   appearance: none;
 }
 
+.input-group input[type="password"],
+.input-group input[type="text"].is-password-visible{
+  padding-right: 44px;
+}
+
 .input-group select{
   padding-right: 42px;
   cursor: pointer;
@@ -90,6 +95,51 @@
   background: linear-gradient(90deg, rgba(16,208,138,.32), rgba(247,201,72,.28));
   border: 1px solid rgba(255,255,255,.14);
   box-shadow: 0 8px 16px rgba(0,0,0,.20);
+}
+
+.password-toggle{
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,.82);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 0;
+  z-index: 2;
+}
+
+.password-toggle svg{
+  width: 18px;
+  height: 18px;
+}
+
+.password-toggle .icon-eye-off{
+  display: none;
+}
+
+.password-toggle.is-active .icon-eye{
+  display: none;
+}
+
+.password-toggle.is-active .icon-eye-off{
+  display: block;
+}
+
+.password-toggle:hover{
+  color: rgba(255,255,255,.98);
+  background: rgba(255,255,255,.08);
+}
+
+.password-toggle:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(16,208,138,.25);
 }
 
 .input-group select:focus + label,

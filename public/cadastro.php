@@ -96,8 +96,37 @@ $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
                 </div>
 
                 <div class="input-group">
-                    <input type="password" name="senha" required autocomplete="new-password">
+                    <input type="password" id="senha" name="senha" required autocomplete="new-password">
                     <label>Senha</label>
+                    <button type="button" class="password-toggle" data-toggle-password="senha" aria-label="Mostrar senha" aria-pressed="false">
+                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M10.6 6.2a10.7 10.7 0 0 1 1.4-.2c6.2 0 10 6 10 6a18 18 0 0 1-3.4 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6.8 8.8C4.2 10.7 2 12 2 12s3.8 6 10 6c1.4 0 2.6-.3 3.8-.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9.9 9.9A3 3 0 0 0 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="input-group">
+                    <input type="password" id="confirmar_senha" name="confirmar_senha" required autocomplete="new-password">
+                    <label>Confirmar senha</label>
+                    <button type="button" class="password-toggle" data-toggle-password="confirmar_senha" aria-label="Mostrar confirmação de senha" aria-pressed="false">
+                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M10.6 6.2a10.7 10.7 0 0 1 1.4-.2c6.2 0 10 6 10 6a18 18 0 0 1-3.4 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6.8 8.8C4.2 10.7 2 12 2 12s3.8 6 10 6c1.4 0 2.6-.3 3.8-.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9.9 9.9A3 3 0 0 0 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
 
                 <button type="submit" class="btn-login">Cadastrar</button>

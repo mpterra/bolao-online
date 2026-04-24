@@ -404,6 +404,67 @@ document.addEventListener("DOMContentLoaded", () => {
   })();
 
   // =========================================================
+  // SENHA: mostrar/ocultar + validação de confirmação
+  // =========================================================
+  (function initPasswordFields() {
+    const form = document.querySelector(".login-form");
+    if (!form) return;
+
+    const senha = form.querySelector('input[name="senha"]');
+    const confirmar = form.querySelector('input[name="confirmar_senha"]');
+    const toggles = Array.from(form.querySelectorAll(".password-toggle"));
+
+    toggles.forEach((btn) => {
+      const targetId = (btn.getAttribute("data-toggle-password") || "").trim();
+      if (!targetId) return;
+
+      const target = document.getElementById(targetId);
+      if (!target) return;
+
+      btn.addEventListener("click", () => {
+        const willShow = target.type === "password";
+        target.type = willShow ? "text" : "password";
+        target.classList.toggle("is-password-visible", willShow);
+        btn.classList.toggle("is-active", willShow);
+        btn.setAttribute("aria-pressed", willShow ? "true" : "false");
+        btn.setAttribute("aria-label", willShow ? "Ocultar senha" : "Mostrar senha");
+      });
+    });
+
+    function syncPasswordValidation() {
+      if (!senha || !confirmar) return true;
+
+      const v1 = senha.value || "";
+      const v2 = confirmar.value || "";
+
+      if (v2.length === 0) {
+        confirmar.setCustomValidity("");
+        return true;
+      }
+
+      if (v1 !== v2) {
+        confirmar.setCustomValidity("As senhas não coincidem.");
+        return false;
+      }
+
+      confirmar.setCustomValidity("");
+      return true;
+    }
+
+    if (senha && confirmar) {
+      senha.addEventListener("input", syncPasswordValidation);
+      confirmar.addEventListener("input", syncPasswordValidation);
+
+      form.addEventListener("submit", (ev) => {
+        if (!syncPasswordValidation()) {
+          ev.preventDefault();
+          confirmar.reportValidity();
+        }
+      });
+    }
+  })();
+
+  // =========================================================
   // MODAL SUCESSO CADASTRO
   // =========================================================
   const regSuccess = document.body && document.body.dataset ? document.body.dataset.regSuccess : "0";
