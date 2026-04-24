@@ -187,18 +187,57 @@ function bet_notify_ensure_table(PDO $pdo): void {
         pending_updates INT NOT NULL DEFAULT 0,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS bet_update_notification_items (
+        usuario_id INT NOT NULL,
+        item_key VARCHAR(80) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (usuario_id, item_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 }
 
-function bet_notify_track_update(PDO $pdo, int $usuarioId): void {
+function bet_notify_track_update(PDO $pdo, int $usuarioId, array $itemKeys = []): void {
     if ($usuarioId <= 0) {
         return;
     }
 
     try {
         bet_notify_ensure_table($pdo);
-        $st = $pdo->prepare('INSERT INTO bet_update_notifications (usuario_id, last_sent_at, pending_updates) VALUES (?, NULL, 1) ON DUPLICATE KEY UPDATE pending_updates = pending_updates + 1');
-        $st->execute([$usuarioId]);
+
+        $normalized = [];
+        foreach ($itemKeys as $key) {
+            $k = trim((string)$key);
+            if ($k === '') continue;
+            if (strlen($k) > 80) $k = substr($k, 0, 80);
+            $normalized[$k] = true;
+        }
+
+        if (count($normalized) === 0) {
+            $normalized['generic'] = true;
+        }
+
+        $pdo->beginTransaction();
+
+        $stUser = $pdo->prepare('INSERT INTO bet_update_notifications (usuario_id, last_sent_at, pending_updates) VALUES (?, NULL, 0) ON DUPLICATE KEY UPDATE usuario_id = usuario_id');
+        $stUser->execute([$usuarioId]);
+
+        $stItem = $pdo->prepare('INSERT IGNORE INTO bet_update_notification_items (usuario_id, item_key) VALUES (?, ?)');
+        foreach (array_keys($normalized) as $itemKey) {
+            $stItem->execute([$usuarioId, $itemKey]);
+        }
+
+        $stCount = $pdo->prepare('SELECT COUNT(*) FROM bet_update_notification_items WHERE usuario_id = ?');
+        $stCount->execute([$usuarioId]);
+        $pending = (int)$stCount->fetchColumn();
+
+        $stUpd = $pdo->prepare('UPDATE bet_update_notifications SET pending_updates = ? WHERE usuario_id = ?');
+        $stUpd->execute([$pending, $usuarioId]);
+
+        $pdo->commit();
     } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         bet_notify_log('Falha ao marcar update pendente. usuario_id=' . $usuarioId . '. ' . $e->getMessage());
     }
 }
@@ -256,6 +295,12 @@ function bet_notify_flush(PDO $pdo, int $usuarioId, bool $force = true): array {
             $pending = isset($row['pending_updates']) ? (int)$row['pending_updates'] : 0;
         }
 
+        $stCount = $pdo->prepare('SELECT COUNT(*) FROM bet_update_notification_items WHERE usuario_id = ?');
+        $stCount->execute([$usuarioId]);
+        $pending = (int)$stCount->fetchColumn();
+        $pdo->prepare('UPDATE bet_update_notifications SET pending_updates = ? WHERE usuario_id = ?')
+            ->execute([$pending, $usuarioId]);
+
         if ($pending <= 0) {
             $pdo->commit();
             $out['ok'] = true;
@@ -306,9 +351,9 @@ function bet_notify_flush(PDO $pdo, int $usuarioId, bool $force = true): array {
             . 'ID: ' . $id . "\n"
             . 'Telefone: ' . $telefone . "\n"
             . 'Email: ' . $email . "\n"
-            . 'Modificacoes acumuladas: ' . $pending . "\n";
+            . 'Partidas/jogos acumulados: ' . $pending . "\n";
 
-        $htmlBody .= '<p><strong>Modificações acumuladas:</strong> ' . $pending . '</p>';
+        $htmlBody .= '<p><strong>Partidas/jogos acumulados:</strong> ' . $pending . '</p>';
 
         $recipients = [
             ['email' => 'thiagopterra@gmail.com', 'name' => 'Thiago'],
@@ -332,6 +377,8 @@ function bet_notify_flush(PDO $pdo, int $usuarioId, bool $force = true): array {
 
         $pdo->beginTransaction();
         if ($allSent) {
+            $pdo->prepare('DELETE FROM bet_update_notification_items WHERE usuario_id = ?')
+                ->execute([$usuarioId]);
             $pdo->prepare('UPDATE bet_update_notifications SET last_sent_at = NOW(), pending_updates = 0 WHERE usuario_id = ?')
                 ->execute([$usuarioId]);
             $out['ok'] = true;

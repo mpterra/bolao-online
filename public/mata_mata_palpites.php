@@ -277,6 +277,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 
 		$blocked = [];
 		$saved = 0;
+		$changedGameKeys = [];
 
 		foreach ($normalized as $row) {
 			$params = array_merge([(int)$row["jogo_id"], $edicaoId], $ph);
@@ -326,6 +327,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 				":passa_time_id" => $passa,
 			]);
 			$saved++;
+			$changedGameKeys['jogo:' . (int)$row["jogo_id"]] = true;
 		}
 
 		if (count($blocked) > 0) {
@@ -342,7 +344,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 
 		$pdo->commit();
 		if (function_exists('bet_notify_track_update') && $saved > 0) {
-			bet_notify_track_update($pdo, $usuarioId);
+			bet_notify_track_update($pdo, $usuarioId, array_keys($changedGameKeys));
 		}
 
 		if ($saved <= 0) json_response(["ok" => false, "message" => "Nenhum palpite foi salvo."], 422);
@@ -437,7 +439,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 
 		$pdo->commit();
 		if (function_exists('bet_notify_track_update')) {
-			bet_notify_track_update($pdo, $usuarioId);
+			bet_notify_track_update($pdo, $usuarioId, ['top4']);
 		}
 		json_response(["ok" => true, "message" => "Top 4 salvo."]);
 	} catch (Throwable $e) {

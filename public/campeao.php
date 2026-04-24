@@ -193,7 +193,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		$pdo->commit();
 
 		if (function_exists('bet_notify_track_update')) {
-			bet_notify_track_update($pdo, $usuarioId);
+			bet_notify_track_update($pdo, $usuarioId, ['campeao']);
 		}
 
 		json_response(["ok" => true, "message" => "Campeão salvo com sucesso.", "time_id" => $timeId]);
