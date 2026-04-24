@@ -93,16 +93,36 @@ function smtp_open_socket(array $config, string $host, int $port, string $encryp
     $remote = $encryption === 'ssl' ? 'ssl://' . $host : $host;
 
     $hasVerifyConfig = array_key_exists('verify_peer', $config) || array_key_exists('verify_peer_name', $config) || array_key_exists('allow_self_signed', $config);
+    $autoRelaxTls = (bool)($config['auto_relax_tls'] ?? true);
 
     $attempts = [];
 
     if ($hasVerifyConfig) {
+        $configuredVerifyPeer = (bool)($config['verify_peer'] ?? true);
+        $configuredVerifyPeerName = (bool)($config['verify_peer_name'] ?? true);
+        $configuredAllowSelfSigned = (bool)($config['allow_self_signed'] ?? false);
+
         $attempts[] = [
-            'verify_peer' => (bool)($config['verify_peer'] ?? true),
-            'verify_peer_name' => (bool)($config['verify_peer_name'] ?? true),
-            'allow_self_signed' => (bool)($config['allow_self_signed'] ?? false),
+            'verify_peer' => $configuredVerifyPeer,
+            'verify_peer_name' => $configuredVerifyPeerName,
+            'allow_self_signed' => $configuredAllowSelfSigned,
             'label' => 'config',
         ];
+
+        if ($autoRelaxTls === true) {
+            $isAlreadyRelaxed = ($configuredVerifyPeer === false)
+                && ($configuredVerifyPeerName === false)
+                && ($configuredAllowSelfSigned === true);
+
+            if (!$isAlreadyRelaxed) {
+                $attempts[] = [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                    'label' => 'relaxed-fallback',
+                ];
+            }
+        }
     } else {
         $attempts[] = [
             'verify_peer' => true,
@@ -111,7 +131,7 @@ function smtp_open_socket(array $config, string $host, int $port, string $encryp
             'label' => 'strict',
         ];
 
-        if (($config['auto_relax_tls'] ?? true) === true) {
+        if ($autoRelaxTls === true) {
             $attempts[] = [
                 'verify_peer' => false,
                 'verify_peer_name' => false,

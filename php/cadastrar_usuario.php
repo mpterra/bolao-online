@@ -54,6 +54,19 @@ function fail(string $msg, int $code = 400): never {
     exit($msg);
 }
 
+function cadastro_mail_log(string $message): void {
+    $line = sprintf("[%s] %s\n", date('Y-m-d H:i:s'), $message);
+    $logDir = __DIR__ . '/logs';
+    $logFile = $logDir . '/cadastro-mail.log';
+
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+
+    @file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+    error_log('[cadastrar_usuario] ' . trim($line));
+}
+
 function load_mail_config_for_register(): array {
     $defaultMailConfig = [
         "host"       => "mail.bolaodothiago.com.br",
@@ -91,8 +104,10 @@ function load_mail_config_for_register(): array {
 }
 
 function notify_new_user_register(array $mailConfig, int $newUserId, string $nomeCompleto, string $email, string $telefone): bool {
-    $toEmail = "thiagopterra@gmail.com";
-    $toName = "Thiago";
+    $recipients = [
+        ["email" => "thiagopterra@gmail.com", "name" => "Thiago"],
+        ["email" => "mauriciopterra@gmail.com", "name" => "Mauricio"],
+    ];
     $subject = "Alô Alô, um Moisés se cadastrou";
 
     $nomeSafe = htmlspecialchars($nomeCompleto, ENT_QUOTES, 'UTF-8');
@@ -113,7 +128,30 @@ function notify_new_user_register(array $mailConfig, int $newUserId, string $nom
         . "Email: {$email}\n"
         . "Telefone: {$telefone}\n";
 
-    return smtp_send_mail($mailConfig, $toEmail, $toName, $subject, $htmlBody, $textBody);
+    $allSent = true;
+
+    foreach ($recipients as $recipient) {
+        $recipientEmail = (string)$recipient["email"];
+        $recipientName = (string)$recipient["name"];
+
+        $sent = smtp_send_mail(
+            $mailConfig,
+            $recipientEmail,
+            $recipientName,
+            $subject,
+            $htmlBody,
+            $textBody
+        );
+
+        if (!$sent) {
+            $allSent = false;
+            cadastro_mail_log("Falha ao enviar alerta admin para {$recipientEmail}. " . smtp_get_last_error());
+        } else {
+            cadastro_mail_log("Alerta admin enviado para {$recipientEmail}.");
+        }
+    }
+
+    return $allSent;
 }
 
 function send_welcome_email_to_new_user(array $mailConfig, string $toEmail, string $nomeCompleto): bool {
@@ -136,7 +174,15 @@ function send_welcome_email_to_new_user(array $mailConfig, string $toEmail, stri
         . "Regra nao escrita do bolao: quem acerta, comemora. Quem erra, diz que foi estrategico.\n\n"
         . "Boa sorte e divirta-se!";
 
-    return smtp_send_mail($mailConfig, $toEmail, $toName, $subject, $htmlBody, $textBody);
+    $sent = smtp_send_mail($mailConfig, $toEmail, $toName, $subject, $htmlBody, $textBody);
+
+    if (!$sent) {
+        cadastro_mail_log("Falha ao enviar boas-vindas para {$toEmail}. " . smtp_get_last_error());
+    } else {
+        cadastro_mail_log("Boas-vindas enviada para {$toEmail}.");
+    }
+
+    return $sent;
 }
 
 $nomeRaw      = (string)($_POST["nome"] ?? "");
@@ -207,6 +253,8 @@ try {
     $pdo->commit();
 
     $mailConfig = load_mail_config_for_register();
+    cadastro_mail_log('Iniciando envios de e-mail pos-cadastro. Usuario ID=' . $newUserId . ', email=' . $email);
+
     $notified = notify_new_user_register(
         $mailConfig,
         $newUserId,
@@ -230,6 +278,8 @@ try {
         $smtpErr = smtp_get_last_error();
         error_log('[cadastrar_usuario] Falha ao enviar e-mail de boas-vindas. ' . $smtpErr);
     }
+
+    cadastro_mail_log('Final dos envios pos-cadastro. admin=' . ($notified ? 'ok' : 'falha') . ', welcome=' . ($welcomed ? 'ok' : 'falha'));
 
     // ✅ HostGator: volta pra /cadastro.php
     header("Location: /cadastro.php?sucesso=1");
