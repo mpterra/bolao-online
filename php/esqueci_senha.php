@@ -13,7 +13,7 @@ use PHPMailer\PHPMailer\Exception;
 |  2. Se o e-mail existir na base, geramos um token seguro (64 hex chars),
 |     salvamos na tabela password_resets com validade de 1 hora e enviamos
 |     o link por e-mail via SMTP.
-|  3. Sempre exibimos a mesma mensagem ao usuário (evita enumeração).
+|  3. Se o e-mail não existir, retornamos feedback ao usuário sem tentar envio.
 |--------------------------------------------------------------------------
 */
 
@@ -226,11 +226,12 @@ try {
     redirect_reset("Erro interno. Tente novamente mais tarde.", "error");
 }
 
-$generic_msg = "Se o e-mail informado estiver cadastrado, você receberá em instantes um link para redefinir sua senha.";
+$success_msg = "Se o e-mail informado estiver cadastrado, você receberá em instantes um link para redefinir sua senha.";
+$not_found_msg = "Email nao cadastrado.";
 
 if (!$user) {
     reset_log($requestId, "Usuario nao encontrado ou inativo.");
-    redirect_reset($generic_msg, "info");
+    redirect_reset($not_found_msg, "warn");
 }
 
 reset_log($requestId, "Usuario encontrado. ID=" . (string)$user["id"]);
@@ -328,4 +329,4 @@ if ($sent) {
     reset_log($requestId, "Fluxo finalizado sem envio.");
 }
 
-redirect_reset($generic_msg, "info");
+redirect_reset($success_msg, "info");
