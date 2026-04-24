@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let finalizeTimer = null;
   let isFinalizing = false;
   let finalizeBtn = null;
+  let exitFinalizeDispatched = false;
 
   function updateFinalizeBtn() {
     if (!finalizeBtn) return;
@@ -69,8 +70,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function markPendingFinalize() {
     hasPendingFinalize = true;
+    exitFinalizeDispatched = false;
     updateFinalizeBtn();
     scheduleAutoFinalize();
+  }
+
+  function dispatchExitFinalize(source) {
+    if (!hasPendingFinalize || exitFinalizeDispatched) return;
+    exitFinalizeDispatched = true;
+
+    const payload = JSON.stringify({ force: true, source: source || "exit" });
+
+    try {
+      if (navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: "application/json" });
+        if (navigator.sendBeacon(ENDPOINT_NOTIFY_CHANGES, blob)) {
+          return;
+        }
+      }
+    } catch (_) {}
+
+    try {
+      fetch(ENDPOINT_NOTIFY_CHANGES, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: payload,
+        keepalive: true,
+        credentials: "same-origin"
+      }).catch(() => {});
+    } catch (_) {}
   }
 
   async function flushChanges({ manual = false } = {}) {
@@ -1261,9 +1289,17 @@ document.addEventListener("DOMContentLoaded", () => {
   installFinalizeButton();
 
   window.addEventListener("beforeunload", () => {
-    if (!hasPendingFinalize || !navigator.sendBeacon) return;
-    const blob = new Blob([JSON.stringify({ force: true, source: "beforeunload" })], { type: "application/json" });
-    navigator.sendBeacon(ENDPOINT_NOTIFY_CHANGES, blob);
+    dispatchExitFinalize("beforeunload");
+  });
+
+  window.addEventListener("pagehide", () => {
+    dispatchExitFinalize("pagehide");
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      dispatchExitFinalize("visibilitychange");
+    }
   });
 
   const btnRecibo = document.getElementById("btnRecibo");
