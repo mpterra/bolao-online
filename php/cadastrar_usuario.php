@@ -12,6 +12,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 // ✅ HostGator: pasta /php fica fora do public_html, mas ESTE arquivo também está em /php.
 // Então conexao.php é "vizinho" (mesma pasta).
 require_once __DIR__ . "/conexao.php";
+require_once __DIR__ . "/smtp_mailer.php";
 
 if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
     // ✅ HostGator: páginas públicas ficam na raiz do public_html
@@ -53,6 +54,91 @@ function fail(string $msg, int $code = 400): never {
     exit($msg);
 }
 
+function load_mail_config_for_register(): array {
+    $defaultMailConfig = [
+        "host"       => "mail.bolaodothiago.com.br",
+        "port"       => 465,
+        "encryption" => "ssl",
+        "auto_relax_tls" => true,
+        "verify_peer" => true,
+        "verify_peer_name" => true,
+        "allow_self_signed" => false,
+        "username"   => "admin@bolaodothiago.com.br",
+        "password"   => "Eng%3571Hawaii",
+        "from_email" => "admin@bolaodothiago.com.br",
+        "from_name"  => "Thiago do Bolão",
+        "timeout"    => 20,
+    ];
+
+    $mailConfigPaths = [
+        __DIR__ . "/../config/mail.php",
+        __DIR__ . "/../../config/mail.php",
+        __DIR__ . "/../../../config/mail.php",
+    ];
+
+    foreach ($mailConfigPaths as $mailConfigPath) {
+        if (!is_file($mailConfigPath)) {
+            continue;
+        }
+
+        $loadedMailConfig = require $mailConfigPath;
+        if (is_array($loadedMailConfig)) {
+            return array_merge($defaultMailConfig, $loadedMailConfig);
+        }
+    }
+
+    return $defaultMailConfig;
+}
+
+function notify_new_user_register(array $mailConfig, int $newUserId, string $nomeCompleto, string $email, string $telefone): bool {
+    $toEmail = "thiagopterra@gmail.com";
+    $toName = "Thiago";
+    $subject = "Alô Alô, um Moisés se cadastrou";
+
+    $nomeSafe = htmlspecialchars($nomeCompleto, ENT_QUOTES, 'UTF-8');
+    $emailSafe = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+    $telefoneSafe = htmlspecialchars($telefone, ENT_QUOTES, 'UTF-8');
+
+    $htmlBody = ""
+        . "<h2>Novo usuário cadastrado</h2>"
+        . "<p><strong>Nome completo:</strong> {$nomeSafe}</p>"
+        . "<p><strong>ID:</strong> {$newUserId}</p>"
+        . "<p><strong>Email:</strong> {$emailSafe}</p>"
+        . "<p><strong>Telefone:</strong> {$telefoneSafe}</p>";
+
+    $textBody = ""
+        . "Novo usuário cadastrado\n\n"
+        . "Nome completo: {$nomeCompleto}\n"
+        . "ID: {$newUserId}\n"
+        . "Email: {$email}\n"
+        . "Telefone: {$telefone}\n";
+
+    return smtp_send_mail($mailConfig, $toEmail, $toName, $subject, $htmlBody, $textBody);
+}
+
+function send_welcome_email_to_new_user(array $mailConfig, string $toEmail, string $nomeCompleto): bool {
+    $toName = $nomeCompleto;
+    $subject = "Bem-vindo ao Bolao do Thiago! Sua resenha acaba de ganhar reforco";
+
+    $nomeSafe = htmlspecialchars($nomeCompleto, ENT_QUOTES, 'UTF-8');
+
+    $htmlBody = ""
+        . "<h2>Fala, {$nomeSafe}! 🎉</h2>"
+        . "<p>Seu cadastro foi confirmado e agora voce ja pode entrar no <strong>Bolao do Thiago</strong>.</p>"
+        . "<p>Prepare o palpite, afie a intuicao e venha brigar pelo topo do ranking.</p>"
+        . "<p>Regra nao escrita do bolao: quem acerta, comemora. Quem erra, diz que foi estrategico.</p>"
+        . "<p>Boa sorte e divirta-se! ⚽🏆</p>";
+
+    $textBody = ""
+        . "Fala, {$nomeCompleto}!\n\n"
+        . "Seu cadastro foi confirmado e agora voce ja pode entrar no Bolao do Thiago.\n"
+        . "Prepare o palpite, afie a intuicao e venha brigar pelo topo do ranking.\n\n"
+        . "Regra nao escrita do bolao: quem acerta, comemora. Quem erra, diz que foi estrategico.\n\n"
+        . "Boa sorte e divirta-se!";
+
+    return smtp_send_mail($mailConfig, $toEmail, $toName, $subject, $htmlBody, $textBody);
+}
+
 $nomeRaw      = (string)($_POST["nome"] ?? "");
 $sobrenomeRaw = (string)($_POST["sobrenome"] ?? "");
 
@@ -69,6 +155,8 @@ $confirmarSenha = (string)($_POST["confirmar_senha"] ?? "");
 // Campo atual do banco: "nome" deve receber Nome + Sobrenome
 $nomeCompleto = trim($nome . " " . $sobrenome);
 $nomeCompleto = preg_replace('/\s+/', ' ', $nomeCompleto) ?? $nomeCompleto;
+$nomeCompletoInformado = trim($nomeRaw . " " . $sobrenomeRaw);
+$nomeCompletoInformado = preg_replace('/\s+/', ' ', $nomeCompletoInformado) ?? $nomeCompletoInformado;
 
 if ($nome === "" || $sobrenome === "" || $email === "" || $telefone === "" || $cidade === "" || $estado === "" || $senha === "" || $confirmarSenha === "") {
     fail("Preencha todos os campos.");
@@ -114,7 +202,34 @@ try {
     $ins = $pdo->prepare($sql);
     $ins->execute([$nomeCompleto, $email, $telefone, $cidade, $estado, $senhaHash]);
 
+    $newUserId = (int)$pdo->lastInsertId();
+
     $pdo->commit();
+
+    $mailConfig = load_mail_config_for_register();
+    $notified = notify_new_user_register(
+        $mailConfig,
+        $newUserId,
+        $nomeCompletoInformado !== '' ? $nomeCompletoInformado : $nomeCompleto,
+        $email,
+        $telefone
+    );
+
+    if (!$notified) {
+        $smtpErr = smtp_get_last_error();
+        error_log('[cadastrar_usuario] Falha ao notificar novo cadastro por e-mail. ' . $smtpErr);
+    }
+
+    $welcomed = send_welcome_email_to_new_user(
+        $mailConfig,
+        $email,
+        $nomeCompletoInformado !== '' ? $nomeCompletoInformado : $nomeCompleto
+    );
+
+    if (!$welcomed) {
+        $smtpErr = smtp_get_last_error();
+        error_log('[cadastrar_usuario] Falha ao enviar e-mail de boas-vindas. ' . $smtpErr);
+    }
 
     // ✅ HostGator: volta pra /cadastro.php
     header("Location: /cadastro.php?sucesso=1");
