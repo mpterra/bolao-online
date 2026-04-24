@@ -81,7 +81,7 @@ function load_mail_config_for_register(): array {
         "username"   => "admin@bolaodothiago.com.br",
         "password"   => "Eng%3571Hawaii",
         "from_email" => "admin@bolaodothiago.com.br",
-        "from_name"  => "Thiago do Bolão",
+        "from_name"  => "Bolão do Thiago",
         "timeout"    => 20,
     ];
 
