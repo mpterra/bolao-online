@@ -33,7 +33,7 @@ $config = [
     "timeout"    => 20,
 ];
 
-$toEmail = "mauriciopterra@gmail.com";
+$toEmail = "admin@bolaodothiago.com.br";
 $toName  = "Mauricio";
 
 $subject  = "TESTE PHP SMTP HOSTGATOR";
