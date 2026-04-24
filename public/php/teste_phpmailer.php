@@ -20,7 +20,7 @@ try {
     $mail->Host = 'mail.bolaodothiago.com.br';
     $mail->SMTPAuth = true;
     $mail->Username = 'admin@bolaodothiago.com.br';
-    $mail->Password = 'COLOQUE_A_SENHA_AQUI';
+    $mail->Password = 'Eng%3571Hawaii';
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $mail->Port = 465;
 
