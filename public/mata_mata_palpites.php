@@ -7,6 +7,7 @@ ini_set('display_startup_errors', '1');
 
 session_start();
 require_once __DIR__ . "/../php/conexao.php";
+require_once __DIR__ . "/../php/bet_update_notifier.php";
 
 date_default_timezone_set('America/Sao_Paulo');
 
@@ -321,6 +322,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		}
 
 		$pdo->commit();
+		if (function_exists('bet_notify_maybe_send') && $saved > 0) {
+			bet_notify_maybe_send($pdo, $usuarioId);
+		}
 
 		if ($saved <= 0) json_response(["ok" => false, "message" => "Nenhum palpite foi salvo."], 422);
 
@@ -413,6 +417,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 		]);
 
 		$pdo->commit();
+		if (function_exists('bet_notify_maybe_send')) {
+			bet_notify_maybe_send($pdo, $usuarioId);
+		}
 		json_response(["ok" => true, "message" => "Top 4 salvo."]);
 	} catch (Throwable $e) {
 		if ($pdo->inTransaction()) $pdo->rollBack();

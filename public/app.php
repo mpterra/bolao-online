@@ -52,6 +52,14 @@ if (is_file($CONEXAO_PATH_1)) {
 	require_once $CONEXAO_PATH_2;
 }
 
+$BET_NOTIFY_PATH_1 = __DIR__ . "/../php/bet_update_notifier.php";
+$BET_NOTIFY_PATH_2 = __DIR__ . "/php/bet_update_notifier.php";
+if (is_file($BET_NOTIFY_PATH_1)) {
+	require_once $BET_NOTIFY_PATH_1;
+} elseif (is_file($BET_NOTIFY_PATH_2)) {
+	require_once $BET_NOTIFY_PATH_2;
+}
+
 /*
 |--------------------------------------------------------------------------
 | APP.PHP - BOLÃO DA COPA (APOSTAS)
@@ -560,6 +568,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 
 		$pdo->commit();
 
+		if (function_exists('bet_notify_maybe_send') && $saved > 0) {
+			bet_notify_maybe_send($pdo, $usuarioId);
+		}
+
 		if ($saved <= 0) {
 			json_response(["ok" => false, "message" => "Nenhum palpite foi salvo (verifique se são jogos da fase de grupos)."], 422);
 		}
@@ -660,6 +672,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 		]);
 
 		$pdo->commit();
+		if (function_exists('bet_notify_maybe_send')) {
+			bet_notify_maybe_send($pdo, $usuarioId);
+		}
 		json_response(["ok" => true, "message" => "Top 4 salvo."]);
 	} catch (Throwable $e) {
 		if ($pdo->inTransaction()) $pdo->rollBack();
@@ -760,6 +775,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 		]);
 
 		$pdo->commit();
+
+		if (function_exists('bet_notify_maybe_send')) {
+			bet_notify_maybe_send($pdo, $usuarioId);
+		}
 
 		json_response([
 			"ok" => true,
