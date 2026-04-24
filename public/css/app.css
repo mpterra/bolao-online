@@ -1411,11 +1411,11 @@ body::before{
 @media (max-width: 560px){
 
   .match-body{
-    padding: 12px;
+    padding: 10px 12px;
     display: grid;
     grid-template-columns: minmax(72px, 84px) minmax(0, 1fr) minmax(72px, 84px);
     grid-template-areas: "home score away";
-    gap: 8px;
+    gap: 10px;
     align-items: center;
     justify-items: stretch;
   }
@@ -1452,12 +1452,16 @@ body::before{
     height: 42px !important;
     border-radius: 14px !important;
     font-size: 12px !important;
+    border-width: 0 !important;
+    box-shadow: none !important;
   }
 
   .team-flag{
     width: 42px !important;
     height: 42px !important;
     border-radius: 14px !important;
+    border: 0 !important;
+    box-shadow: none !important;
   }
 
   .team-sigla{
@@ -1469,12 +1473,15 @@ body::before{
   }
 
   .scorebox{
-    width: 100% !important;
-    max-width: 100% !important;
+    width: auto !important;
+    max-width: none !important;
     margin: 0 auto !important;
     justify-content: center !important;
-    gap: 6px !important;
-    padding: 8px 6px !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
   }
 
   .score{
@@ -1482,10 +1489,14 @@ body::before{
     height: 42px !important;
     line-height: 42px !important;
     font-size: 16px !important;
+    border-color: rgba(255,255,255,.10) !important;
+    background: rgba(255,255,255,.08) !important;
+    box-shadow: none !important;
   }
 
   .x{
     font-size: 15px !important;
+    opacity: .88 !important;
   }
 }
 
