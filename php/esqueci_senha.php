@@ -38,6 +38,19 @@ function redirect_reset(string $msg, string $type = "info", string $dest = "/esq
     exit;
 }
 
+function reset_log(string $requestId, string $message): void {
+  $line = sprintf("[%s] <%s> %s\n", date('Y-m-d H:i:s'), $requestId, $message);
+  $logDir = __DIR__ . '/logs';
+  $logFile = $logDir . '/reset-mail.log';
+
+  if (!is_dir($logDir)) {
+    @mkdir($logDir, 0755, true);
+  }
+
+  @file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+  error_log('[esqueci_senha] ' . $line);
+}
+
 function build_base_url(): string {
     $proto = (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off") ? "https" : "http";
     $host  = $_SERVER["HTTP_HOST"] ?? "bolaodothiago.com.br";
@@ -97,14 +110,17 @@ $defaultMailConfig = [
 
 $mailConfigPath = __DIR__ . "/../config/mail.php";
 $mailConfig = $defaultMailConfig;
+$requestId = bin2hex(random_bytes(4));
+reset_log($requestId, 'Inicio do fluxo de esqueci_senha.');
 
 if (is_file($mailConfigPath)) {
   $loadedMailConfig = require $mailConfigPath;
   if (is_array($loadedMailConfig)) {
     $mailConfig = array_merge($defaultMailConfig, $loadedMailConfig);
+    reset_log($requestId, 'Config SMTP carregada de config/mail.php.');
   }
 } else {
-  error_log("[esqueci_senha] Usando configuração SMTP embutida; arquivo ausente em: " . $mailConfigPath);
+  reset_log($requestId, 'Usando configuração SMTP embutida; arquivo ausente em: ' . $mailConfigPath);
 }
 
 $smtpAttempts = [];
@@ -143,10 +159,12 @@ foreach ($smtpAttempts as $cfg) {
 $email = trim((string)($_POST["email"] ?? ""));
 
 if ($email === "" || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+  reset_log($requestId, 'Email invalido no POST.');
     redirect_reset("Informe um e-mail válido.", "error");
 }
 
 $email = mb_strtolower($email, "UTF-8");
+reset_log($requestId, 'Email recebido: ' . $email);
 
 // ── Busca usuário ────────────────────────────────────────
 try {
@@ -154,15 +172,18 @@ try {
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 } catch (PDOException $e) {
-    error_log("[esqueci_senha] DB error: " . $e->getMessage());
+  reset_log($requestId, 'DB error ao buscar usuario: ' . $e->getMessage());
     redirect_reset("Erro interno. Tente novamente mais tarde.", "error");
 }
 
 $generic_msg = "Se o e-mail informado estiver cadastrado, você receberá em instantes um link para redefinir sua senha.";
 
 if (!$user) {
+  reset_log($requestId, 'Usuario nao encontrado ou inativo.');
     redirect_reset($generic_msg, "info");
 }
+
+reset_log($requestId, 'Usuario encontrado. ID=' . (string)$user['id']);
 
 // ── Gera token ───────────────────────────────────────────
 $token     = bin2hex(random_bytes(32));
@@ -179,9 +200,11 @@ try {
     $pdo->commit();
 } catch (PDOException $e) {
     $pdo->rollBack();
-    error_log("[esqueci_senha] DB error ao salvar token: " . $e->getMessage());
+  reset_log($requestId, 'DB error ao salvar token: ' . $e->getMessage());
     redirect_reset("Erro interno. Tente novamente mais tarde.", "error");
 }
+
+reset_log($requestId, 'Token salvo com sucesso.');
 
 // ── Monta e-mail ─────────────────────────────────────────
 $baseUrl   = build_base_url();
@@ -235,6 +258,7 @@ $sent = false;
 $smtpDebug = [];
 
 foreach ($smtpUnique as $cfg) {
+  reset_log($requestId, 'Tentando SMTP em ' . (string)($cfg['host'] ?? '') . ':' . (string)($cfg['port'] ?? '') . ' (' . (string)($cfg['encryption'] ?? '') . ').');
   $sent = smtp_send_mail(
     $cfg,
     $email,
@@ -245,7 +269,7 @@ foreach ($smtpUnique as $cfg) {
   );
 
   if ($sent) {
-    error_log("[esqueci_senha] E-mail enviado com sucesso via {$cfg['host']}:{$cfg['port']} ({$cfg['encryption']})");
+    reset_log($requestId, 'Email enviado com sucesso via SMTP em ' . (string)$cfg['host'] . ':' . (string)$cfg['port'] . ' (' . (string)$cfg['encryption'] . ').');
     break;
   }
 
@@ -253,7 +277,7 @@ foreach ($smtpUnique as $cfg) {
 }
 
 if (!$sent) {
-  error_log('[esqueci_senha] Falha em todas as tentativas SMTP: ' . implode(' || ', $smtpDebug));
+  reset_log($requestId, 'Falha em todas as tentativas SMTP: ' . implode(' || ', $smtpDebug));
 
   $fallbackOk = false;
   try {
@@ -266,15 +290,21 @@ if (!$sent) {
       "Acesse o link para redefinir sua senha: {$resetLink} (expira em 1 hora)"
     );
   } catch (Throwable $e) {
-    error_log('[esqueci_senha] Erro no fallback mail(): ' . $e->getMessage());
+    reset_log($requestId, 'Erro no fallback mail(): ' . $e->getMessage());
   }
 
   if ($fallbackOk) {
     $sent = true;
-    error_log('[esqueci_senha] E-mail enviado com sucesso via fallback mail().');
+    reset_log($requestId, 'Email enviado com sucesso via fallback mail().');
   } else {
-    error_log('[esqueci_senha] Fallback mail() também falhou.');
+    reset_log($requestId, 'Fallback mail() tambem falhou.');
   }
+}
+
+if ($sent) {
+  reset_log($requestId, 'Fluxo finalizado com sucesso.');
+} else {
+  reset_log($requestId, 'Fluxo finalizado sem envio.');
 }
 
 redirect_reset($generic_msg, "info");
