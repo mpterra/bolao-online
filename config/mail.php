@@ -14,6 +14,10 @@ return [
     "host"       => "mail.bolaodothiago.com.br",
     "port"       => 465,
     "encryption" => "ssl",           // tls | ssl | none
+    "auto_relax_tls" => true,          // tenta conexão sem validar certificado se a estrita falhar
+    "verify_peer" => true,
+    "verify_peer_name" => true,
+    "allow_self_signed" => false,
     "username"   => "admin@bolaodothiago.com.br",
     "password"   => "Eng%3571Hawaii",
     "from_email" => "admin@bolaodothiago.com.br",

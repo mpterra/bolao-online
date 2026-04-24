@@ -33,17 +33,10 @@ function smtp_send_mail(array $config, string $toEmail, string $toName, string $
         return false;
     }
 
-    $remote = $encryption === 'ssl' ? 'ssl://' . $host : $host;
-    $socket = @stream_socket_client(
-        $remote . ':' . $port,
-        $errorNumber,
-        $errorString,
-        $timeout,
-        STREAM_CLIENT_CONNECT
-    );
-
-    if (!is_resource($socket)) {
-        $msg = '[smtp_mailer] Falha na conexão SMTP: ' . $errorString . ' (' . $errorNumber . ')';
+    try {
+        $socket = smtp_open_socket($config, $host, $port, $encryption, $timeout);
+    } catch (Throwable $e) {
+        $msg = '[smtp_mailer] Falha na conexão SMTP: ' . $e->getMessage();
         smtp_set_last_error($msg);
         error_log($msg);
         return false;
@@ -93,6 +86,77 @@ function smtp_send_mail(array $config, string $toEmail, string $toName, string $
 
     fclose($socket);
     return true;
+}
+
+function smtp_open_socket(array $config, string $host, int $port, string $encryption, int $timeout)
+{
+    $remote = $encryption === 'ssl' ? 'ssl://' . $host : $host;
+
+    $hasVerifyConfig = array_key_exists('verify_peer', $config) || array_key_exists('verify_peer_name', $config) || array_key_exists('allow_self_signed', $config);
+
+    $attempts = [];
+
+    if ($hasVerifyConfig) {
+        $attempts[] = [
+            'verify_peer' => (bool)($config['verify_peer'] ?? true),
+            'verify_peer_name' => (bool)($config['verify_peer_name'] ?? true),
+            'allow_self_signed' => (bool)($config['allow_self_signed'] ?? false),
+            'label' => 'config',
+        ];
+    } else {
+        $attempts[] = [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+            'allow_self_signed' => false,
+            'label' => 'strict',
+        ];
+
+        if (($config['auto_relax_tls'] ?? true) === true) {
+            $attempts[] = [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true,
+                'label' => 'relaxed',
+            ];
+        }
+    }
+
+    $errors = [];
+
+    foreach ($attempts as $tls) {
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => (bool)$tls['verify_peer'],
+                'verify_peer_name' => (bool)$tls['verify_peer_name'],
+                'allow_self_signed' => (bool)$tls['allow_self_signed'],
+                'SNI_enabled' => true,
+                'peer_name' => $host,
+                'crypto_method' => STREAM_CRYPTO_METHOD_TLS_CLIENT,
+            ],
+        ]);
+
+        $socket = @stream_socket_client(
+            $remote . ':' . $port,
+            $errorNumber,
+            $errorString,
+            $timeout,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+
+        if (is_resource($socket)) {
+            return $socket;
+        }
+
+        $errors[] = sprintf(
+            '%s: %s (%d)',
+            (string)$tls['label'],
+            (string)$errorString,
+            (int)$errorNumber
+        );
+    }
+
+    throw new RuntimeException(implode(' | ', $errors));
 }
 
 function smtp_build_message(string $fromEmail, string $fromName, string $toEmail, string $toName, string $subject, string $htmlBody, string $textBody): string
