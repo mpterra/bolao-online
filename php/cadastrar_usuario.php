@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
@@ -12,7 +15,6 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 // ✅ HostGator: pasta /php fica fora do public_html, mas ESTE arquivo também está em /php.
 // Então conexao.php é "vizinho" (mesma pasta).
 require_once __DIR__ . "/conexao.php";
-require_once __DIR__ . "/smtp_mailer.php";
 
 if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
     // ✅ HostGator: páginas públicas ficam na raiz do public_html
@@ -103,12 +105,128 @@ function load_mail_config_for_register(): array {
     return $defaultMailConfig;
 }
 
+function load_phpmailer_for_register(): bool {
+    $possibleBases = [
+        __DIR__ . "/PHPMailer/src",
+        __DIR__ . "/../PHPMailer/src",
+        __DIR__ . "/../../php/PHPMailer/src",
+        __DIR__ . "/../../../php/PHPMailer/src",
+    ];
+
+    foreach ($possibleBases as $base) {
+        $exceptionFile = $base . "/Exception.php";
+        $phpMailerFile = $base . "/PHPMailer.php";
+        $smtpFile      = $base . "/SMTP.php";
+
+        if (is_file($exceptionFile) && is_file($phpMailerFile) && is_file($smtpFile)) {
+            require_once $exceptionFile;
+            require_once $phpMailerFile;
+            require_once $smtpFile;
+            cadastro_mail_log("PHPMailer carregado de: " . $base);
+            return true;
+        }
+    }
+
+    cadastro_mail_log("PHPMailer nao encontrado nos caminhos esperados.");
+    return false;
+}
+
+function send_email_phpmailer(
+    array $cfg,
+    string $toEmail,
+    string $toName,
+    string $subject,
+    string $htmlBody,
+    string $textBody
+): bool {
+    try {
+        $host       = trim((string)($cfg["host"] ?? ""));
+        $port       = (int)($cfg["port"] ?? 0);
+        $encryption = strtolower(trim((string)($cfg["encryption"] ?? "ssl")));
+        $username   = trim((string)($cfg["username"] ?? ""));
+        $password   = (string)($cfg["password"] ?? "");
+        $fromEmail  = trim((string)($cfg["from_email"] ?? $username));
+        $fromName   = trim((string)($cfg["from_name"] ?? "Bolao do Thiago"));
+        $timeout    = (int)($cfg["timeout"] ?? 20);
+
+        if ($host === "" || $port <= 0 || $username === "" || $password === "" || $fromEmail === "") {
+            cadastro_mail_log("Configuracao SMTP incompleta para PHPMailer.");
+            return false;
+        }
+
+        $mail = new PHPMailer(true);
+
+        $mail->isSMTP();
+        $mail->Host       = $host;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $username;
+        $mail->Password   = $password;
+        $mail->Port       = $port;
+        $mail->Timeout    = $timeout;
+        $mail->SMTPDebug  = 0;
+
+        if ($encryption === "ssl") {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        } elseif ($encryption === "tls") {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        } else {
+            $mail->SMTPSecure = false;
+            $mail->SMTPAutoTLS = false;
+        }
+
+        $mail->CharSet  = "UTF-8";
+        $mail->Encoding = "base64";
+
+        $mail->setFrom($fromEmail, $fromName);
+        $mail->addReplyTo($fromEmail, $fromName);
+        $mail->Sender = $fromEmail;
+
+        $mail->addAddress($toEmail, $toName);
+
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $htmlBody;
+        $mail->AltBody = $textBody;
+
+        $mail->send();
+        cadastro_mail_log("Email enviado via PHPMailer para {$toEmail}.");
+        return true;
+    } catch (Throwable $e) {
+        cadastro_mail_log("Erro PHPMailer para {$toEmail}: " . $e->getMessage());
+
+        if (isset($mail) && $mail instanceof PHPMailer && $mail->ErrorInfo !== "") {
+            cadastro_mail_log("PHPMailer ErrorInfo para {$toEmail}: " . $mail->ErrorInfo);
+        }
+
+        return false;
+    }
+}
+
+function send_admin_alert_with_retry(
+    array $mailConfig,
+    string $recipientEmail,
+    string $recipientName,
+    string $htmlBody,
+    string $textBody
+): bool {
+    $primarySubject = "Alô Alô, um Moisés se cadastrou";
+    $fallbackSubject = "Alo Alo, um Moises se cadastrou";
+
+    $sent = send_email_phpmailer($mailConfig, $recipientEmail, $recipientName, $primarySubject, $htmlBody, $textBody);
+    if ($sent) {
+        return true;
+    }
+
+    cadastro_mail_log("Retry alerta admin para {$recipientEmail} com assunto ASCII.");
+
+    return send_email_phpmailer($mailConfig, $recipientEmail, $recipientName, $fallbackSubject, $htmlBody, $textBody);
+}
+
 function notify_new_user_register(array $mailConfig, int $newUserId, string $nomeCompleto, string $email, string $telefone): bool {
     $recipients = [
         ["email" => "thiagopterra@gmail.com", "name" => "Thiago"],
         ["email" => "mauriciopterra@gmail.com", "name" => "Mauricio"],
     ];
-    $subject = "Alô Alô, um Moisés se cadastrou";
 
     $nomeSafe = htmlspecialchars($nomeCompleto, ENT_QUOTES, 'UTF-8');
     $emailSafe = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
@@ -134,18 +252,17 @@ function notify_new_user_register(array $mailConfig, int $newUserId, string $nom
         $recipientEmail = (string)$recipient["email"];
         $recipientName = (string)$recipient["name"];
 
-        $sent = smtp_send_mail(
+        $sent = send_admin_alert_with_retry(
             $mailConfig,
             $recipientEmail,
             $recipientName,
-            $subject,
             $htmlBody,
             $textBody
         );
 
         if (!$sent) {
             $allSent = false;
-            cadastro_mail_log("Falha ao enviar alerta admin para {$recipientEmail}. " . smtp_get_last_error());
+            cadastro_mail_log("Falha ao enviar alerta admin para {$recipientEmail}.");
         } else {
             cadastro_mail_log("Alerta admin enviado para {$recipientEmail}.");
         }
@@ -174,10 +291,10 @@ function send_welcome_email_to_new_user(array $mailConfig, string $toEmail, stri
         . "Regra nao escrita do bolao: quem acerta, comemora. Quem erra, diz que foi estrategico.\n\n"
         . "Boa sorte e divirta-se!";
 
-    $sent = smtp_send_mail($mailConfig, $toEmail, $toName, $subject, $htmlBody, $textBody);
+    $sent = send_email_phpmailer($mailConfig, $toEmail, $toName, $subject, $htmlBody, $textBody);
 
     if (!$sent) {
-        cadastro_mail_log("Falha ao enviar boas-vindas para {$toEmail}. " . smtp_get_last_error());
+        cadastro_mail_log("Falha ao enviar boas-vindas para {$toEmail}.");
     } else {
         cadastro_mail_log("Boas-vindas enviada para {$toEmail}.");
     }
@@ -253,6 +370,12 @@ try {
     $pdo->commit();
 
     $mailConfig = load_mail_config_for_register();
+    if (!load_phpmailer_for_register()) {
+        cadastro_mail_log('Falha ao carregar PHPMailer para envios pos-cadastro.');
+        header("Location: /cadastro.php?sucesso=1");
+        exit;
+    }
+
     cadastro_mail_log('Iniciando envios de e-mail pos-cadastro. Usuario ID=' . $newUserId . ', email=' . $email);
 
     $notified = notify_new_user_register(
@@ -264,8 +387,7 @@ try {
     );
 
     if (!$notified) {
-        $smtpErr = smtp_get_last_error();
-        error_log('[cadastrar_usuario] Falha ao notificar novo cadastro por e-mail. ' . $smtpErr);
+        error_log('[cadastrar_usuario] Falha ao notificar novo cadastro por e-mail.');
     }
 
     $welcomed = send_welcome_email_to_new_user(
@@ -275,8 +397,7 @@ try {
     );
 
     if (!$welcomed) {
-        $smtpErr = smtp_get_last_error();
-        error_log('[cadastrar_usuario] Falha ao enviar e-mail de boas-vindas. ' . $smtpErr);
+        error_log('[cadastrar_usuario] Falha ao enviar e-mail de boas-vindas.');
     }
 
     cadastro_mail_log('Final dos envios pos-cadastro. admin=' . ($notified ? 'ok' : 'falha') . ', welcome=' . ($welcomed ? 'ok' : 'falha'));
