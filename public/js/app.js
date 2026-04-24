@@ -59,6 +59,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!finalizeBtn) return;
     finalizeBtn.textContent = hasPendingFinalize ? "Salvar modificações *" : "Salvar modificações";
     finalizeBtn.style.opacity = hasPendingFinalize ? "1" : "0.86";
+    finalizeBtn.style.filter = hasPendingFinalize ? "none" : "saturate(0.72)";
+    finalizeBtn.style.boxShadow = hasPendingFinalize
+      ? "0 10px 24px rgba(0,0,0,.35)"
+      : "0 8px 18px rgba(0,0,0,.18)";
+    finalizeBtn.style.background = hasPendingFinalize
+      ? "linear-gradient(90deg,#00c27a,#f7c948)"
+      : "linear-gradient(90deg,rgba(0,194,122,.62),rgba(247,201,72,.62))";
   }
 
   function scheduleAutoFinalize() {
@@ -132,17 +139,20 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.type = "button";
     btn.textContent = "Salvar modificações";
     btn.style.position = "fixed";
-    btn.style.right = "16px";
-    btn.style.bottom = "16px";
+    const isNarrowScreen = window.matchMedia("(max-width: 560px)").matches;
+    btn.style.right = isNarrowScreen ? "12px" : "16px";
+    btn.style.bottom = isNarrowScreen ? "calc(10px + env(safe-area-inset-bottom))" : "16px";
     btn.style.zIndex = "99999";
     btn.style.border = "0";
-    btn.style.borderRadius = "12px";
-    btn.style.padding = "12px 14px";
+    btn.style.borderRadius = isNarrowScreen ? "10px" : "12px";
+    btn.style.padding = isNarrowScreen ? "10px 12px" : "12px 14px";
     btn.style.fontWeight = "900";
     btn.style.cursor = "pointer";
     btn.style.background = "linear-gradient(90deg,#00c27a,#f7c948)";
     btn.style.color = "#062027";
     btn.style.boxShadow = "0 10px 24px rgba(0,0,0,.35)";
+    btn.style.fontSize = isNarrowScreen ? "13px" : "15px";
+    btn.style.maxWidth = isNarrowScreen ? "calc(100vw - 24px)" : "none";
     btn.addEventListener("click", () => flushChanges({ manual: true }));
     document.body.appendChild(btn);
     finalizeBtn = btn;

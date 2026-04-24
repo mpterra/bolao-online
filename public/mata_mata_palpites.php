@@ -737,6 +737,7 @@ require_once __DIR__ . "/partials/app_header.php";
 												<?php else: ?>
 													<div class="team-badge"><?php echo strh($csig); ?></div>
 												<?php endif; ?>
+													<div class="team-sigla"><?php echo strh($csig); ?></div>
 											</div>
 
 											<div class="scorebox">
@@ -764,6 +765,7 @@ require_once __DIR__ . "/partials/app_header.php";
 												<?php else: ?>
 													<div class="team-badge"><?php echo strh($fsig); ?></div>
 												<?php endif; ?>
+													<div class="team-sigla"><?php echo strh($fsig); ?></div>
 
 												<div class="team-name"><?php echo strh($fora); ?></div>
 											</div>
