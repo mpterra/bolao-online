@@ -44,6 +44,46 @@ function build_base_url(): string {
     return $proto . "://" . $host;
 }
 
+function send_mail_fallback(array $cfg, string $toEmail, string $toName, string $subject, string $htmlBody, string $textBody): bool {
+    $fromEmail = trim((string)($cfg['from_email'] ?? ''));
+    $fromName = trim((string)($cfg['from_name'] ?? ''));
+
+    if ($fromEmail === '') {
+        return false;
+    }
+
+    $boundary = 'bnd_' . bin2hex(random_bytes(12));
+    $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    $toHeader = $toName !== ''
+      ? ('=?UTF-8?B?' . base64_encode($toName) . '?= <' . $toEmail . '>')
+      : ('<' . $toEmail . '>');
+    $fromHeader = $fromName !== ''
+      ? ('=?UTF-8?B?' . base64_encode($fromName) . '?= <' . $fromEmail . '>')
+      : ('<' . $fromEmail . '>');
+
+    $headers = [];
+    $headers[] = 'MIME-Version: 1.0';
+    $headers[] = 'From: ' . $fromHeader;
+    $headers[] = 'Reply-To: ' . $fromEmail;
+    $headers[] = 'Content-Type: multipart/alternative; boundary="' . $boundary . '"';
+
+    $body = [];
+    $body[] = '--' . $boundary;
+    $body[] = 'Content-Type: text/plain; charset=UTF-8';
+    $body[] = 'Content-Transfer-Encoding: 8bit';
+    $body[] = '';
+    $body[] = $textBody;
+    $body[] = '--' . $boundary;
+    $body[] = 'Content-Type: text/html; charset=UTF-8';
+    $body[] = 'Content-Transfer-Encoding: 8bit';
+    $body[] = '';
+    $body[] = $htmlBody;
+    $body[] = '--' . $boundary . '--';
+    $body[] = '';
+
+    return @mail($toHeader, $encodedSubject, implode("\r\n", $body), implode("\r\n", $headers));
+}
+
 $defaultMailConfig = [
   "host"       => "mail.bolaodothiago.com.br",
   "port"       => 465,
@@ -214,6 +254,27 @@ foreach ($smtpUnique as $cfg) {
 
 if (!$sent) {
   error_log('[esqueci_senha] Falha em todas as tentativas SMTP: ' . implode(' || ', $smtpDebug));
+
+  $fallbackOk = false;
+  try {
+    $fallbackOk = send_mail_fallback(
+      $mailConfig,
+      $email,
+      (string)($user["nome"] ?? ""),
+      "Redefinição de senha — Bolão do Thiago",
+      $htmlBody,
+      "Acesse o link para redefinir sua senha: {$resetLink} (expira em 1 hora)"
+    );
+  } catch (Throwable $e) {
+    error_log('[esqueci_senha] Erro no fallback mail(): ' . $e->getMessage());
+  }
+
+  if ($fallbackOk) {
+    $sent = true;
+    error_log('[esqueci_senha] E-mail enviado com sucesso via fallback mail().');
+  } else {
+    error_log('[esqueci_senha] Fallback mail() também falhou.');
+  }
 }
 
 redirect_reset($generic_msg, "info");
