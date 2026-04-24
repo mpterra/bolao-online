@@ -15,12 +15,84 @@ document.addEventListener("DOMContentLoaded", () => {
   try { cfg = JSON.parse(cfgEl.textContent || "{}"); } catch { cfg = {}; }
 
   const endpointSave = cfg?.endpoints?.save || "/campeao.php?action=save";
+  const endpointNotify = cfg?.endpoints?.notify_changes || "/campeao.php?action=notify_changes";
 
   // ✅ endpoint do recibo (se não vier no config, usa o padrão)
   const endpointRecibo = cfg?.endpoints?.recibo || "/php/recibo.php";
 
   let selectedId = Number(cfg?.selected_time_id || 0);
   let pendingId = selectedId;
+  let hasPendingFinalize = false;
+  let finalizeTimer = null;
+  let isFinalizing = false;
+  let finalizeBtn = null;
+  const FINALIZE_IDLE_MS = 90000;
+
+  function updateFinalizeBtn() {
+    if (!finalizeBtn) return;
+    finalizeBtn.textContent = hasPendingFinalize ? "Salvar modificações *" : "Salvar modificações";
+    finalizeBtn.style.opacity = hasPendingFinalize ? "1" : "0.86";
+  }
+
+  function scheduleAutoFinalize() {
+    if (finalizeTimer) clearTimeout(finalizeTimer);
+    finalizeTimer = setTimeout(() => flushChanges(false), FINALIZE_IDLE_MS);
+  }
+
+  function markPendingFinalize() {
+    hasPendingFinalize = true;
+    updateFinalizeBtn();
+    scheduleAutoFinalize();
+  }
+
+  async function flushChanges(manual) {
+    if (!hasPendingFinalize || isFinalizing) return;
+    isFinalizing = true;
+
+    try {
+      const resp = await fetch(endpointNotify, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ force: true, source: manual ? "manual" : "auto" }),
+        keepalive: true
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && data && data.ok === true) {
+        hasPendingFinalize = false;
+        updateFinalizeBtn();
+        if (manual) showToast(data.sent ? "Modificações enviadas para o admin." : "Sem modificações pendentes.", true);
+      } else if (manual) {
+        showToast("Falha ao finalizar alterações.", false);
+      }
+    } catch (_) {
+      if (manual) showToast("Falha ao finalizar alterações.", false);
+    } finally {
+      isFinalizing = false;
+    }
+  }
+
+  function installFinalizeButton() {
+    const btn = document.createElement("button");
+    btn.id = "btnFinalizeChangesGlobal";
+    btn.type = "button";
+    btn.textContent = "Salvar modificações";
+    btn.style.position = "fixed";
+    btn.style.right = "16px";
+    btn.style.bottom = "16px";
+    btn.style.zIndex = "99999";
+    btn.style.border = "0";
+    btn.style.borderRadius = "12px";
+    btn.style.padding = "12px 14px";
+    btn.style.fontWeight = "900";
+    btn.style.cursor = "pointer";
+    btn.style.background = "linear-gradient(90deg,#00c27a,#f7c948)";
+    btn.style.color = "#062027";
+    btn.style.boxShadow = "0 10px 24px rgba(0,0,0,.35)";
+    btn.addEventListener("click", () => flushChanges(true));
+    document.body.appendChild(btn);
+    finalizeBtn = btn;
+    updateFinalizeBtn();
+  }
 
   // ✅ evita corridas quando clica rápido
   let saving = false;
@@ -92,6 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       selectedId = Number(data.time_id || tid);
       pendingId = selectedId;
+      markPendingFinalize();
 
       showToast(data.message || "Campeão salvo.", true);
       setSelected(selectedId);
@@ -201,6 +274,14 @@ document.addEventListener("DOMContentLoaded", () => {
   btnSave.addEventListener("click", async () => {
     if (!(pendingId > 0)) return;
     await saveChampion(pendingId, { generateReceipt: true });
+  });
+
+  installFinalizeButton();
+
+  window.addEventListener("beforeunload", () => {
+    if (!hasPendingFinalize || !navigator.sendBeacon) return;
+    const blob = new Blob([JSON.stringify({ force: true, source: "beforeunload" })], { type: "application/json" });
+    navigator.sendBeacon(endpointNotify, blob);
   });
 
   // Estado inicial

@@ -8,6 +8,7 @@ ini_set('display_startup_errors', '1');
 session_start();
 require_once __DIR__ . "/../php/conexao.php";
 require_once __DIR__ . "/../php/bet_update_notifier.php";
+require_once __DIR__ . "/../php/bet_update_notifier.php";
 
 date_default_timezone_set('America/Sao_Paulo');
 
@@ -76,6 +77,29 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 	session_destroy();
 	header("Location: /index.php");
 	exit;
+}
+
+if (isset($_GET["action"]) && $_GET["action"] === "notify_changes") {
+	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+		json_response(["ok" => false, "message" => "Método inválido."], 405);
+	}
+	if (!function_exists('bet_notify_flush')) {
+		json_response(["ok" => false, "message" => "Notificador indisponível."], 500);
+	}
+
+	$raw = file_get_contents("php://input");
+	$payload = json_decode($raw ?: "{}", true);
+	if (!is_array($payload)) $payload = [];
+
+	$force = (bool)($payload["force"] ?? true);
+	$result = bet_notify_flush($pdo, $usuarioId, $force);
+
+	json_response([
+		"ok" => (bool)($result["ok"] ?? false),
+		"sent" => (bool)($result["sent"] ?? false),
+		"pending" => (int)($result["pending"] ?? 0),
+		"reason" => (string)($result["reason"] ?? ""),
+	], ((bool)($result["ok"] ?? false)) ? 200 : 500);
 }
 
 try {
@@ -168,8 +192,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 
 		$pdo->commit();
 
-		if (function_exists('bet_notify_maybe_send')) {
-			bet_notify_maybe_send($pdo, $usuarioId);
+		if (function_exists('bet_notify_track_update')) {
+			bet_notify_track_update($pdo, $usuarioId);
 		}
 
 		json_response(["ok" => true, "message" => "Campeão salvo com sucesso.", "time_id" => $timeId]);
@@ -303,6 +327,7 @@ require_once __DIR__ . "/partials/app_header.php";
 	"selected_time_id" => $selectedTimeId,
 	"endpoints" => [
 		"save" => "/campeao.php?action=save",
+		"notify_changes" => "/campeao.php?action=notify_changes",
 		// opcional (o JS já tem fallback):
 		"recibo" => "/php/recibo.php",
 	],

@@ -408,6 +408,30 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 	exit;
 }
 
+if (isset($_GET["action"]) && $_GET["action"] === "notify_changes") {
+	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+		json_response(["ok" => false, "message" => "Método inválido."], 405);
+	}
+
+	if (!function_exists('bet_notify_flush')) {
+		json_response(["ok" => false, "message" => "Notificador indisponível."], 500);
+	}
+
+	$raw = file_get_contents("php://input");
+	$payload = json_decode($raw ?: "{}", true);
+	if (!is_array($payload)) $payload = [];
+
+	$force = (bool)($payload["force"] ?? true);
+	$result = bet_notify_flush($pdo, $usuarioId, $force);
+
+	json_response([
+		"ok" => (bool)($result["ok"] ?? false),
+		"sent" => (bool)($result["sent"] ?? false),
+		"pending" => (int)($result["pending"] ?? 0),
+		"reason" => (string)($result["reason"] ?? ""),
+	], ((bool)($result["ok"] ?? false)) ? 200 : 500);
+}
+
 /* ---------------------------
    API: salvar palpites jogos (JSON)
 --------------------------- */
@@ -568,8 +592,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 
 		$pdo->commit();
 
-		if (function_exists('bet_notify_maybe_send') && $saved > 0) {
-			bet_notify_maybe_send($pdo, $usuarioId);
+		if (function_exists('bet_notify_track_update') && $saved > 0) {
+			bet_notify_track_update($pdo, $usuarioId);
 		}
 
 		if ($saved <= 0) {
@@ -672,8 +696,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 		]);
 
 		$pdo->commit();
-		if (function_exists('bet_notify_maybe_send')) {
-			bet_notify_maybe_send($pdo, $usuarioId);
+		if (function_exists('bet_notify_track_update')) {
+			bet_notify_track_update($pdo, $usuarioId);
 		}
 		json_response(["ok" => true, "message" => "Top 4 salvo."]);
 	} catch (Throwable $e) {
@@ -776,8 +800,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 
 		$pdo->commit();
 
-		if (function_exists('bet_notify_maybe_send')) {
-			bet_notify_maybe_send($pdo, $usuarioId);
+		if (function_exists('bet_notify_track_update')) {
+			bet_notify_track_update($pdo, $usuarioId);
 		}
 
 		json_response([
@@ -1727,6 +1751,7 @@ require_once __DIR__ . "/partials/app_header.php";
 		"save_games" => $SAVE_GAMES_URL,
 		"save_group_rank" => $SAVE_GROUP_RANK_URL,
 		"save_top4" => $SAVE_TOP4_URL,
+		"notify_changes" => $APP_URL . "?action=notify_changes",
 		"receipt_url" => $RECIBO_URL,
 	],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>

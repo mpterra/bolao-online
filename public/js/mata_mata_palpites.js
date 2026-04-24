@@ -23,7 +23,74 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!CFG.endpoints || typeof CFG.endpoints !== "object") CFG.endpoints = {};
   if (!CFG.endpoints.save_games)  CFG.endpoints.save_games  = "/mata_mata_palpites.php?action=save";
   if (!CFG.endpoints.save_top4)   CFG.endpoints.save_top4   = "/mata_mata_palpites.php?action=save_top4";
+  if (!CFG.endpoints.notify_changes) CFG.endpoints.notify_changes = "/mata_mata_palpites.php?action=notify_changes";
   if (!CFG.endpoints.receipt_url) CFG.endpoints.receipt_url = "/php/recibo_mata_mata.php?action=pdf";
+
+  const FINALIZE_IDLE_MS = 90000;
+  let hasPendingFinalize = false;
+  let finalizeTimer = null;
+  let isFinalizing = false;
+  let finalizeBtn = null;
+
+  function updateFinalizeBtn() {
+    if (!finalizeBtn) return;
+    finalizeBtn.textContent = hasPendingFinalize ? "Salvar modificações *" : "Salvar modificações";
+    finalizeBtn.style.opacity = hasPendingFinalize ? "1" : "0.86";
+  }
+
+  function scheduleAutoFinalize() {
+    if (finalizeTimer) clearTimeout(finalizeTimer);
+    finalizeTimer = setTimeout(() => flushChanges(false), FINALIZE_IDLE_MS);
+  }
+
+  function markPendingFinalize() {
+    hasPendingFinalize = true;
+    updateFinalizeBtn();
+    scheduleAutoFinalize();
+  }
+
+  async function flushChanges(manual) {
+    if (!hasPendingFinalize || isFinalizing) return;
+    isFinalizing = true;
+
+    try {
+      const { ok, data } = await postJSON(CFG.endpoints.notify_changes, { force: true, source: manual ? "manual" : "auto" });
+      if (ok && data && data.ok === true) {
+        hasPendingFinalize = false;
+        updateFinalizeBtn();
+        if (manual) toast(data.sent ? "Modificações enviadas para o admin." : "Sem modificações pendentes.", true);
+      } else if (manual) {
+        toast("Falha ao finalizar alterações.", false);
+      }
+    } catch (_) {
+      if (manual) toast("Falha ao finalizar alterações.", false);
+    } finally {
+      isFinalizing = false;
+    }
+  }
+
+  function installFinalizeButton() {
+    const btn = document.createElement("button");
+    btn.id = "btnFinalizeChangesGlobal";
+    btn.type = "button";
+    btn.textContent = "Salvar modificações";
+    btn.style.position = "fixed";
+    btn.style.right = "16px";
+    btn.style.bottom = "16px";
+    btn.style.zIndex = "99999";
+    btn.style.border = "0";
+    btn.style.borderRadius = "12px";
+    btn.style.padding = "12px 14px";
+    btn.style.fontWeight = "900";
+    btn.style.cursor = "pointer";
+    btn.style.background = "linear-gradient(90deg,#00c27a,#f7c948)";
+    btn.style.color = "#062027";
+    btn.style.boxShadow = "0 10px 24px rgba(0,0,0,.35)";
+    btn.addEventListener("click", () => flushChanges(true));
+    document.body.appendChild(btn);
+    finalizeBtn = btn;
+    updateFinalizeBtn();
+  }
 
   const menu = document.getElementById("menuFases");
   const blocks = Array.from(document.querySelectorAll("[data-fase-block]"));
@@ -291,6 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
+    markPendingFinalize();
     setCardState(card, "Salvo ✓", true);
     if (!silentSuccess) toast(data.message || "Palpite salvo.");
     return true;
@@ -514,6 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
+    markPendingFinalize();
     setTop4State(data.message || "Top 4 salvo.", true);
     if (!silentSuccess) toast(data.message || "Top 4 salvo.");
     return true;
@@ -540,5 +609,13 @@ document.addEventListener("DOMContentLoaded", () => {
         validateTop4({ silent: false });
       }
     });
+  });
+
+  installFinalizeButton();
+
+  window.addEventListener("beforeunload", () => {
+    if (!hasPendingFinalize || !navigator.sendBeacon) return;
+    const blob = new Blob([JSON.stringify({ force: true, source: "beforeunload" })], { type: "application/json" });
+    navigator.sendBeacon(CFG.endpoints.notify_changes, blob);
   });
 });

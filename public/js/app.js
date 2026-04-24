@@ -27,6 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
     ? APP_CFG.endpoints.save_top4
     : "/app.php?action=save_top4";
 
+  const ENDPOINT_NOTIFY_CHANGES = (APP_CFG.endpoints && APP_CFG.endpoints.notify_changes)
+    ? APP_CFG.endpoints.notify_changes
+    : "/app.php?action=notify_changes";
+
   const ENDPOINT_RECEIPT = (APP_CFG.endpoints && APP_CFG.endpoints.receipt_url)
     ? APP_CFG.endpoints.receipt_url
     : null;
@@ -43,6 +47,79 @@ document.addEventListener("DOMContentLoaded", () => {
     group: null,
     day: null
   };
+
+  const FINALIZE_IDLE_MS = 90000;
+  let hasPendingFinalize = false;
+  let finalizeTimer = null;
+  let isFinalizing = false;
+  let finalizeBtn = null;
+
+  function updateFinalizeBtn() {
+    if (!finalizeBtn) return;
+    finalizeBtn.textContent = hasPendingFinalize ? "Salvar modificações *" : "Salvar modificações";
+    finalizeBtn.style.opacity = hasPendingFinalize ? "1" : "0.86";
+  }
+
+  function scheduleAutoFinalize() {
+    if (finalizeTimer) clearTimeout(finalizeTimer);
+    finalizeTimer = setTimeout(() => {
+      flushChanges({ manual: false });
+    }, FINALIZE_IDLE_MS);
+  }
+
+  function markPendingFinalize() {
+    hasPendingFinalize = true;
+    updateFinalizeBtn();
+    scheduleAutoFinalize();
+  }
+
+  async function flushChanges({ manual = false } = {}) {
+    if (!hasPendingFinalize || isFinalizing) return;
+    isFinalizing = true;
+    try {
+      const res = await fetch(ENDPOINT_NOTIFY_CHANGES, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ force: true, source: manual ? "manual" : "auto" }),
+        keepalive: true
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data && data.ok === true) {
+        hasPendingFinalize = false;
+        updateFinalizeBtn();
+        if (manual) showToast(data.sent ? "Modificações enviadas para o admin." : "Sem modificações pendentes.");
+      } else if (manual) {
+        showToast("Falha ao finalizar alterações.", true);
+      }
+    } catch (_) {
+      if (manual) showToast("Falha ao finalizar alterações.", true);
+    } finally {
+      isFinalizing = false;
+    }
+  }
+
+  function installFinalizeButton() {
+    const btn = document.createElement("button");
+    btn.id = "btnFinalizeChangesGlobal";
+    btn.type = "button";
+    btn.textContent = "Salvar modificações";
+    btn.style.position = "fixed";
+    btn.style.right = "16px";
+    btn.style.bottom = "16px";
+    btn.style.zIndex = "99999";
+    btn.style.border = "0";
+    btn.style.borderRadius = "12px";
+    btn.style.padding = "12px 14px";
+    btn.style.fontWeight = "900";
+    btn.style.cursor = "pointer";
+    btn.style.background = "linear-gradient(90deg,#00c27a,#f7c948)";
+    btn.style.color = "#062027";
+    btn.style.boxShadow = "0 10px 24px rgba(0,0,0,.35)";
+    btn.addEventListener("click", () => flushChanges({ manual: true }));
+    document.body.appendChild(btn);
+    finalizeBtn = btn;
+    updateFinalizeBtn();
+  }
 
   function showToast(msg, isError = false) {
     if (!toast) return;
@@ -366,6 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const msg = (data && data.message) ? data.message : "Falha ao salvar.";
       throw new Error(msg);
     }
+    markPendingFinalize();
     return data;
   }
 
@@ -384,6 +462,8 @@ document.addEventListener("DOMContentLoaded", () => {
       throw new Error(msg);
     }
 
+    markPendingFinalize();
+
     return data;
   }
 
@@ -401,6 +481,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const msg = (data && data.message) ? data.message : "Falha ao salvar Top 4.";
       throw new Error(msg);
     }
+
+    markPendingFinalize();
 
     return data;
   }
@@ -1175,6 +1257,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
+
+  installFinalizeButton();
+
+  window.addEventListener("beforeunload", () => {
+    if (!hasPendingFinalize || !navigator.sendBeacon) return;
+    const blob = new Blob([JSON.stringify({ force: true, source: "beforeunload" })], { type: "application/json" });
+    navigator.sendBeacon(ENDPOINT_NOTIFY_CHANGES, blob);
+  });
 
   const btnRecibo = document.getElementById("btnRecibo");
   if (btnRecibo) {

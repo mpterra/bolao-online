@@ -188,6 +188,25 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 	exit;
 }
 
+if (isset($_GET["action"]) && $_GET["action"] === "notify_changes") {
+	if ($_SERVER["REQUEST_METHOD"] !== "POST") json_response(["ok" => false, "message" => "Método inválido."], 405);
+	if (!function_exists('bet_notify_flush')) json_response(["ok" => false, "message" => "Notificador indisponível."], 500);
+
+	$raw = file_get_contents("php://input");
+	$payload = json_decode($raw ?: "{}", true);
+	if (!is_array($payload)) $payload = [];
+
+	$force = (bool)($payload["force"] ?? true);
+	$result = bet_notify_flush($pdo, $usuarioId, $force);
+
+	json_response([
+		"ok" => (bool)($result["ok"] ?? false),
+		"sent" => (bool)($result["sent"] ?? false),
+		"pending" => (int)($result["pending"] ?? 0),
+		"reason" => (string)($result["reason"] ?? ""),
+	], ((bool)($result["ok"] ?? false)) ? 200 : 500);
+}
+
 /* API salvar palpites (placares + quem passa no empate) */
 if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") json_response(["ok" => false, "message" => "Método inválido."], 405);
@@ -322,8 +341,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		}
 
 		$pdo->commit();
-		if (function_exists('bet_notify_maybe_send') && $saved > 0) {
-			bet_notify_maybe_send($pdo, $usuarioId);
+		if (function_exists('bet_notify_track_update') && $saved > 0) {
+			bet_notify_track_update($pdo, $usuarioId);
 		}
 
 		if ($saved <= 0) json_response(["ok" => false, "message" => "Nenhum palpite foi salvo."], 422);
@@ -417,8 +436,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 		]);
 
 		$pdo->commit();
-		if (function_exists('bet_notify_maybe_send')) {
-			bet_notify_maybe_send($pdo, $usuarioId);
+		if (function_exists('bet_notify_track_update')) {
+			bet_notify_track_update($pdo, $usuarioId);
 		}
 		json_response(["ok" => true, "message" => "Top 4 salvo."]);
 	} catch (Throwable $e) {
@@ -866,6 +885,7 @@ echo json_encode([
 	"endpoints" => [
 		"save_games"  => "/mata_mata_palpites.php?action=save",
 		"save_top4"   => "/mata_mata_palpites.php?action=save_top4",
+		"notify_changes" => "/mata_mata_palpites.php?action=notify_changes",
 		"receipt_url" => "/php/recibo_mata_mata.php?action=pdf",
 	],
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

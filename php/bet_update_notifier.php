@@ -68,6 +68,26 @@ function bet_notify_cooldown_seconds(): int {
     return $default;
 }
 
+function bet_notify_idle_seconds(): int {
+    $default = 90;
+
+    $env = getenv('BET_UPDATE_NOTIFY_IDLE_SECONDS');
+    if (is_string($env) && $env !== '') {
+        $v = (int)$env;
+        if ($v >= 20) {
+            return $v;
+        }
+    }
+
+    $cfg = bet_mail_config();
+    $fromConfig = (int)($cfg['bet_update_notify_idle_seconds'] ?? 0);
+    if ($fromConfig >= 20) {
+        return $fromConfig;
+    }
+
+    return $default;
+}
+
 function bet_load_phpmailer(): bool {
     static $loaded = false;
     if ($loaded) {
@@ -160,29 +180,55 @@ function bet_send_email(array $cfg, string $toEmail, string $toName, string $sub
     }
 }
 
-function bet_notify_maybe_send(PDO $pdo, int $usuarioId, ?int $cooldownSeconds = null): void {
+function bet_notify_ensure_table(PDO $pdo): void {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS bet_update_notifications (
+        usuario_id INT NOT NULL PRIMARY KEY,
+        last_sent_at DATETIME NULL,
+        pending_updates INT NOT NULL DEFAULT 0,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+
+function bet_notify_track_update(PDO $pdo, int $usuarioId): void {
     if ($usuarioId <= 0) {
         return;
     }
 
-    if ($cooldownSeconds === null || $cooldownSeconds < 30) {
-        $cooldownSeconds = bet_notify_cooldown_seconds();
+    try {
+        bet_notify_ensure_table($pdo);
+        $st = $pdo->prepare('INSERT INTO bet_update_notifications (usuario_id, last_sent_at, pending_updates) VALUES (?, NULL, 1) ON DUPLICATE KEY UPDATE pending_updates = pending_updates + 1');
+        $st->execute([$usuarioId]);
+    } catch (Throwable $e) {
+        bet_notify_log('Falha ao marcar update pendente. usuario_id=' . $usuarioId . '. ' . $e->getMessage());
+    }
+}
+
+function bet_notify_flush(PDO $pdo, int $usuarioId, bool $force = true): array {
+    $out = [
+        'ok' => false,
+        'sent' => false,
+        'pending' => 0,
+        'reason' => 'unknown',
+    ];
+
+    if ($usuarioId <= 0) {
+        $out['reason'] = 'invalid-user';
+        return $out;
     }
 
     if (!bet_load_phpmailer()) {
-        return;
+        $out['reason'] = 'phpmailer-missing';
+        return $out;
     }
 
+    $cooldownSeconds = bet_notify_cooldown_seconds();
+
     try {
-        $pdo->exec("CREATE TABLE IF NOT EXISTS bet_update_notifications (
-            usuario_id INT NOT NULL PRIMARY KEY,
-            last_sent_at DATETIME NULL,
-            pending_updates INT NOT NULL DEFAULT 0,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        bet_notify_ensure_table($pdo);
     } catch (Throwable $e) {
+        $out['reason'] = 'table-error';
         bet_notify_log('Falha criando tabela bet_update_notifications: ' . $e->getMessage());
-        return;
+        return $out;
     }
 
     try {
@@ -190,7 +236,8 @@ function bet_notify_maybe_send(PDO $pdo, int $usuarioId, ?int $cooldownSeconds =
         $stUser->execute([$usuarioId]);
         $user = $stUser->fetch(PDO::FETCH_ASSOC);
         if (!is_array($user)) {
-            return;
+            $out['reason'] = 'user-not-found';
+            return $out;
         }
 
         $pdo->beginTransaction();
@@ -200,7 +247,7 @@ function bet_notify_maybe_send(PDO $pdo, int $usuarioId, ?int $cooldownSeconds =
         $row = $stLock->fetch(PDO::FETCH_ASSOC);
 
         if (!is_array($row)) {
-            $pdo->prepare('INSERT INTO bet_update_notifications (usuario_id, last_sent_at, pending_updates) VALUES (?, NULL, 0)')
+            $pdo->prepare('INSERT INTO bet_update_notifications (usuario_id, last_sent_at, pending_updates) VALUES (?, NULL, 0) ON DUPLICATE KEY UPDATE usuario_id = usuario_id')
                 ->execute([$usuarioId]);
             $lastSentAt = null;
             $pending = 0;
@@ -209,19 +256,27 @@ function bet_notify_maybe_send(PDO $pdo, int $usuarioId, ?int $cooldownSeconds =
             $pending = isset($row['pending_updates']) ? (int)$row['pending_updates'] : 0;
         }
 
-        $pending++;
-
-        $shouldSend = true;
-        if ($lastSentAt !== null && $lastSentAt !== '') {
-            $lastTs = strtotime($lastSentAt);
-            $shouldSend = ($lastTs === false) || ((time() - $lastTs) >= $cooldownSeconds);
+        if ($pending <= 0) {
+            $pdo->commit();
+            $out['ok'] = true;
+            $out['reason'] = 'no-pending';
+            return $out;
         }
 
-        if (!$shouldSend) {
-            $pdo->prepare('UPDATE bet_update_notifications SET pending_updates = ? WHERE usuario_id = ?')
-                ->execute([$pending, $usuarioId]);
-            $pdo->commit();
-            return;
+        if (!$force) {
+            $shouldSend = true;
+            if ($lastSentAt !== null && $lastSentAt !== '') {
+                $lastTs = strtotime($lastSentAt);
+                $shouldSend = ($lastTs === false) || ((time() - $lastTs) >= $cooldownSeconds);
+            }
+
+            if (!$shouldSend) {
+                $pdo->commit();
+                $out['ok'] = true;
+                $out['pending'] = $pending;
+                $out['reason'] = 'cooldown';
+                return $out;
+            }
         }
 
         $pdo->commit();
@@ -250,7 +305,10 @@ function bet_notify_maybe_send(PDO $pdo, int $usuarioId, ?int $cooldownSeconds =
             . 'Nome completo: ' . $nome . "\n"
             . 'ID: ' . $id . "\n"
             . 'Telefone: ' . $telefone . "\n"
-            . 'Email: ' . $email . "\n";
+            . 'Email: ' . $email . "\n"
+            . 'Modificacoes acumuladas: ' . $pending . "\n";
+
+        $htmlBody .= '<p><strong>Modificações acumuladas:</strong> ' . $pending . '</p>';
 
         $recipients = [
             ['email' => 'thiagopterra@gmail.com', 'name' => 'Thiago'],
@@ -276,9 +334,15 @@ function bet_notify_maybe_send(PDO $pdo, int $usuarioId, ?int $cooldownSeconds =
         if ($allSent) {
             $pdo->prepare('UPDATE bet_update_notifications SET last_sent_at = NOW(), pending_updates = 0 WHERE usuario_id = ?')
                 ->execute([$usuarioId]);
+            $out['ok'] = true;
+            $out['sent'] = true;
+            $out['pending'] = $pending;
+            $out['reason'] = 'sent';
         } else {
-            $pdo->prepare('UPDATE bet_update_notifications SET pending_updates = ? WHERE usuario_id = ?')
-                ->execute([$pending, $usuarioId]);
+            $out['ok'] = false;
+            $out['sent'] = false;
+            $out['pending'] = $pending;
+            $out['reason'] = 'send-failed';
         }
         $pdo->commit();
 
@@ -287,5 +351,22 @@ function bet_notify_maybe_send(PDO $pdo, int $usuarioId, ?int $cooldownSeconds =
             $pdo->rollBack();
         }
         bet_notify_log('Falha geral notificador de apostas: ' . $e->getMessage());
+        $out['reason'] = 'exception';
     }
+
+    return $out;
+}
+
+function bet_notify_maybe_send(PDO $pdo, int $usuarioId, ?int $cooldownSeconds = null): void {
+    if ($cooldownSeconds !== null && $cooldownSeconds >= 30) {
+        // compatibilidade: mantém assinatura antiga sem quebrar chamadas antigas
+    }
+
+    bet_notify_track_update($pdo, $usuarioId);
+    $idleSec = bet_notify_idle_seconds();
+    $force = false;
+
+    // Heurística simples para manter compatibilidade com comportamento anterior:
+    // tenta flush não-forçado (respeita cooldown).
+    bet_notify_flush($pdo, $usuarioId, $force);
 }
