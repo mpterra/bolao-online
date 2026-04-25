@@ -133,7 +133,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const menu = document.getElementById("menuFases");
   const blocks = Array.from(document.querySelectorAll("[data-fase-block]"));
 
-  function setActivePhase(faseCode) {
+  function setActivePhase(faseCode, options = {}) {
+    const shouldScroll = options.scroll !== false;
     const fc = String(faseCode || "");
 
     blocks.forEach((b) => {
@@ -151,8 +152,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    const head = document.getElementById("mmContentHead");
-    if (head) head.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (shouldScroll) {
+      const head = document.getElementById("mmContentHead");
+      if (head) head.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   function firstEnabledPhase() {
@@ -170,12 +173,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (a.classList.contains("is-disabled")) return;
       const fase = a.getAttribute("data-fase");
       if (!fase) return;
-      setActivePhase(fase);
+      setActivePhase(fase, { scroll: true });
     });
   }
 
   const initial = firstEnabledPhase();
-  if (initial) setActivePhase(initial);
+  if (initial) setActivePhase(initial, { scroll: false });
 
   function normalizeScoreValue(raw) {
     const s = String(raw ?? "").replace(/[^\d]/g, "");
