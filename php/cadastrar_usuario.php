@@ -22,6 +22,8 @@ if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
     exit;
 }
 
+$successRedirect = '/boas_vindas.php';
+
 /**
  * Normaliza string:
  * - remove acentos/ç (Transliterator se disponível; fallback iconv)
@@ -372,7 +374,7 @@ try {
     $mailConfig = load_mail_config_for_register();
     if (!load_phpmailer_for_register()) {
         cadastro_mail_log('Falha ao carregar PHPMailer para envios pos-cadastro.');
-        header("Location: /cadastro.php?sucesso=1");
+        header("Location: {$successRedirect}");
         exit;
     }
 
@@ -402,8 +404,7 @@ try {
 
     cadastro_mail_log('Final dos envios pos-cadastro. admin=' . ($notified ? 'ok' : 'falha') . ', welcome=' . ($welcomed ? 'ok' : 'falha'));
 
-    // ✅ HostGator: volta pra /cadastro.php
-    header("Location: /cadastro.php?sucesso=1");
+    header("Location: {$successRedirect}");
     exit;
 
 } catch (Throwable $e) {

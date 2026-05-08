@@ -10,6 +10,11 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
+
+if ($sucesso) {
+    header('Location: /boas_vindas.php');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
