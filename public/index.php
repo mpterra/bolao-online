@@ -79,8 +79,8 @@ if (!in_array($flashType, $allowed, true)) $flashType = "";
             </p>
 
             <p class="cadastro-link">
-                Quer entender as regras?
-                <a href="regulamento.php">Ler o regulamento completo</a>
+                Quer conhecer o bolão?
+                <a href="regulamento.php">Clique aqui</a>
             </p>
 
         </form>
