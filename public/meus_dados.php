@@ -115,16 +115,16 @@ if (!in_array($flashType, $allowedFlashTypes, true)) {
     $flashType = '';
 }
 
-$supportsBirthDate = false;
+$birthDateSchemaReady = false;
 
 try {
     if (!isset($pdo) || !($pdo instanceof PDO)) {
         throw new RuntimeException('Conexão indisponível.');
     }
 
-    $supportsBirthDate = usuario_supports_birth_date($pdo);
+    $birthDateSchemaReady = usuario_ensure_birth_date($pdo);
     $selectFields = 'id, nome, email, telefone, cidade, estado';
-    if ($supportsBirthDate) {
+    if ($birthDateSchemaReady) {
         $selectFields .= ', data_nascimento';
     }
 
@@ -176,12 +176,16 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
     <section class="app-shell profile-shell">
         <div class="profile-card">
             <div class="content-head profile-head">
-                <div>
+                <div class="profile-head-copy">
+                    <div class="profile-eyebrow">Área do participante</div>
                     <div class="content-h1">Meus dados</div>
                     <p class="profile-lead">Atualize suas informações de cadastro. Sempre que houver alteração, os administradores do bolão recebem um aviso por email.</p>
                 </div>
 
-                <div class="profile-chip" title="Email atual do cadastro"><?php echo h($email); ?></div>
+                <div class="profile-chip-wrap">
+                    <span class="profile-chip-label">Email principal da conta</span>
+                    <div class="profile-chip" title="Email atual do cadastro"><?php echo h($email); ?></div>
+                </div>
             </div>
 
             <?php if ($flashType !== '' && $flashMsg !== ''): ?>
@@ -190,19 +194,32 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
                 </div>
             <?php endif; ?>
 
+            <?php if (!$birthDateSchemaReady): ?>
+                <div class="profile-alert profile-alert--warn" role="status" aria-live="polite">
+                    O campo de data de nascimento foi liberado no código. Se o salvamento falhar, aplique a migration de banco incluída no projeto.
+                </div>
+            <?php endif; ?>
+
             <form method="POST" action="/php/atualizar_cadastro.php" class="login-form profile-form" autocomplete="on" data-password-optional="1">
-                <div class="profile-grid">
-                    <div class="input-group">
-                        <input type="text" name="nome" required autocomplete="given-name" value="<?php echo h($nome); ?>">
-                        <label>Nome</label>
+                <section class="profile-section" aria-labelledby="profileSectionCadastro">
+                    <div class="profile-section-head">
+                        <div>
+                            <h2 class="profile-section-title" id="profileSectionCadastro">Dados cadastrais</h2>
+                            <p class="profile-section-text">Revise seus dados principais e mantenha o cadastro atualizado para contato e identificação no bolão.</p>
+                        </div>
                     </div>
 
-                    <div class="input-group">
-                        <input type="text" name="sobrenome" required autocomplete="family-name" value="<?php echo h($sobrenome); ?>">
-                        <label>Sobrenome</label>
-                    </div>
+                    <div class="profile-grid">
+                        <div class="input-group">
+                            <input type="text" name="nome" required autocomplete="given-name" value="<?php echo h($nome); ?>">
+                            <label>Nome</label>
+                        </div>
 
-                    <?php if ($supportsBirthDate): ?>
+                        <div class="input-group">
+                            <input type="text" name="sobrenome" required autocomplete="family-name" value="<?php echo h($sobrenome); ?>">
+                            <label>Sobrenome</label>
+                        </div>
+
                         <div class="input-group">
                             <input
                                 type="text"
@@ -224,80 +241,95 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
                                 </svg>
                             </button>
                             <input type="date" id="data_nascimento_picker" class="date-picker-native" tabindex="-1" aria-hidden="true" max="<?php echo date('Y-m-d'); ?>">
+                            <small class="input-hint">Use o formato DD/MM/AAAA.</small>
                         </div>
-                    <?php endif; ?>
 
-                    <div class="input-group">
-                        <input type="email" name="email" required autocomplete="email" value="<?php echo h($email); ?>">
-                        <label>Email</label>
+                        <div class="input-group">
+                            <input type="email" name="email" required autocomplete="email" value="<?php echo h($email); ?>">
+                            <label>Email</label>
+                        </div>
+
+                        <div class="input-group">
+                            <input type="text" name="telefone" required autocomplete="tel" inputmode="tel" maxlength="15" value="<?php echo h($telefone); ?>">
+                            <label>Telefone</label>
+                        </div>
+
+                        <div class="input-group">
+                            <select name="estado" required>
+                                <option value="" disabled <?php echo $estadoAtual === '' ? 'selected' : ''; ?> hidden></option>
+                                <?php foreach ($ufs as $uf): ?>
+                                    <option value="<?php echo h($uf); ?>" <?php echo $estadoAtual === $uf ? 'selected' : ''; ?>><?php echo h($uf); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <label>Estado (UF)</label>
+                        </div>
+
+                        <div class="input-group profile-field-full">
+                            <select id="cidade" name="cidade" required data-selected-city="<?php echo h($cidade); ?>">
+                                <?php if ($cidade !== ''): ?>
+                                    <option value="<?php echo h($cidade); ?>" selected><?php echo h($cidade); ?></option>
+                                <?php else: ?>
+                                    <option value="" selected hidden></option>
+                                <?php endif; ?>
+                            </select>
+                            <label>Cidade</label>
+                            <small class="input-hint" id="cityHint"><?php echo $estadoAtual !== '' ? 'Carregando cidades...' : 'Selecione o estado primeiro.'; ?></small>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="profile-section profile-section--security" aria-labelledby="profileSectionSeguranca">
+                    <div class="profile-section-head">
+                        <div>
+                            <h2 class="profile-section-title" id="profileSectionSeguranca">Segurança</h2>
+                            <p class="profile-section-text">Troque sua senha apenas quando precisar. Se deixar em branco, a senha atual continua valendo.</p>
+                        </div>
                     </div>
 
-                    <div class="input-group">
-                        <input type="text" name="telefone" required autocomplete="tel" inputmode="tel" maxlength="15" value="<?php echo h($telefone); ?>">
-                        <label>Telefone</label>
-                    </div>
+                    <div class="profile-grid profile-grid--security">
+                        <div class="input-group">
+                            <input type="password" id="senha" name="senha" autocomplete="new-password">
+                            <label>Nova senha</label>
+                            <button type="button" class="password-toggle" data-toggle-password="senha" aria-label="Mostrar nova senha" aria-pressed="false">
+                                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M10.6 6.2a10.7 10.7 0 0 1 1.4-.2c6.2 0 10 6 10 6a18 18 0 0 1-3.4 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M6.8 8.8C4.2 10.7 2 12 2 12s3.8 6 10 6c1.4 0 2.6-.3 3.8-.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M9.9 9.9A3 3 0 0 0 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <small class="input-hint">Deixe em branco para manter a senha atual.</small>
+                        </div>
 
-                    <div class="input-group">
-                        <select name="estado" required>
-                            <option value="" disabled <?php echo $estadoAtual === '' ? 'selected' : ''; ?> hidden></option>
-                            <?php foreach ($ufs as $uf): ?>
-                                <option value="<?php echo h($uf); ?>" <?php echo $estadoAtual === $uf ? 'selected' : ''; ?>><?php echo h($uf); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <label>Estado (UF)</label>
+                        <div class="input-group">
+                            <input type="password" id="confirmar_senha" name="confirmar_senha" autocomplete="new-password">
+                            <label>Confirmar nova senha</label>
+                            <button type="button" class="password-toggle" data-toggle-password="confirmar_senha" aria-label="Mostrar confirmação da nova senha" aria-pressed="false">
+                                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M10.6 6.2a10.7 10.7 0 0 1 1.4-.2c6.2 0 10 6 10 6a18 18 0 0 1-3.4 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M6.8 8.8C4.2 10.7 2 12 2 12s3.8 6 10 6c1.4 0 2.6-.3 3.8-.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M9.9 9.9A3 3 0 0 0 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-
-                    <div class="input-group profile-field-full">
-                        <select id="cidade" name="cidade" required data-selected-city="<?php echo h($cidade); ?>">
-                            <?php if ($cidade !== ''): ?>
-                                <option value="<?php echo h($cidade); ?>" selected><?php echo h($cidade); ?></option>
-                            <?php else: ?>
-                                <option value="" selected hidden></option>
-                            <?php endif; ?>
-                        </select>
-                        <label>Cidade</label>
-                        <small class="input-hint" id="cityHint"><?php echo $estadoAtual !== '' ? 'Carregando cidades...' : 'Selecione o estado primeiro.'; ?></small>
-                    </div>
-
-                    <div class="input-group">
-                        <input type="password" id="senha" name="senha" autocomplete="new-password">
-                        <label>Nova senha</label>
-                        <button type="button" class="password-toggle" data-toggle-password="senha" aria-label="Mostrar nova senha" aria-pressed="false">
-                            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                            </svg>
-                            <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M10.6 6.2a10.7 10.7 0 0 1 1.4-.2c6.2 0 10 6 10 6a18 18 0 0 1-3.4 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M6.8 8.8C4.2 10.7 2 12 2 12s3.8 6 10 6c1.4 0 2.6-.3 3.8-.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M9.9 9.9A3 3 0 0 0 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <small class="input-hint">Deixe em branco para manter a senha atual.</small>
-                    </div>
-
-                    <div class="input-group">
-                        <input type="password" id="confirmar_senha" name="confirmar_senha" autocomplete="new-password">
-                        <label>Confirmar nova senha</label>
-                        <button type="button" class="password-toggle" data-toggle-password="confirmar_senha" aria-label="Mostrar confirmação da nova senha" aria-pressed="false">
-                            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                            </svg>
-                            <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M10.6 6.2a10.7 10.7 0 0 1 1.4-.2c6.2 0 10 6 10 6a18 18 0 0 1-3.4 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M6.8 8.8C4.2 10.7 2 12 2 12s3.8 6 10 6c1.4 0 2.6-.3 3.8-.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M9.9 9.9A3 3 0 0 0 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+                </section>
 
                 <div class="profile-actions">
                     <button type="submit" class="btn-login">Salvar alterações</button>
-                    <p class="profile-note">As alterações são comunicadas automaticamente aos administradores do bolão.</p>
+                    <div class="profile-note-card">
+                        <div class="profile-note-title">Notificação automática</div>
+                        <p class="profile-note">As alterações são comunicadas automaticamente aos administradores do bolão.</p>
+                    </div>
                 </div>
             </form>
         </div>

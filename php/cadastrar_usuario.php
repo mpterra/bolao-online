@@ -159,8 +159,11 @@ if (strlen($estado) !== 2) {
 }
 
 // Higiene mínima (sem “inventar” regra de negócio)
-$supportsBirthDate = isset($pdo) && $pdo instanceof PDO ? usuario_supports_birth_date($pdo) : false;
-$dataNascimento = $supportsBirthDate ? normalize_data_nascimento($dataNascimentoRaw) : '';
+if (!isset($pdo) || !($pdo instanceof PDO) || !usuario_ensure_birth_date($pdo)) {
+    fail("Erro interno: não foi possível preparar o campo de data de nascimento.", 500);
+}
+
+$dataNascimento = normalize_data_nascimento($dataNascimentoRaw);
 $telefone = normalize_telefone($telefoneRaw);
 $email = mb_strtolower($email, 'UTF-8');
 $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
@@ -183,15 +186,9 @@ try {
         fail("Já existe uma conta com esse email.", 409);
     }
 
-    if ($supportsBirthDate) {
-        $sql = "INSERT INTO usuarios (nome, data_nascimento, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
-        $insertParams = [$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $senhaHash];
-    } else {
-        $sql = "INSERT INTO usuarios (nome, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo)
-            VALUES (?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
-        $insertParams = [$nomeCompleto, $email, $telefone, $cidade, $estado, $senhaHash];
-    }
+    $sql = "INSERT INTO usuarios (nome, data_nascimento, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
+    $insertParams = [$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $senhaHash];
 
     $ins = $pdo->prepare($sql);
     $ins->execute($insertParams);

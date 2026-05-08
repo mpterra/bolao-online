@@ -16,6 +16,7 @@ CREATE TABLE usuarios (
   id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 
   nome            VARCHAR(120) NOT NULL,
+  data_nascimento DATE NULL,
   email           VARCHAR(190) NOT NULL,
   telefone        VARCHAR(20)  NOT NULL,
   cidade          VARCHAR(120) NOT NULL,
@@ -34,6 +35,7 @@ CREATE TABLE usuarios (
 
   UNIQUE KEY uk_usuarios_email (email),
 
+  KEY idx_usuarios_data_nascimento (data_nascimento),
   KEY idx_usuarios_tipo   (tipo_usuario),
   KEY idx_usuarios_estado (estado),
   KEY idx_usuarios_cidade (cidade),
