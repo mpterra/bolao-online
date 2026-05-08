@@ -11,6 +11,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/cadastro_mailer.php';
+require_once __DIR__ . '/usuario_schema.php';
 
 function redirect_profile_with_flash(string $message, string $type = 'error'): never {
     $_SESSION['flash_profile'] = [
@@ -120,6 +121,8 @@ if ($usuarioId <= 0) {
     exit;
 }
 
+$supportsBirthDate = isset($pdo) && $pdo instanceof PDO ? usuario_supports_birth_date($pdo) : false;
+
 $nomeRaw = (string)($_POST['nome'] ?? '');
 $sobrenomeRaw = (string)($_POST['sobrenome'] ?? '');
 $dataNascimentoRaw = trim((string)($_POST['data_nascimento'] ?? ''));
@@ -137,7 +140,11 @@ $nomeCompleto = preg_replace('/\s+/', ' ', $nomeCompleto) ?? $nomeCompleto;
 $nomeCompletoInformado = trim($nomeRaw . ' ' . $sobrenomeRaw);
 $nomeCompletoInformado = preg_replace('/\s+/', ' ', $nomeCompletoInformado) ?? $nomeCompletoInformado;
 
-if ($nome === '' || $sobrenome === '' || $dataNascimentoRaw === '' || $email === '' || $telefoneRaw === '' || $cidade === '' || $estado === '') {
+if ($nome === '' || $sobrenome === '' || $email === '' || $telefoneRaw === '' || $cidade === '' || $estado === '') {
+    redirect_profile_with_flash('Preencha todos os campos obrigatórios.', 'warn');
+}
+
+if ($supportsBirthDate && $dataNascimentoRaw === '') {
     redirect_profile_with_flash('Preencha todos os campos obrigatórios.', 'warn');
 }
 
@@ -154,7 +161,7 @@ if ($passwordChanged && $senha !== $confirmarSenha) {
     redirect_profile_with_flash('As senhas não coincidem.', 'warn');
 }
 
-$dataNascimento = normalize_birth_date_update($dataNascimentoRaw);
+$dataNascimento = $supportsBirthDate ? normalize_birth_date_update($dataNascimentoRaw) : '';
 $telefone = normalize_phone_update($telefoneRaw);
 $email = mb_strtolower($email, 'UTF-8');
 $senhaHash = $passwordChanged ? password_hash($senha, PASSWORD_DEFAULT) : null;
@@ -189,21 +196,41 @@ try {
     }
 
     if ($passwordChanged) {
-        $updateSql = '
-            UPDATE usuarios
-            SET nome = ?, data_nascimento = ?, email = ?, telefone = ?, cidade = ?, estado = ?, senha_hash = ?
-            WHERE id = ?
-            LIMIT 1
-        ';
-        $updateParams = [$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $senhaHash, $usuarioId];
+        if ($supportsBirthDate) {
+            $updateSql = '
+                UPDATE usuarios
+                SET nome = ?, data_nascimento = ?, email = ?, telefone = ?, cidade = ?, estado = ?, senha_hash = ?
+                WHERE id = ?
+                LIMIT 1
+            ';
+            $updateParams = [$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $senhaHash, $usuarioId];
+        } else {
+            $updateSql = '
+                UPDATE usuarios
+                SET nome = ?, email = ?, telefone = ?, cidade = ?, estado = ?, senha_hash = ?
+                WHERE id = ?
+                LIMIT 1
+            ';
+            $updateParams = [$nomeCompleto, $email, $telefone, $cidade, $estado, $senhaHash, $usuarioId];
+        }
     } else {
-        $updateSql = '
-            UPDATE usuarios
-            SET nome = ?, data_nascimento = ?, email = ?, telefone = ?, cidade = ?, estado = ?
-            WHERE id = ?
-            LIMIT 1
-        ';
-        $updateParams = [$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $usuarioId];
+        if ($supportsBirthDate) {
+            $updateSql = '
+                UPDATE usuarios
+                SET nome = ?, data_nascimento = ?, email = ?, telefone = ?, cidade = ?, estado = ?
+                WHERE id = ?
+                LIMIT 1
+            ';
+            $updateParams = [$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $usuarioId];
+        } else {
+            $updateSql = '
+                UPDATE usuarios
+                SET nome = ?, email = ?, telefone = ?, cidade = ?, estado = ?
+                WHERE id = ?
+                LIMIT 1
+            ';
+            $updateParams = [$nomeCompleto, $email, $telefone, $cidade, $estado, $usuarioId];
+        }
     }
 
     $updateStmt = $pdo->prepare($updateSql);

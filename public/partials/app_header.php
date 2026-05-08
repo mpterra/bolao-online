@@ -44,11 +44,6 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			"label" => "Resultados",
 			"href"  => "/resultados.php",
 		],
-		[
-			"key"   => "meus_dados",
-			"label" => "Meus dados",
-			"href"  => "/meus_dados.php",
-		],
 	];
 
 	if ($isAdmin) {
@@ -66,6 +61,10 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			$activeLabel = $item["label"];
 			break;
 		}
+	}
+
+	if ($active === "meus_dados") {
+		$activeLabel = "Editar cadastro";
 	}
 
 	if (!$bh_assets_printed) {
@@ -215,6 +214,23 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				background:rgba(255,255,255,.05);
 			}
 
+			.bh-header__user-link{
+				text-decoration:none;
+				transition:background .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease;
+			}
+
+			.bh-header__user-link:hover{
+				background:rgba(255,255,255,.09);
+				border-color:rgba(255,255,255,.16);
+				transform:translateY(-1px);
+			}
+
+			.bh-header__user-link.is-active{
+				background:rgba(255,255,255,.10);
+				border-color:rgba(16,208,138,.36);
+				box-shadow:0 0 0 3px rgba(16,208,138,.10);
+			}
+
 			.bh-header__user-dot{
 				width:8px;
 				height:8px;
@@ -232,6 +248,22 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				font-size:12px;
 				font-weight:800;
 				color:rgba(255,255,255,.90);
+			}
+
+			.bh-header__user-stack{
+				display:flex;
+				flex-direction:column;
+				gap:1px;
+				min-width:0;
+			}
+
+			.bh-header__user-meta{
+				font-size:10px;
+				font-weight:800;
+				letter-spacing:.04em;
+				text-transform:uppercase;
+				color:rgba(255,255,255,.56);
+				white-space:nowrap;
 			}
 
 			.bh-header__logout{
@@ -372,6 +404,19 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				min-width:0;
 			}
 
+			.bh-header__mobile-user-link{
+				text-decoration:none;
+				padding:9px 10px;
+				border-radius:12px;
+				border:1px solid rgba(255,255,255,.10);
+				background:rgba(255,255,255,.05);
+			}
+
+			.bh-header__mobile-user-link.is-active{
+				border-color:rgba(16,208,138,.36);
+				background:rgba(255,255,255,.09);
+			}
+
 			.bh-header__mobile-user-name{
 				max-width:180px;
 				overflow:hidden;
@@ -380,6 +425,14 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				font-size:12px;
 				font-weight:800;
 				color:rgba(255,255,255,.90);
+			}
+
+			.bh-header__mobile-user-meta{
+				font-size:10px;
+				font-weight:800;
+				letter-spacing:.04em;
+				text-transform:uppercase;
+				color:rgba(255,255,255,.56);
 			}
 
 			.bh-header__mobile-logout{
@@ -551,10 +604,13 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			</nav>
 
 			<div class="bh-header__right">
-				<div class="bh-header__user" title="<?php echo strh($usuarioNome); ?>">
+				<a class="bh-header__user bh-header__user-link<?php echo $active === 'meus_dados' ? ' is-active' : ''; ?>" href="/meus_dados.php" title="Editar dados cadastrais de <?php echo strh($usuarioNome); ?>" aria-label="Editar dados cadastrais">
 					<span class="bh-header__user-dot"></span>
-					<span class="bh-header__user-name"><?php echo strh($usuarioNome); ?></span>
-				</div>
+					<span class="bh-header__user-stack">
+						<span class="bh-header__user-name"><?php echo strh($usuarioNome); ?></span>
+						<span class="bh-header__user-meta">Editar cadastro</span>
+					</span>
+				</a>
 
 				<a class="bh-header__logout" href="<?php echo strh($logoutHref); ?>">Sair</a>
 
@@ -598,10 +654,13 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			</nav>
 
 			<div class="bh-header__mobile-footer">
-				<div class="bh-header__mobile-user" title="<?php echo strh($usuarioNome); ?>">
+				<a class="bh-header__mobile-user bh-header__mobile-user-link<?php echo $active === 'meus_dados' ? ' is-active' : ''; ?>" href="/meus_dados.php" title="Editar dados cadastrais de <?php echo strh($usuarioNome); ?>" aria-label="Editar dados cadastrais">
 					<span class="bh-header__user-dot"></span>
-					<span class="bh-header__mobile-user-name"><?php echo strh($usuarioNome); ?></span>
-				</div>
+					<span class="bh-header__user-stack">
+						<span class="bh-header__mobile-user-name"><?php echo strh($usuarioNome); ?></span>
+						<span class="bh-header__mobile-user-meta">Editar cadastro</span>
+					</span>
+				</a>
 
 				<a class="bh-header__mobile-logout" href="<?php echo strh($logoutHref); ?>">Sair</a>
 			</div>

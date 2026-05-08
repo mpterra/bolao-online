@@ -30,6 +30,7 @@ if (!$connectionLoaded) {
     exit('Erro ao carregar a conexão com o banco.');
 }
 
+require_once __DIR__ . '/../php/usuario_schema.php';
 require_once __DIR__ . '/partials/app_header.php';
 
 function require_login_for_profile(): void {
@@ -114,13 +115,21 @@ if (!in_array($flashType, $allowedFlashTypes, true)) {
     $flashType = '';
 }
 
+$supportsBirthDate = false;
+
 try {
     if (!isset($pdo) || !($pdo instanceof PDO)) {
         throw new RuntimeException('Conexão indisponível.');
     }
 
+    $supportsBirthDate = usuario_supports_birth_date($pdo);
+    $selectFields = 'id, nome, email, telefone, cidade, estado';
+    if ($supportsBirthDate) {
+        $selectFields .= ', data_nascimento';
+    }
+
     $stmt = $pdo->prepare('
-        SELECT id, nome, data_nascimento, email, telefone, cidade, estado
+        SELECT ' . $selectFields . '
         FROM usuarios
         WHERE id = ?
         LIMIT 1
@@ -135,6 +144,7 @@ try {
         exit;
     }
 } catch (Throwable $e) {
+    error_log('[meus_dados] ' . $e->getMessage());
     http_response_code(500);
     exit('Erro ao carregar seus dados cadastrais.');
 }
@@ -192,28 +202,30 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
                         <label>Sobrenome</label>
                     </div>
 
-                    <div class="input-group">
-                        <input
-                            type="text"
-                            id="data_nascimento"
-                            name="data_nascimento"
-                            class="has-inline-action"
-                            required
-                            inputmode="numeric"
-                            autocomplete="bday"
-                            maxlength="10"
-                            pattern="\d{2}/\d{2}/\d{4}"
-                            value="<?php echo h($dataNascimento); ?>">
-                        <label>Data de nascimento</label>
-                        <button type="button" class="password-toggle date-picker-toggle" data-open-date-picker="data_nascimento_picker" aria-label="Abrir calendário para data de nascimento">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M7 2v3M17 2v3M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="2"/>
-                                <path d="M8 13h3M8 17h3M13 13h3M13 17h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                        <input type="date" id="data_nascimento_picker" class="date-picker-native" tabindex="-1" aria-hidden="true" max="<?php echo date('Y-m-d'); ?>">
-                    </div>
+                    <?php if ($supportsBirthDate): ?>
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                id="data_nascimento"
+                                name="data_nascimento"
+                                class="has-inline-action"
+                                required
+                                inputmode="numeric"
+                                autocomplete="bday"
+                                maxlength="10"
+                                pattern="\d{2}/\d{2}/\d{4}"
+                                value="<?php echo h($dataNascimento); ?>">
+                            <label>Data de nascimento</label>
+                            <button type="button" class="password-toggle date-picker-toggle" data-open-date-picker="data_nascimento_picker" aria-label="Abrir calendário para data de nascimento">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M7 2v3M17 2v3M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M8 13h3M8 17h3M13 13h3M13 17h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                            <input type="date" id="data_nascimento_picker" class="date-picker-native" tabindex="-1" aria-hidden="true" max="<?php echo date('Y-m-d'); ?>">
+                        </div>
+                    <?php endif; ?>
 
                     <div class="input-group">
                         <input type="email" name="email" required autocomplete="email" value="<?php echo h($email); ?>">
