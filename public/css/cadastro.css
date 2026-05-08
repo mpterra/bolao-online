@@ -73,6 +73,12 @@
   background: rgba(255,255,255,.12);
 }
 
+.input-group input:disabled,
+.input-group select:disabled{
+  opacity: .72;
+  cursor: not-allowed;
+}
+
 .input-group input.is-invalid,
 .input-group input.is-invalid:focus{
   border-color: rgba(255,107,107,.88);

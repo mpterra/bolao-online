@@ -80,6 +80,15 @@ document.addEventListener("DOMContentLoaded", () => {
     return { day, month, year, iso };
   }
 
+  function normalizeLookupText(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLocaleLowerCase("pt-BR");
+  }
+
   // =========================================================
   // CUSTOM SELECT (UF)
   // =========================================================
@@ -473,6 +482,187 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     setDisplayText();
+  })();
+
+  // =========================================================
+  // CIDADES POR UF (IBGE) + filtro por digitação
+  // =========================================================
+  (function initCityLookup() {
+    const form = document.querySelector(".login-form");
+    if (!form) return;
+
+    const ufSelect = form.querySelector('select[name="estado"]');
+    const cityInput = form.querySelector('input[name="cidade"]');
+    const cityList = form.querySelector("#listaCidades");
+    if (!ufSelect || !cityInput || !cityList) return;
+
+    const IBGE_BASE_URL = "https://servicodados.ibge.gov.br/api/v1/localidades/estados";
+    const cityCache = new Map();
+    let availableCities = [];
+    let strictCityValidation = false;
+    let activeRequest = 0;
+
+    function setCityPlaceholder(text) {
+      cityInput.placeholder = text || "";
+    }
+
+    function clearCityOptions() {
+      cityList.innerHTML = "";
+      availableCities = [];
+    }
+
+    function setCityOptions(cities) {
+      const fragment = document.createDocumentFragment();
+      clearCityOptions();
+
+      availableCities = Array.isArray(cities) ? cities.slice() : [];
+
+      availableCities.forEach((cityName) => {
+        const option = document.createElement("option");
+        option.value = cityName;
+        fragment.appendChild(option);
+      });
+
+      cityList.appendChild(fragment);
+    }
+
+    function setCityEnabled(enabled) {
+      cityInput.disabled = !enabled;
+      if (!enabled) {
+        cityInput.value = "";
+        cityInput.setCustomValidity("");
+      }
+
+      const group = cityInput.closest(".input-group");
+      if (group) {
+        if (enabled && String(cityInput.value || "").trim() !== "") group.classList.add("has-value");
+        else if (String(cityInput.value || "").trim() === "") group.classList.remove("has-value");
+      }
+    }
+
+    function resetCityField(message) {
+      activeRequest += 1;
+      strictCityValidation = false;
+      clearCityOptions();
+      setCityEnabled(false);
+      setCityPlaceholder(message || "Selecione o estado primeiro");
+    }
+
+    function validateCity(forceReport) {
+      const cityValue = String(cityInput.value || "").trim();
+
+      if (cityInput.disabled) {
+        cityInput.setCustomValidity("Selecione o estado antes da cidade.");
+        if (forceReport) cityInput.reportValidity();
+        return false;
+      }
+
+      if (cityValue === "") {
+        cityInput.setCustomValidity("Preencha a cidade.");
+        if (forceReport) cityInput.reportValidity();
+        return false;
+      }
+
+      if (strictCityValidation) {
+        const normalizedValue = normalizeLookupText(cityValue);
+        const isKnownCity = availableCities.some((cityName) => normalizeLookupText(cityName) === normalizedValue);
+
+        if (!isKnownCity) {
+          cityInput.setCustomValidity("Escolha uma cidade da lista do estado selecionado.");
+          if (forceReport) cityInput.reportValidity();
+          return false;
+        }
+      }
+
+      cityInput.setCustomValidity("");
+      return true;
+    }
+
+    async function loadCitiesForState(uf) {
+      const cleanUf = String(uf || "").trim().toUpperCase();
+      const requestId = activeRequest + 1;
+      activeRequest = requestId;
+
+      cityInput.value = "";
+      cityInput.setCustomValidity("");
+
+      if (cleanUf === "") {
+        resetCityField("Selecione o estado primeiro");
+        return;
+      }
+
+      if (cityCache.has(cleanUf)) {
+        setCityOptions(cityCache.get(cleanUf));
+        strictCityValidation = true;
+        setCityEnabled(true);
+        setCityPlaceholder("Digite para filtrar a cidade");
+        return;
+      }
+
+      clearCityOptions();
+      strictCityValidation = false;
+      setCityEnabled(false);
+      setCityPlaceholder("Carregando cidades...");
+
+      try {
+        const response = await fetch(`${IBGE_BASE_URL}/${encodeURIComponent(cleanUf)}/municipios?orderBy=nome`, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          cache: "force-cache"
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        if (requestId !== activeRequest) return;
+
+        const cities = Array.isArray(payload)
+          ? payload
+            .map((item) => String((item && item.nome) || "").trim())
+            .filter(Boolean)
+            .sort((left, right) => left.localeCompare(right, "pt-BR", { sensitivity: "base" }))
+          : [];
+
+        cityCache.set(cleanUf, cities);
+        setCityOptions(cities);
+        strictCityValidation = true;
+        setCityEnabled(true);
+        setCityPlaceholder(cities.length > 0 ? "Digite para filtrar a cidade" : "Nenhuma cidade encontrada");
+
+        if (cities.length > 0) {
+          try { cityInput.focus({ preventScroll: true }); } catch (e) {}
+        }
+      } catch (error) {
+        if (requestId !== activeRequest) return;
+
+        clearCityOptions();
+        strictCityValidation = false;
+        setCityEnabled(true);
+        setCityPlaceholder("Digite a cidade manualmente");
+      }
+    }
+
+    ufSelect.addEventListener("change", () => {
+      loadCitiesForState(ufSelect.value);
+    });
+
+    cityInput.addEventListener("input", () => {
+      validateCity(false);
+    });
+
+    cityInput.addEventListener("blur", () => {
+      validateCity(false);
+    });
+
+    form.addEventListener("submit", (ev) => {
+      if (!validateCity(true)) {
+        ev.preventDefault();
+      }
+    });
+
+    resetCityField("Selecione o estado primeiro");
   })();
 
   // =========================================================

@@ -84,11 +84,6 @@ if ($sucesso) {
                 </div>
 
                 <div class="input-group">
-                    <input type="text" name="cidade" required autocomplete="address-level2">
-                    <label>Cidade</label>
-                </div>
-
-                <div class="input-group">
                     <select name="estado" required>
                         <option value="" disabled selected hidden></option>
                         <option value="AC">AC</option>
@@ -120,6 +115,12 @@ if ($sucesso) {
                         <option value="TO">TO</option>
                     </select>
                     <label>Estado (UF)</label>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="cidade" name="cidade" required autocomplete="off" list="listaCidades" disabled>
+                    <label>Cidade</label>
+                    <datalist id="listaCidades"></datalist>
                 </div>
 
                 <div class="input-group">
