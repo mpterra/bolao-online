@@ -612,6 +612,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const cityHint = form.querySelector("#cityHint");
     if (!ufSelect || !citySelect) return;
 
+    const initialCityValue = String(citySelect.dataset.selectedCity || citySelect.value || "").trim();
+
     const cityPicker = attachCustomSelect(citySelect, {
       searchPlaceholder: "Filtrar cidade...",
       emptyText: "Nenhuma cidade disponível."
@@ -628,10 +630,23 @@ document.addEventListener("DOMContentLoaded", () => {
       cityHint.classList.toggle("is-error", !!isError);
     }
 
-    function setCityOptions(cities) {
+    function setCityOptions(cities, preferredCity = "") {
       cityPicker.setOptions(
         (Array.isArray(cities) ? cities : []).map((cityName) => ({ value: cityName, label: cityName }))
       );
+
+      const desiredValue = String(preferredCity || "").trim();
+      if (desiredValue !== "" && Array.isArray(cities)) {
+        const desiredLookup = normalizeLookupText(desiredValue);
+        const matchedCity = cities.find((cityName) => normalizeLookupText(cityName) === desiredLookup);
+
+        if (!matchedCity) {
+          return;
+        }
+
+        citySelect.value = matchedCity;
+        try { citySelect.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
+      }
     }
 
     function resetCityField(message, isError = false) {
@@ -643,7 +658,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setCityHint(message || "Selecione o estado primeiro.", isError);
     }
 
-    async function loadCitiesForState(uf) {
+    async function loadCitiesForState(uf, preferredCity = "") {
       const cleanUf = String(uf || "").trim().toUpperCase();
       const requestId = activeRequest + 1;
       activeRequest = requestId;
@@ -654,7 +669,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (cityCache.has(cleanUf)) {
-        setCityOptions(cityCache.get(cleanUf));
+        setCityOptions(cityCache.get(cleanUf), preferredCity);
         cityPicker.setDisabled(false);
         citySelect.setCustomValidity("");
         setCityHint("Clique e digite para filtrar a cidade.");
@@ -689,7 +704,7 @@ document.addEventListener("DOMContentLoaded", () => {
           : [];
 
         cityCache.set(cleanUf, cities);
-        setCityOptions(cities);
+        setCityOptions(cities, preferredCity);
         cityPicker.setDisabled(cities.length === 0);
 
         if (cities.length > 0) {
@@ -711,7 +726,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     ufSelect.addEventListener("change", () => {
-      loadCitiesForState(ufSelect.value);
+      loadCitiesForState(ufSelect.value, "");
     });
 
     citySelect.addEventListener("change", () => {
@@ -739,7 +754,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    resetCityField("Selecione o estado primeiro.");
+    if (ufSelect.value) {
+      loadCitiesForState(ufSelect.value, initialCityValue);
+    } else {
+      resetCityField("Selecione o estado primeiro.");
+    }
   })();
 
   // =========================================================
@@ -919,6 +938,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const senha = form.querySelector('input[name="senha"]');
     const confirmar = form.querySelector('input[name="confirmar_senha"]');
     const toggles = Array.from(form.querySelectorAll(".password-toggle"));
+    const passwordOptional = String(form.dataset.passwordOptional || "0") === "1";
 
     toggles.forEach((btn) => {
       const targetId = (btn.getAttribute("data-toggle-password") || "").trim();
@@ -938,27 +958,38 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function syncPasswordValidation() {
-      if (!senha || !confirmar) return true;
+      if (!senha || !confirmar) return { valid: true, target: null };
 
       const v1 = senha.value || "";
       const v2 = confirmar.value || "";
 
+      senha.setCustomValidity("");
+      confirmar.setCustomValidity("");
       confirmar.classList.remove("is-invalid", "is-valid");
 
-      if (v2.length === 0) {
-        confirmar.setCustomValidity("");
-        return true;
+      if (v1.length === 0 && v2.length === 0) {
+        return { valid: true, target: null };
+      }
+
+      if (v1.length === 0 && v2.length > 0) {
+        senha.setCustomValidity("Informe a nova senha.");
+        return { valid: false, target: senha };
+      }
+
+      if (v1.length > 0 && v2.length === 0) {
+        confirmar.setCustomValidity("Confirme a nova senha.");
+        confirmar.classList.add("is-invalid");
+        return { valid: false, target: confirmar };
       }
 
       if (v1 !== v2) {
         confirmar.setCustomValidity("As senhas não coincidem.");
         confirmar.classList.add("is-invalid");
-        return false;
+        return { valid: false, target: confirmar };
       }
 
-      confirmar.setCustomValidity("");
       confirmar.classList.add("is-valid");
-      return true;
+      return { valid: true, target: null };
     }
 
     if (senha && confirmar) {
@@ -966,9 +997,11 @@ document.addEventListener("DOMContentLoaded", () => {
       confirmar.addEventListener("input", syncPasswordValidation);
 
       form.addEventListener("submit", (ev) => {
-        if (!syncPasswordValidation()) {
+        const validation = syncPasswordValidation();
+        if (!validation.valid) {
           ev.preventDefault();
-          confirmar.reportValidity();
+          const target = validation.target || confirmar;
+          target.reportValidity();
         }
       });
     }

@@ -44,6 +44,11 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			"label" => "Resultados",
 			"href"  => "/resultados.php",
 		],
+		[
+			"key"   => "meus_dados",
+			"label" => "Meus dados",
+			"href"  => "/meus_dados.php",
+		],
 	];
 
 	if ($isAdmin) {
