@@ -123,10 +123,7 @@ try {
     }
 
     $birthDateSchemaReady = usuario_ensure_birth_date($pdo);
-    $selectFields = 'id, nome, email, telefone, cidade, estado';
-    if ($birthDateSchemaReady) {
-        $selectFields .= ', data_nascimento';
-    }
+    $selectFields = 'id, nome, email, telefone, cidade, estado, ' . usuario_birth_date_select_sql($pdo);
 
     $stmt = $pdo->prepare('
         SELECT ' . $selectFields . '
