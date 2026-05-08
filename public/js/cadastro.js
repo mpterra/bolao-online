@@ -89,141 +89,157 @@ document.addEventListener("DOMContentLoaded", () => {
       .toLocaleLowerCase("pt-BR");
   }
 
-  // =========================================================
-  // CUSTOM SELECT (UF)
-  // =========================================================
-  (function initCustomUfSelect() {
-    const form = document.querySelector(".login-form");
-    if (!form) return;
+  function ensureCustomSelectStyles() {
+    if (document.getElementById("bolao-custom-select-css")) return;
 
-    const sel = form.querySelector('select[name="estado"]');
-    if (!sel) return;
+    const style = document.createElement("style");
+    style.id = "bolao-custom-select-css";
+    style.textContent = `
+      .bolao-select-wrap{ position:relative; width:100%; }
+      .bolao-select-native{
+        position:absolute !important;
+        inset:0 !important;
+        width:100% !important;
+        height:100% !important;
+        opacity:0 !important;
+        pointer-events:none !important;
+      }
+      .bolao-select-display{
+        width:100%;
+        padding: 12px 44px 12px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.18);
+        background: rgba(255,255,255,.10);
+        color: var(--text);
+        font-size: 14px;
+        outline:none;
+        transition: 220ms ease;
+        cursor:pointer;
+        user-select:none;
+        display:flex;
+        align-items:center;
+        -webkit-tap-highlight-color: transparent;
+        min-height: unset;
+        line-height: normal;
+      }
+      .bolao-select-display:focus{
+        border-color: rgba(16,208,138,.55);
+        box-shadow: 0 0 0 4px rgba(16,208,138,.14), 0 10px 22px rgba(0,0,0,.25);
+        background: rgba(255,255,255,.12);
+      }
+      .bolao-select-display.is-disabled{
+        opacity:.72;
+        cursor:not-allowed;
+      }
+      .bolao-select-display.is-disabled:focus{
+        border-color: rgba(255,255,255,.18);
+        box-shadow: none;
+        background: rgba(255,255,255,.10);
+      }
+      .bolao-select-caret{
+        position:absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        pointer-events:none;
+        opacity:.9;
+      }
+      .bolao-select-portal{
+        position: fixed;
+        z-index: 999999;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,.16);
+        background: rgba(0,0,0,.68);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 22px 60px rgba(0,0,0,.55);
+        overflow: hidden;
+        display:none;
+      }
+      .bolao-select-portal.is-open{ display:block; }
+      .bolao-select-search{
+        padding: 10px;
+        border-bottom: 1px solid rgba(255,255,255,.10);
+        background: rgba(255,255,255,.06);
+      }
+      .bolao-select-search input{
+        width:100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(0,0,0,.20);
+        color: rgba(255,255,255,.92);
+        font-weight: 900;
+        font-size: 13px;
+        outline:none;
+        transition: 180ms ease;
+      }
+      .bolao-select-search input:focus{
+        border-color: rgba(16,208,138,.55);
+        box-shadow: 0 0 0 4px rgba(16,208,138,.12);
+      }
+      .bolao-select-search input::placeholder{
+        color: rgba(255,255,255,.55);
+        font-weight: 800;
+      }
+      .bolao-select-list{
+        max-height: 260px;
+        overflow: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+      .bolao-select-list::-webkit-scrollbar{ width: 10px; }
+      .bolao-select-list::-webkit-scrollbar-track{ background: rgba(255,255,255,.05); }
+      .bolao-select-list::-webkit-scrollbar-thumb{
+        background: rgba(255,255,255,.18);
+        border-radius: 999px;
+        border: 2px solid rgba(0,0,0,.35);
+      }
+      .bolao-select-list::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,.26); }
+      .bolao-select-opt{
+        padding: 10px 12px;
+        font-weight: 900;
+        font-size: 13px;
+        color: rgba(255,255,255,.92);
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        cursor:pointer;
+        border-bottom: 1px solid rgba(255,255,255,.08);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .bolao-select-opt:last-child{ border-bottom:0; }
+      .bolao-select-opt:hover{ background: rgba(255,255,255,.08); }
+      .bolao-select-opt.is-active{
+        color: #062027;
+        background: linear-gradient(90deg, var(--green), var(--gold));
+      }
+      .bolao-select-opt.is-hidden{ display:none; }
+      .bolao-select-empty{
+        padding: 12px;
+        color: rgba(255,255,255,.62);
+        font-weight: 800;
+        font-size: 13px;
+      }
+    `;
 
-    if (sel.__BOLAO_CUSTOM_SELECT__) return;
-    sel.__BOLAO_CUSTOM_SELECT__ = true;
+    document.head.appendChild(style);
+  }
 
-    if (!document.getElementById("bolao-custom-select-css")) {
-      const style = document.createElement("style");
-      style.id = "bolao-custom-select-css";
-      style.textContent = `
-        .bolao-select-wrap{ position:relative; width:100%; }
-        .bolao-select-native{
-          position:absolute !important;
-          inset:0 !important;
-          width:100% !important;
-          height:100% !important;
-          opacity:0 !important;
-          pointer-events:none !important;
-        }
-        .bolao-select-display{
-          width:100%;
-          padding: 12px 44px 12px 14px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,.18);
-          background: rgba(255,255,255,.10);
-          color: var(--text);
-          font-size: 14px;
-          outline:none;
-          transition: 220ms ease;
-          cursor:pointer;
-          user-select:none;
-          display:flex;
-          align-items:center;
-          -webkit-tap-highlight-color: transparent;
-          min-height: unset;
-          line-height: normal;
-        }
-        .bolao-select-display:focus{
-          border-color: rgba(16,208,138,.55);
-          box-shadow: 0 0 0 4px rgba(16,208,138,.14), 0 10px 22px rgba(0,0,0,.25);
-          background: rgba(255,255,255,.12);
-        }
-        .bolao-select-caret{
-          position:absolute;
-          right: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 18px;
-          height: 18px;
-          pointer-events:none;
-          opacity:.9;
-        }
-        .bolao-select-portal{
-          position: fixed;
-          z-index: 999999;
-          border-radius: 14px;
-          border: 1px solid rgba(255,255,255,.16);
-          background: rgba(0,0,0,.68);
-          backdrop-filter: blur(12px);
-          box-shadow: 0 22px 60px rgba(0,0,0,.55);
-          overflow: hidden;
-          display:none;
-        }
-        .bolao-select-portal.is-open{ display:block; }
-        .bolao-select-search{
-          padding: 10px;
-          border-bottom: 1px solid rgba(255,255,255,.10);
-          background: rgba(255,255,255,.06);
-        }
-        .bolao-select-search input{
-          width:100%;
-          padding: 10px 12px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,.14);
-          background: rgba(0,0,0,.20);
-          color: rgba(255,255,255,.92);
-          font-weight: 900;
-          font-size: 13px;
-          outline:none;
-          transition: 180ms ease;
-        }
-        .bolao-select-search input:focus{
-          border-color: rgba(16,208,138,.55);
-          box-shadow: 0 0 0 4px rgba(16,208,138,.12);
-        }
-        .bolao-select-search input::placeholder{
-          color: rgba(255,255,255,.55);
-          font-weight: 800;
-        }
-        .bolao-select-list{
-          max-height: 260px;
-          overflow: auto;
-          overscroll-behavior: contain;
-          -webkit-overflow-scrolling: touch;
-        }
-        .bolao-select-list::-webkit-scrollbar{ width: 10px; }
-        .bolao-select-list::-webkit-scrollbar-track{ background: rgba(255,255,255,.05); }
-        .bolao-select-list::-webkit-scrollbar-thumb{
-          background: rgba(255,255,255,.18);
-          border-radius: 999px;
-          border: 2px solid rgba(0,0,0,.35);
-        }
-        .bolao-select-list::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,.26); }
-        .bolao-select-opt{
-          padding: 10px 12px;
-          font-weight: 900;
-          font-size: 13px;
-          color: rgba(255,255,255,.92);
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          cursor:pointer;
-          border-bottom: 1px solid rgba(255,255,255,.08);
-          -webkit-tap-highlight-color: transparent;
-        }
-        .bolao-select-opt:last-child{ border-bottom:0; }
-        .bolao-select-opt:hover{ background: rgba(255,255,255,.08); }
-        .bolao-select-opt.is-active{
-          color: #062027;
-          background: linear-gradient(90deg, var(--green), var(--gold));
-        }
-        .bolao-select-opt.is-hidden{ display:none; }
-      `;
-      document.head.appendChild(style);
-    }
+  function attachCustomSelect(sel, config = {}) {
+    if (!sel) return null;
+    if (sel.__BOLAO_CUSTOM_SELECT__) return sel.__BOLAO_CUSTOM_SELECT__;
+
+    ensureCustomSelectStyles();
 
     const group = sel.closest(".input-group");
-    if (!group) return;
+    if (!group) return null;
+
+    const state = {
+      searchPlaceholder: String(config.searchPlaceholder || "Filtrar..."),
+      emptyText: String(config.emptyText || "Nenhuma opção disponível.")
+    };
 
     const wrap = document.createElement("div");
     wrap.className = "bolao-select-wrap";
@@ -250,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.createElement("input");
     searchInput.type = "text";
     searchInput.autocomplete = "off";
-    searchInput.placeholder = "Filtrar UF...";
+    searchInput.placeholder = state.searchPlaceholder;
     searchWrap.appendChild(searchInput);
 
     const list = document.createElement("div");
@@ -261,62 +277,78 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(portal);
 
     sel.classList.add("bolao-select-native");
-
     sel.parentNode.insertBefore(wrap, sel);
     wrap.appendChild(display);
     wrap.appendChild(caret);
     wrap.appendChild(sel);
 
-    const options = Array.from(sel.options).filter(o => (o.value || "").trim() !== "");
+    function getOptions() {
+      return Array.from(sel.options).filter((option) => String(option.value || "").trim() !== "");
+    }
 
     function currentValue() {
-      return (sel.value || "").trim();
+      return String(sel.value || "").trim();
+    }
+
+    function syncGroupState() {
+      if (currentValue()) group.classList.add("has-value");
+      else group.classList.remove("has-value");
     }
 
     function setDisplayText() {
-      const val = currentValue();
-      const opt = options.find(o => o.value === val);
+      const value = currentValue();
+      const active = getOptions().find((option) => String(option.value || "").trim() === value);
 
-      display.textContent = "";
-      display.textContent = opt ? opt.value : "\u00A0";
+      display.textContent = active
+        ? String(active.textContent || active.value || "").trim()
+        : "\u00A0";
 
-      wrap.appendChild(caret);
-
-      // mantém floating label coerente
-      if (window.BOLAO && typeof window.BOLAO.initFloatingLabels === "function") {
-        // nada; labels já são por listeners. aqui só força classe se existir
-      }
-      const inputGroup = sel.closest(".input-group");
-      if (inputGroup) {
-        if (val) inputGroup.classList.add("has-value");
-        else inputGroup.classList.remove("has-value");
-      }
+      display.classList.toggle("is-disabled", !!sel.disabled);
+      display.setAttribute("aria-disabled", sel.disabled ? "true" : "false");
+      display.tabIndex = sel.disabled ? -1 : 0;
+      syncGroupState();
     }
 
-    function buildList(activeVal) {
+    function buildList(activeValue) {
       list.innerHTML = "";
 
-      options.forEach((o) => {
+      const options = getOptions();
+      if (options.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "bolao-select-empty";
+        empty.textContent = state.emptyText;
+        list.appendChild(empty);
+        return;
+      }
+
+      options.forEach((option) => {
+        const label = String(option.textContent || option.value || "").trim();
         const item = document.createElement("div");
         item.className = "bolao-select-opt";
-        item.dataset.value = o.value;
-        item.textContent = o.value;
+        item.dataset.value = String(option.value || "");
+        item.dataset.lookup = normalizeLookupText(label);
+        item.textContent = label;
 
-        if (o.value === activeVal) item.classList.add("is-active");
+        if (String(option.value || "") === activeValue) item.classList.add("is-active");
 
         item.addEventListener("click", (ev) => {
           ev.preventDefault();
           ev.stopPropagation();
 
-          sel.value = o.value;
-          try { sel.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
+          sel.value = String(option.value || "");
+          try { sel.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) { setDisplayText(); }
 
           closeMenu(true);
-          setDisplayText();
         });
 
         list.appendChild(item);
       });
+
+      const noResults = document.createElement("div");
+      noResults.className = "bolao-select-empty bolao-select-no-results";
+      noResults.textContent = "Nenhuma opção encontrada.";
+      noResults.style.display = "none";
+      list.appendChild(noResults);
     }
 
     let open = false;
@@ -361,16 +393,32 @@ document.addEventListener("DOMContentLoaded", () => {
       portal.style.transform = "translateZ(0)";
     }
 
+    function applyFilter() {
+      const query = normalizeLookupText(searchInput.value);
+      const items = Array.from(list.querySelectorAll(".bolao-select-opt"));
+      const noResults = list.querySelector(".bolao-select-no-results");
+
+      let visibleCount = 0;
+      items.forEach((item) => {
+        const matches = query === "" || String(item.dataset.lookup || "").includes(query);
+        item.classList.toggle("is-hidden", !matches);
+        if (matches) visibleCount += 1;
+      });
+
+      if (noResults) {
+        noResults.style.display = (items.length > 0 && visibleCount === 0) ? "block" : "none";
+      }
+    }
+
     function openMenu() {
-      if (open) return;
+      if (open || sel.disabled) return;
       open = true;
 
       portal.style.display = "";
       display.setAttribute("aria-expanded", "true");
-      buildList(currentValue());
-
       searchInput.value = "";
-      Array.from(list.children).forEach(el => el.classList.remove("is-hidden"));
+      buildList(currentValue());
+      applyFilter();
 
       portal.classList.add("is-open");
       positionPortal();
@@ -404,18 +452,6 @@ document.addEventListener("DOMContentLoaded", () => {
       else openMenu();
     }
 
-    function applyFilter() {
-      const q = (searchInput.value || "").trim().toUpperCase();
-      const items = Array.from(list.querySelectorAll(".bolao-select-opt"));
-      if (!q) {
-        items.forEach(el => el.classList.remove("is-hidden"));
-        return;
-      }
-      items.forEach(el => {
-        const v = (el.dataset.value || "").toUpperCase();
-        el.classList.toggle("is-hidden", !v.includes(q));
-      });
-    }
     searchInput.addEventListener("input", applyFilter);
 
     searchInput.addEventListener("keydown", (ev) => {
@@ -438,23 +474,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     display.addEventListener("keydown", (ev) => {
-      const k = ev.key;
-      if (k === "Enter" || k === " ") {
+      const key = ev.key;
+      if (key === "Enter" || key === " ") {
         ev.preventDefault();
         toggleMenu();
         return;
       }
-      if (k === "ArrowDown") {
+      if (key === "ArrowDown") {
         ev.preventDefault();
         if (!open) openMenu();
         else searchInput.focus();
         return;
       }
-      if (k === "Escape") {
-        if (open) {
-          ev.preventDefault();
-          closeMenu(true);
-        }
+      if (key === "Escape" && open) {
+        ev.preventDefault();
+        closeMenu(true);
+        return;
+      }
+      if (key.length === 1 && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+        ev.preventDefault();
+        if (!open) openMenu();
+        searchInput.value = key;
+        applyFilter();
+        try {
+          searchInput.focus();
+          searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+        } catch (e) {}
       }
     });
 
@@ -481,7 +526,78 @@ document.addEventListener("DOMContentLoaded", () => {
       if (open) closeMenu(true);
     });
 
+    const api = {
+      setOptions(nextOptions) {
+        const selectedValue = currentValue();
+        let keepSelected = false;
+
+        sel.innerHTML = "";
+
+        const blank = document.createElement("option");
+        blank.value = "";
+        blank.textContent = "";
+        blank.hidden = true;
+        sel.appendChild(blank);
+
+        (Array.isArray(nextOptions) ? nextOptions : []).forEach((item) => {
+          const option = document.createElement("option");
+          option.value = String(item && item.value != null ? item.value : "");
+          option.textContent = String(item && item.label != null ? item.label : option.value);
+          if (option.value === selectedValue) keepSelected = true;
+          sel.appendChild(option);
+        });
+
+        sel.value = keepSelected ? selectedValue : "";
+        setDisplayText();
+        if (open) {
+          buildList(currentValue());
+          applyFilter();
+          positionPortal();
+        }
+      },
+      setDisabled(disabled) {
+        sel.disabled = !!disabled;
+        if (sel.disabled) closeMenu(false);
+        setDisplayText();
+      },
+      refresh(nextConfig = {}) {
+        if (typeof nextConfig.searchPlaceholder === "string") {
+          state.searchPlaceholder = nextConfig.searchPlaceholder;
+          searchInput.placeholder = state.searchPlaceholder;
+        }
+        if (typeof nextConfig.emptyText === "string") {
+          state.emptyText = nextConfig.emptyText;
+        }
+        setDisplayText();
+        if (open) {
+          buildList(currentValue());
+          applyFilter();
+          positionPortal();
+        }
+      },
+      focus() {
+        try { display.focus(); } catch (e) {}
+      }
+    };
+
+    sel.__BOLAO_CUSTOM_SELECT__ = api;
     setDisplayText();
+    return api;
+  }
+
+  // =========================================================
+  // CUSTOM SELECT (UF)
+  // =========================================================
+  (function initCustomUfSelect() {
+    const form = document.querySelector(".login-form");
+    if (!form) return;
+
+    const sel = form.querySelector('select[name="estado"]');
+    if (!sel) return;
+    attachCustomSelect(sel, {
+      searchPlaceholder: "Filtrar UF...",
+      emptyText: "Nenhum estado disponível."
+    });
   })();
 
   // =========================================================
@@ -492,90 +608,39 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!form) return;
 
     const ufSelect = form.querySelector('select[name="estado"]');
-    const cityInput = form.querySelector('input[name="cidade"]');
-    const cityList = form.querySelector("#listaCidades");
-    if (!ufSelect || !cityInput || !cityList) return;
+    const citySelect = form.querySelector('select[name="cidade"]');
+    const cityHint = form.querySelector("#cityHint");
+    if (!ufSelect || !citySelect) return;
+
+    const cityPicker = attachCustomSelect(citySelect, {
+      searchPlaceholder: "Filtrar cidade...",
+      emptyText: "Nenhuma cidade disponível."
+    });
+    if (!cityPicker) return;
 
     const IBGE_BASE_URL = "https://servicodados.ibge.gov.br/api/v1/localidades/estados";
     const cityCache = new Map();
-    let availableCities = [];
-    let strictCityValidation = false;
     let activeRequest = 0;
 
-    function setCityPlaceholder(text) {
-      cityInput.placeholder = text || "";
-    }
-
-    function clearCityOptions() {
-      cityList.innerHTML = "";
-      availableCities = [];
+    function setCityHint(text, isError = false) {
+      if (!cityHint) return;
+      cityHint.textContent = String(text || "");
+      cityHint.classList.toggle("is-error", !!isError);
     }
 
     function setCityOptions(cities) {
-      const fragment = document.createDocumentFragment();
-      clearCityOptions();
-
-      availableCities = Array.isArray(cities) ? cities.slice() : [];
-
-      availableCities.forEach((cityName) => {
-        const option = document.createElement("option");
-        option.value = cityName;
-        fragment.appendChild(option);
-      });
-
-      cityList.appendChild(fragment);
+      cityPicker.setOptions(
+        (Array.isArray(cities) ? cities : []).map((cityName) => ({ value: cityName, label: cityName }))
+      );
     }
 
-    function setCityEnabled(enabled) {
-      cityInput.disabled = !enabled;
-      if (!enabled) {
-        cityInput.value = "";
-        cityInput.setCustomValidity("");
-      }
-
-      const group = cityInput.closest(".input-group");
-      if (group) {
-        if (enabled && String(cityInput.value || "").trim() !== "") group.classList.add("has-value");
-        else if (String(cityInput.value || "").trim() === "") group.classList.remove("has-value");
-      }
-    }
-
-    function resetCityField(message) {
+    function resetCityField(message, isError = false) {
       activeRequest += 1;
-      strictCityValidation = false;
-      clearCityOptions();
-      setCityEnabled(false);
-      setCityPlaceholder(message || "Selecione o estado primeiro");
-    }
-
-    function validateCity(forceReport) {
-      const cityValue = String(cityInput.value || "").trim();
-
-      if (cityInput.disabled) {
-        cityInput.setCustomValidity("Selecione o estado antes da cidade.");
-        if (forceReport) cityInput.reportValidity();
-        return false;
-      }
-
-      if (cityValue === "") {
-        cityInput.setCustomValidity("Preencha a cidade.");
-        if (forceReport) cityInput.reportValidity();
-        return false;
-      }
-
-      if (strictCityValidation) {
-        const normalizedValue = normalizeLookupText(cityValue);
-        const isKnownCity = availableCities.some((cityName) => normalizeLookupText(cityName) === normalizedValue);
-
-        if (!isKnownCity) {
-          cityInput.setCustomValidity("Escolha uma cidade da lista do estado selecionado.");
-          if (forceReport) cityInput.reportValidity();
-          return false;
-        }
-      }
-
-      cityInput.setCustomValidity("");
-      return true;
+      citySelect.value = "";
+      citySelect.setCustomValidity("");
+      setCityOptions([]);
+      cityPicker.setDisabled(true);
+      setCityHint(message || "Selecione o estado primeiro.", isError);
     }
 
     async function loadCitiesForState(uf) {
@@ -583,26 +648,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const requestId = activeRequest + 1;
       activeRequest = requestId;
 
-      cityInput.value = "";
-      cityInput.setCustomValidity("");
-
       if (cleanUf === "") {
-        resetCityField("Selecione o estado primeiro");
+        resetCityField("Selecione o estado primeiro.");
         return;
       }
 
       if (cityCache.has(cleanUf)) {
         setCityOptions(cityCache.get(cleanUf));
-        strictCityValidation = true;
-        setCityEnabled(true);
-        setCityPlaceholder("Digite para filtrar a cidade");
+        cityPicker.setDisabled(false);
+        citySelect.setCustomValidity("");
+        setCityHint("Clique e digite para filtrar a cidade.");
         return;
       }
 
-      clearCityOptions();
-      strictCityValidation = false;
-      setCityEnabled(false);
-      setCityPlaceholder("Carregando cidades...");
+      citySelect.value = "";
+      citySelect.setCustomValidity("");
+      setCityOptions([]);
+      cityPicker.setDisabled(true);
+      setCityHint("Carregando cidades...");
 
       try {
         const response = await fetch(`${IBGE_BASE_URL}/${encodeURIComponent(cleanUf)}/municipios?orderBy=nome`, {
@@ -627,20 +690,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cityCache.set(cleanUf, cities);
         setCityOptions(cities);
-        strictCityValidation = true;
-        setCityEnabled(true);
-        setCityPlaceholder(cities.length > 0 ? "Digite para filtrar a cidade" : "Nenhuma cidade encontrada");
+        cityPicker.setDisabled(cities.length === 0);
 
         if (cities.length > 0) {
-          try { cityInput.focus({ preventScroll: true }); } catch (e) {}
+          setCityHint("Clique e digite para filtrar a cidade.");
+          citySelect.setCustomValidity("");
+          cityPicker.focus();
+        } else {
+          citySelect.setCustomValidity("Nenhuma cidade disponível para a UF selecionada.");
+          setCityHint("Nenhuma cidade disponível para a UF selecionada.", true);
         }
       } catch (error) {
         if (requestId !== activeRequest) return;
 
-        clearCityOptions();
-        strictCityValidation = false;
-        setCityEnabled(true);
-        setCityPlaceholder("Digite a cidade manualmente");
+        setCityOptions([]);
+        cityPicker.setDisabled(true);
+        citySelect.setCustomValidity("Não foi possível carregar as cidades agora.");
+        setCityHint("Não foi possível carregar as cidades agora. Tente novamente.", true);
       }
     }
 
@@ -648,21 +714,32 @@ document.addEventListener("DOMContentLoaded", () => {
       loadCitiesForState(ufSelect.value);
     });
 
-    cityInput.addEventListener("input", () => {
-      validateCity(false);
-    });
+    citySelect.addEventListener("change", () => {
+      if (citySelect.value) {
+        citySelect.setCustomValidity("");
+        setCityHint("Clique e digite para filtrar a cidade.");
+        return;
+      }
 
-    cityInput.addEventListener("blur", () => {
-      validateCity(false);
+      if (!citySelect.disabled) {
+        citySelect.setCustomValidity("Selecione a cidade.");
+      }
     });
 
     form.addEventListener("submit", (ev) => {
-      if (!validateCity(true)) {
+      if (citySelect.disabled || !citySelect.value) {
+        citySelect.setCustomValidity(
+          citySelect.disabled
+            ? (citySelect.validationMessage || "Selecione uma UF com cidades disponíveis.")
+            : "Selecione a cidade."
+        );
+        cityPicker.focus();
+        citySelect.reportValidity();
         ev.preventDefault();
       }
     });
 
-    resetCityField("Selecione o estado primeiro");
+    resetCityField("Selecione o estado primeiro.");
   })();
 
   // =========================================================

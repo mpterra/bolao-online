@@ -118,9 +118,11 @@ if ($sucesso) {
                 </div>
 
                 <div class="input-group">
-                    <input type="text" id="cidade" name="cidade" required autocomplete="off" list="listaCidades" disabled>
+                    <select id="cidade" name="cidade" required disabled>
+                        <option value="" selected hidden></option>
+                    </select>
                     <label>Cidade</label>
-                    <datalist id="listaCidades"></datalist>
+                    <small class="input-hint" id="cityHint">Selecione o estado primeiro.</small>
                 </div>
 
                 <div class="input-group">

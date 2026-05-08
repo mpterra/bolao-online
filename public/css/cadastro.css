@@ -109,6 +109,19 @@
   border-radius: 8px;
 }
 
+.input-hint{
+  display: block;
+  margin-top: 6px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255,255,255,.60);
+}
+
+.input-hint.is-error{
+  color: rgba(255,140,140,.95);
+}
+
 /* FIX: manter label “flutuante” após preenchido (sem depender de JS) */
 .input-group.has-value label,
 .input-group input:focus + label,
