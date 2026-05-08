@@ -41,36 +41,98 @@ if ($isLoggedIn) {
 
 		<main class="rules-shell">
 			<section class="rules-hero card-glass">
-				<div class="rules-title">
-					<h1>
-						<span>BOLÃO DA COPA</span>
-						<span>DO MUNDO 2026</span>
-					</h1>
-				</div>
+				<div class="rules-hero-grid">
+					<div class="rules-hero-main">
+						<p class="rules-eyebrow">Regulamento oficial</p>
+						<div class="rules-title">
+							<h1>
+								<span>BOLÃO DA COPA</span>
+								<span>DO MUNDO 2026</span>
+							</h1>
+						</div>
 
-				<div class="rules-copy">
-					<p>Chegou a hora!!</p>
-					<p>O segundo maior espetáculo do universo observável vai começar!!</p>
-					<p>(Sim, porque nós somos humildes e sabemos que o primeiro lugar tem dono: a Copa do Mundo de futebol!)</p>
-					<p>Preparem seus corações, tragam as crianças, chamem a família, os amigos, aquele vizinho meio mala para fazer número, que vai começar o Bolão da Copa do Mundo de 2026!</p>
-					<p>O que lá na Copa do Mundo de 2014 começou como um humilde sonho de divertir amigos que adoravam copas do mundo, hoje é uma máquina de diversão e prêmios!</p>
-					<p>No bolão da Copa de 2022 nós tivemos 102 participantes e 5.100 reais no potinho dos prêmios. A meta para esse bolão é bater os 200 apostadores!</p>
-					<p>Então vamos nessa!</p>
-					<p>De cara temos novidades!</p>
-					<p>A primeira é que a partir desse bolão vai ser tudo pela internet!</p>
-					<p>Adeus, planilha!</p>
-					<p>Acessem <a class="rules-link" href="https://www.bolaodothiago.com.br">www.bolaodothiago.com.br</a>, conheçam o bolão, façam seus cadastros e sentem o dedo nos palpites!</p>
-					<p>Como a compra da hospedagem e do domínio tiveram um custo de 460 reais, essa vai ser a primeira vez que vamos usar uma parte do dinheiro das apostas para financiar a estrutura do bolão. Vai ser só esse valor de 460 reais, mais nada. Todo o resto do dinheiro das apostas vai em prêmios.</p>
-					<p>Mas o site do bolão não é a única novidade!</p>
-					<p>Como agora temos uma solução tecnológica de mais alto nível, acessível a qualquer hora, em qualquer lugar, de computadores ou dispositivos móveis, vai ser possível alterar palpites durante a copa toda!</p>
-					<p>E não para por aí!</p>
-					<p>No bolão da Copa de 2022, o potinho com os 5.100 reais foi distribuído todo entre os 10 primeiros colocados. E vamos continuar premiando os 10 primeiros do bolão. Maaas... Agora também teremos 10 prêmios extras ao final do bolão para os apostadores que forem os melhores em 10 critérios de desempenho diferentes!</p>
-					<p>Os valores da premiação vãos ser divulgados no dia a abertura da copa, porque dependem de quantos participantes vamos ter. Quanto mais gente, mais dinheiro no potinho!</p>
-					<p>Novidades apresentadas, vamos às regras!</p>
+						<div class="rules-badges" aria-label="Destaques do regulamento">
+							<span class="rules-badge">Aposta de 80 reais</span>
+							<span class="rules-badge">Top 10 premiado</span>
+							<span class="rules-badge">10 prêmios extras</span>
+							<span class="rules-badge">Liga do Mata-Mata</span>
+						</div>
+
+						<div class="rules-copy rules-copy--intro">
+							<p class="rules-burst">Chegou a hora!!</p>
+							<p class="rules-standfirst">O segundo maior espetáculo do universo observável vai começar!!</p>
+							<p class="rules-aside">(Sim, porque nós somos humildes e sabemos que o primeiro lugar tem dono: a Copa do Mundo de futebol!)</p>
+							<p>Preparem seus corações, tragam as crianças, chamem a família, os amigos, aquele vizinho meio mala para fazer número, que vai começar o Bolão da Copa do Mundo de 2026!</p>
+							<p>O que lá na Copa do Mundo de 2014 começou como um humilde sonho de divertir amigos que adoravam copas do mundo, hoje é uma máquina de diversão e prêmios!</p>
+							<p>No bolão da Copa de 2022 nós tivemos 102 participantes e 5.100 reais no potinho dos prêmios. A meta para esse bolão é bater os 200 apostadores!</p>
+							<p>Então vamos nessa!</p>
+							<p>De cara temos novidades!</p>
+							<p>A primeira é que a partir desse bolão vai ser tudo pela internet!</p>
+							<p>Adeus, planilha!</p>
+							<p>Acessem <a class="rules-link" href="https://www.bolaodothiago.com.br">www.bolaodothiago.com.br</a>, conheçam o bolão, façam seus cadastros e sentem o dedo nos palpites!</p>
+							<p>Como a compra da hospedagem e do domínio tiveram um custo de 460 reais, essa vai ser a primeira vez que vamos usar uma parte do dinheiro das apostas para financiar a estrutura do bolão. Vai ser só esse valor de 460 reais, mais nada. Todo o resto do dinheiro das apostas vai em prêmios.</p>
+							<p>Mas o site do bolão não é a única novidade!</p>
+							<p>Como agora temos uma solução tecnológica de mais alto nível, acessível a qualquer hora, em qualquer lugar, de computadores ou dispositivos móveis, vai ser possível alterar palpites durante a copa toda!</p>
+							<p>E não para por aí!</p>
+							<p>No bolão da Copa de 2022, o potinho com os 5.100 reais foi distribuído todo entre os 10 primeiros colocados. E vamos continuar premiando os 10 primeiros do bolão. Maaas... Agora também teremos 10 prêmios extras ao final do bolão para os apostadores que forem os melhores em 10 critérios de desempenho diferentes!</p>
+							<p>Os valores da premiação vãos ser divulgados no dia a abertura da copa, porque dependem de quantos participantes vamos ter. Quanto mais gente, mais dinheiro no potinho!</p>
+							<p>Novidades apresentadas, vamos às regras!</p>
+						</div>
+					</div>
+
+					<aside class="rules-hero-panel" aria-label="Resumo rápido do regulamento">
+						<div class="rules-stat-card">
+							<span>Inscrição</span>
+							<strong>80 reais</strong>
+						</div>
+						<div class="rules-stat-card">
+							<span>Premiação principal</span>
+							<strong>G10</strong>
+						</div>
+						<div class="rules-stat-card">
+							<span>Extras</span>
+							<strong>10 prêmios</strong>
+						</div>
+						<div class="rules-stat-card">
+							<span>Novidade</span>
+							<strong>Liga do Mata-Mata</strong>
+						</div>
+
+						<nav class="rules-toc" aria-label="Sumário do regulamento">
+							<a href="#participacao">A participação</a>
+							<a href="#palpites">Os palpites</a>
+							<a href="#pontuacao">A pontuação</a>
+							<a href="#premiacao">A premiação</a>
+							<a href="#extras">Os prêmios extras</a>
+							<a href="#liga">A Liga do Mata-Mata</a>
+							<a href="#desempate">Critérios de desempate</a>
+							<a href="#simulacao">Simulação de premiação</a>
+							<a href="#final">Considerações finais</a>
+						</nav>
+					</aside>
 				</div>
 			</section>
 
-			<section class="rules-section card-glass">
+			<div class="rules-body">
+				<aside class="rules-sidebar">
+					<div class="rules-sidebar-card card-glass">
+						<p class="rules-sidebar-label">Navegação</p>
+						<nav class="rules-sidebar-nav" aria-label="Ir para uma seção">
+							<a href="#participacao">A participação</a>
+							<a href="#palpites">Os palpites</a>
+							<a href="#pontuacao">A pontuação</a>
+							<a href="#premiacao">A premiação</a>
+							<a href="#extras">Os prêmios extras</a>
+							<a href="#liga">A Liga do Mata-Mata</a>
+							<a href="#desempate">Critérios de desempate</a>
+							<a href="#simulacao">Simulação de premiação</a>
+							<a href="#final">Considerações finais</a>
+						</nav>
+					</div>
+				</aside>
+
+				<div class="rules-content">
+			<section id="participacao" class="rules-section card-glass">
 				<h2>A participação</h2>
 				<div class="rules-copy">
 					<p>A aposta vai custar 80 reais.</p>
@@ -82,7 +144,7 @@ if ($isLoggedIn) {
 				</div>
 			</section>
 
-			<section class="rules-section card-glass">
+			<section id="palpites" class="rules-section card-glass">
 				<h2>Os palpites</h2>
 				<div class="rules-copy">
 					<p>Feito o cadastro, você vai colocar os palpites dos placares de todos os jogos da fase de grupos.</p>
@@ -96,7 +158,7 @@ if ($isLoggedIn) {
 				</div>
 			</section>
 
-			<section class="rules-section card-glass">
+			<section id="pontuacao" class="rules-section card-glass">
 				<h2>A pontuação</h2>
 				<div class="rules-copy">
 					<p>Você vai fazer 1 ponto por cada acerto no bolão.</p>
@@ -117,7 +179,7 @@ if ($isLoggedIn) {
 				</ul>
 			</section>
 
-			<section class="rules-section card-glass">
+			<section id="premiacao" class="rules-section card-glass">
 				<h2>A premiação</h2>
 				<div class="rules-copy">
 					<p>De todo dinheiro arrecadado para o potinho dos prêmios, 460 reais vão ser usados para parar a hospedagem e o domínio do site.</p>
@@ -160,7 +222,7 @@ if ($isLoggedIn) {
 				</div>
 			</section>
 
-			<section class="rules-section card-glass">
+			<section id="extras" class="rules-section card-glass">
 				<h2>Os prêmios extras</h2>
 				<div class="rules-copy">
 					<p>Os prêmios extras do bolão são 10!</p>
@@ -192,7 +254,7 @@ if ($isLoggedIn) {
 				</div>
 			</section>
 
-			<section class="rules-section card-glass">
+			<section id="liga" class="rules-section card-glass">
 				<h2>A Liga do Mata-Mata</h2>
 				<div class="rules-copy">
 					<p>E agora mais uma novidade do bolão: a Liga do Mata-Mata!</p>
@@ -214,7 +276,7 @@ if ($isLoggedIn) {
 				</div>
 			</section>
 
-			<section class="rules-section card-glass">
+			<section id="desempate" class="rules-section card-glass">
 				<h2>Critérios de desempate</h2>
 				<div class="rules-copy">
 					<p>Os critérios de desempate na classificação do bolão são os seguintes, por ordem de importância:</p>
@@ -243,7 +305,7 @@ if ($isLoggedIn) {
 				</div>
 			</section>
 
-			<section class="rules-section card-glass">
+			<section id="simulacao" class="rules-section card-glass">
 				<h2>Simulação de premiação</h2>
 				<div class="rules-copy">
 					<p>Como a essa altura tá todo mundo curioso para saber quanto o potinho do bolão vai ter, vamos simular!</p>
@@ -286,13 +348,15 @@ if ($isLoggedIn) {
 				</div>
 			</section>
 
-			<section class="rules-section rules-section--final card-glass">
+			<section id="final" class="rules-section rules-section--final card-glass">
 				<h2>Considerações finais</h2>
 				<div class="rules-copy rules-copy--final">
 					<p>As considerações finais são:</p>
 					<strong>VAMOOOOOOO!!!</strong>
 				</div>
 			</section>
+				</div>
+			</div>
 		</main>
 	</div>
 </body>
