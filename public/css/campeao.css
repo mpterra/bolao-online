@@ -400,6 +400,11 @@ body::before{
   box-shadow: 0 10px 22px rgba(0,0,0,.16);
 }
 
+.champ-search input:disabled{
+  opacity: .62;
+  cursor: not-allowed;
+}
+
 .champ-search input::placeholder{
   color: rgba(255,255,255,.62);
   font-weight: 900;
@@ -465,6 +470,22 @@ body::before{
     rgba(255,255,255,.09);
   transform: translateY(-1px);
   box-shadow: 0 16px 34px rgba(0,0,0,.22);
+}
+
+.team-tile:disabled{
+  opacity: .68;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 14px 28px rgba(0,0,0,.12);
+}
+
+.team-tile:disabled:hover,
+.team-tile:disabled:active{
+  transform: none;
+  background:
+    radial-gradient(220px 70px at 20% 20%, rgba(70,220,255,.10), transparent 60%),
+    rgba(255,255,255,.06);
+  box-shadow: 0 14px 28px rgba(0,0,0,.12);
 }
 
 .team-tile:active{ transform: translateY(0) scale(.99); }

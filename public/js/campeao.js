@@ -16,6 +16,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const endpointSave = cfg?.endpoints?.save || "/campeao.php?action=save";
   const endpointNotify = cfg?.endpoints?.notify_changes || "/campeao.php?action=notify_changes";
+  const canEdit = cfg?.editing?.enabled !== false;
+  const deadlineLabel = String(cfg?.editing?.deadline_label || "").trim();
+  const lockedMessage = String(
+    cfg?.editing?.locked_message ||
+    (deadlineLabel
+      ? `O prazo para escolher ou alterar o campeão encerrou em ${deadlineLabel}.`
+      : "O prazo para escolher ou alterar o campeão foi encerrado.")
+  );
 
   // ✅ endpoint do recibo (se não vier no config, usa o padrão)
   const endpointRecibo = cfg?.endpoints?.recibo || "/php/recibo.php";
@@ -28,6 +36,28 @@ document.addEventListener("DOMContentLoaded", () => {
   let finalizeBtn = null;
   let exitFinalizeDispatched = false;
   const FINALIZE_IDLE_MS = 90000;
+
+  function openReceipt() {
+    window.open(endpointRecibo, "_blank", "noopener,noreferrer");
+  }
+
+  function updateSaveButtonState() {
+    if (!btnSave) return;
+
+    if (!canEdit) {
+      if (selectedId > 0) {
+        btnSave.disabled = false;
+        btnSave.textContent = "Gerar recibo";
+      } else {
+        btnSave.disabled = true;
+        btnSave.textContent = "Prazo encerrado";
+      }
+      return;
+    }
+
+    btnSave.disabled = !(pendingId > 0);
+    btnSave.textContent = "Salvar campeão";
+  }
 
   function updateFinalizeBtn() {
     if (!finalizeBtn) return;
@@ -156,10 +186,14 @@ document.addEventListener("DOMContentLoaded", () => {
       t.setAttribute("aria-pressed", sel ? "true" : "false");
     });
 
-    btnSave.disabled = !(pendingId > 0);
+    updateSaveButtonState();
 
     if (hint) {
-      if (!(pendingId > 0)) {
+      if (!canEdit) {
+        hint.textContent = selectedId > 0
+          ? `${lockedMessage} Seu campeão segue salvo e o recibo continua disponível.`
+          : lockedMessage;
+      } else if (!(pendingId > 0)) {
         hint.textContent = "Selecione um time.";
       } else if (pendingId === selectedId && selectedId > 0) {
         hint.textContent = "Seu campeão já está salvo. Clique em “Salvar campeão” para gerar o recibo.";
@@ -174,6 +208,10 @@ document.addEventListener("DOMContentLoaded", () => {
   async function saveChampion(timeId, { generateReceipt = false } = {}) {
     const tid = Number(timeId || 0);
     if (!(tid > 0)) return;
+    if (!canEdit) {
+      showToast(lockedMessage, false);
+      return;
+    }
 
     lastRequestedId = tid;
     if (saving) return;
@@ -208,7 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setSelected(selectedId);
 
       if (generateReceipt) {
-        window.open(endpointRecibo, "_blank", "noopener,noreferrer");
+        openReceipt();
       }
 
     } catch (err) {
@@ -226,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (generateReceipt) {
         btnSave.textContent = prevText || "Salvar campeão";
-        btnSave.disabled = !(pendingId > 0);
+        updateSaveButtonState();
       }
     }
   }
@@ -295,6 +333,10 @@ document.addEventListener("DOMContentLoaded", () => {
   grid.addEventListener("click", (e) => {
     const tile = e.target.closest(".team-tile");
     if (!tile || tile.classList.contains("is-hidden")) return;
+    if (!canEdit) {
+      showToast(lockedMessage, false);
+      return;
+    }
 
     const tid = Number(tile.getAttribute("data-time-id") || 0);
     if (!(tid > 0)) return;
@@ -310,11 +352,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Botão: salva (garante) e abre recibo
   btnSave.addEventListener("click", async () => {
+    if (!canEdit) {
+      if (selectedId > 0) {
+        openReceipt();
+      } else {
+        showToast(lockedMessage, false);
+      }
+      return;
+    }
+
     if (!(pendingId > 0)) return;
     await saveChampion(pendingId, { generateReceipt: true });
   });
 
-  installFinalizeButton();
+  if (canEdit) {
+    installFinalizeButton();
+  }
 
   window.addEventListener("beforeunload", () => {
     dispatchExitFinalize("beforeunload");
@@ -332,5 +385,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Estado inicial
   setSelected(selectedId);
+  updateSaveButtonState();
   applyFilter(searchInput ? searchInput.value : "");
 });

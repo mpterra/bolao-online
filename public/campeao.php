@@ -12,6 +12,8 @@ require_once __DIR__ . "/../php/bet_update_notifier.php";
 
 date_default_timezone_set('America/Sao_Paulo');
 
+const CAMPEAO_PICK_DEADLINE = '2026-06-11 15:59:00';
+
 function json_response(array $data, int $code = 200): void {
 	http_response_code($code);
 	header("Content-Type: application/json; charset=utf-8");
@@ -28,6 +30,21 @@ function require_login(): void {
 
 function strh(?string $s): string {
 	return htmlspecialchars($s ?? "", ENT_QUOTES, "UTF-8");
+}
+
+function campeao_pick_deadline(): DateTimeImmutable {
+	static $deadline = null;
+	if ($deadline instanceof DateTimeImmutable) {
+		return $deadline;
+	}
+
+	$deadline = new DateTimeImmutable(CAMPEAO_PICK_DEADLINE, new DateTimeZone('America/Sao_Paulo'));
+	return $deadline;
+}
+
+function campeao_pick_is_locked(?DateTimeImmutable $now = null): bool {
+	$now = $now ?? new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'));
+	return $now > campeao_pick_deadline();
 }
 
 /**
@@ -71,6 +88,13 @@ $usuarioNome = isset($_SESSION["usuario_nome"]) ? (string)$_SESSION["usuario_nom
 
 $tipoUsuario = isset($_SESSION["tipo_usuario"]) ? (string)$_SESSION["tipo_usuario"] : "";
 $isAdmin = (mb_strtoupper($tipoUsuario, "UTF-8") === "ADMIN");
+
+$tz = new DateTimeZone('America/Sao_Paulo');
+$now = new DateTimeImmutable('now', $tz);
+$campeaoDeadlineAt = campeao_pick_deadline();
+$campeaoDeadlineLocked = campeao_pick_is_locked($now);
+$campeaoDeadlineLabel = $campeaoDeadlineAt->format('d/m/Y \à\s H:i:s');
+$campeaoDeadlineMessage = "O prazo para escolher ou alterar o campeão encerrou em {$campeaoDeadlineLabel}.";
 
 /* Logout */
 if (isset($_GET["action"]) && $_GET["action"] === "logout") {
@@ -148,6 +172,10 @@ try {
 if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 		json_response(["ok" => false, "message" => "Método inválido."], 405);
+	}
+
+	if ($campeaoDeadlineLocked) {
+		json_response(["ok" => false, "message" => $campeaoDeadlineMessage], 403);
 	}
 
 	$raw = file_get_contents("php://input");
@@ -234,7 +262,13 @@ require_once __DIR__ . "/partials/app_header.php";
 
 			<div class="content-head">
 				<h1 class="content-h1">Quem será o campeão?</h1>
-				<p class="content-sub">Toque no time e salve seu palpite.</p>
+				<p class="content-sub">
+					<?php if ($campeaoDeadlineLocked): ?>
+						<?php echo strh($campeaoDeadlineMessage); ?>
+					<?php else: ?>
+						Toque no time e salve seu palpite até <?php echo strh($campeaoDeadlineLabel); ?>.
+					<?php endif; ?>
+				</p>
 			</div>
 
 			<section class="champ-card">
@@ -250,6 +284,7 @@ require_once __DIR__ . "/partials/app_header.php";
 							autocomplete="off"
 							spellcheck="false"
 							aria-label="Buscar time pelo nome"
+							<?php echo $campeaoDeadlineLocked ? 'disabled aria-disabled="true"' : ''; ?>
 						/>
 					</div>
 				</div>
@@ -279,6 +314,7 @@ require_once __DIR__ . "/partials/app_header.php";
 								data-time-name="<?php echo strh($nome); ?>"
 								data-time-sigla="<?php echo strh($sigla); ?>"
 								aria-pressed="<?php echo $isSel ? "true" : "false"; ?>"
+								<?php echo $campeaoDeadlineLocked ? 'disabled aria-disabled="true"' : ''; ?>
 							>
 								<?php if ($flag !== null): ?>
 									<img class="flag" src="<?php echo strh($flag); ?>" alt="Bandeira <?php echo strh($nome); ?>" loading="lazy" decoding="async">
@@ -297,9 +333,26 @@ require_once __DIR__ . "/partials/app_header.php";
 					</div>
 
 					<div class="champ-footer">
-						<button class="btn-save-champ" id="btnSaveChamp" type="button" disabled>Salvar campeão</button>
+						<button
+							class="btn-save-champ"
+							id="btnSaveChamp"
+							type="button"
+							<?php echo ($campeaoDeadlineLocked && $selectedTimeId > 0) ? '' : 'disabled'; ?>
+						>
+							<?php if ($campeaoDeadlineLocked && $selectedTimeId > 0): ?>
+								Gerar recibo
+							<?php elseif ($campeaoDeadlineLocked): ?>
+								Prazo encerrado
+							<?php else: ?>
+								Salvar campeão
+							<?php endif; ?>
+						</button>
 						<div class="champ-hint" id="champHint">
-							<?php if ($selectedTimeId > 0): ?>
+							<?php if ($campeaoDeadlineLocked && $selectedTimeId > 0): ?>
+								<?php echo strh($campeaoDeadlineMessage); ?> Seu campeão segue salvo e o recibo continua disponível.
+							<?php elseif ($campeaoDeadlineLocked): ?>
+								<?php echo strh($campeaoDeadlineMessage); ?>
+							<?php elseif ($selectedTimeId > 0): ?>
 								Seu campeão já está selecionado. Você pode trocar e salvar novamente.
 							<?php else: ?>
 								Selecione um time para habilitar o botão.
@@ -325,6 +378,12 @@ require_once __DIR__ . "/partials/app_header.php";
 	"user" => ["id" => $usuarioId, "nome" => $usuarioNome],
 	"edicao" => ["id" => $edicaoId],
 	"selected_time_id" => $selectedTimeId,
+	"editing" => [
+		"enabled" => !$campeaoDeadlineLocked,
+		"deadline_at" => $campeaoDeadlineAt->format('Y-m-d H:i:s'),
+		"deadline_label" => $campeaoDeadlineLabel,
+		"locked_message" => $campeaoDeadlineMessage,
+	],
 	"endpoints" => [
 		"save" => "/campeao.php?action=save",
 		"notify_changes" => "/campeao.php?action=notify_changes",
