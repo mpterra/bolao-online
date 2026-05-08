@@ -36,6 +36,7 @@
 }
 
 .input-group input[type="password"],
+.input-group input.has-inline-action,
 .input-group input[type="text"].is-password-visible{
   padding-right: 44px;
 }
@@ -158,6 +159,17 @@
 .password-toggle:focus-visible{
   outline: none;
   box-shadow: 0 0 0 3px rgba(16,208,138,.25);
+}
+
+.date-picker-native{
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .input-group select:focus + label,

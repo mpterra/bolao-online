@@ -53,6 +53,71 @@ function normalize_nome(string $s): string {
     return trim($s);
 }
 
+function normalize_data_nascimento(string $s): string {
+    $s = trim($s);
+    if ($s === "") {
+        fail("Preencha a data de nascimento.");
+    }
+
+    $formats = [
+        'd/m/Y' => '!d/m/Y',
+        'Y-m-d' => '!Y-m-d',
+    ];
+
+    $birthDate = null;
+
+    foreach ($formats as $expectedFormat => $parserFormat) {
+        $candidate = DateTimeImmutable::createFromFormat($parserFormat, $s);
+        if (!$candidate instanceof DateTimeImmutable) {
+            continue;
+        }
+
+        $errors = DateTimeImmutable::getLastErrors();
+        if (is_array($errors) && (($errors['warning_count'] ?? 0) > 0 || ($errors['error_count'] ?? 0) > 0)) {
+            continue;
+        }
+
+        if ($candidate->format($expectedFormat) !== $s) {
+            continue;
+        }
+
+        $birthDate = $candidate;
+        break;
+    }
+
+    if (!$birthDate instanceof DateTimeImmutable) {
+        fail("Data de nascimento inválida. Use DD/MM/AAAA.");
+    }
+
+    $today = new DateTimeImmutable('today');
+    if ($birthDate > $today) {
+        fail("Data de nascimento inválida.");
+    }
+
+    return $birthDate->format('Y-m-d');
+}
+
+function normalize_telefone(string $s): string {
+    $digits = preg_replace('/\D+/', '', trim($s)) ?? '';
+
+    if ((strlen($digits) === 12 || strlen($digits) === 13) && strncmp($digits, '55', 2) === 0) {
+        $digits = substr($digits, 2);
+    }
+
+    if (!preg_match('/^\d{10,11}$/', $digits)) {
+        fail("Telefone inválido. Informe DDD + número.");
+    }
+
+    $ddd = substr($digits, 0, 2);
+    $numero = substr($digits, 2);
+
+    if (strlen($numero) === 8) {
+        return sprintf('(%s) %s-%s', $ddd, substr($numero, 0, 4), substr($numero, 4));
+    }
+
+    return sprintf('(%s) %s-%s', $ddd, substr($numero, 0, 5), substr($numero, 5));
+}
+
 function fail(string $msg, int $code = 400): never {
     http_response_code($code);
     exit($msg);
@@ -310,11 +375,12 @@ $sobrenomeRaw = (string)($_POST["sobrenome"] ?? "");
 $nome      = normalize_nome($nomeRaw);
 $sobrenome = normalize_nome($sobrenomeRaw);
 
-$email    = trim((string)($_POST["email"] ?? ""));
-$telefone = trim((string)($_POST["telefone"] ?? ""));
-$cidade   = trim((string)($_POST["cidade"] ?? ""));
-$estado   = strtoupper(trim((string)($_POST["estado"] ?? "")));
-$senha    = (string)($_POST["senha"] ?? "");
+$dataNascimentoRaw = trim((string)($_POST["data_nascimento"] ?? ""));
+$email             = trim((string)($_POST["email"] ?? ""));
+$telefoneRaw       = trim((string)($_POST["telefone"] ?? ""));
+$cidade            = trim((string)($_POST["cidade"] ?? ""));
+$estado            = strtoupper(trim((string)($_POST["estado"] ?? "")));
+$senha             = (string)($_POST["senha"] ?? "");
 $confirmarSenha = (string)($_POST["confirmar_senha"] ?? "");
 
 // Campo atual do banco: "nome" deve receber Nome + Sobrenome
@@ -323,7 +389,7 @@ $nomeCompleto = preg_replace('/\s+/', ' ', $nomeCompleto) ?? $nomeCompleto;
 $nomeCompletoInformado = trim($nomeRaw . " " . $sobrenomeRaw);
 $nomeCompletoInformado = preg_replace('/\s+/', ' ', $nomeCompletoInformado) ?? $nomeCompletoInformado;
 
-if ($nome === "" || $sobrenome === "" || $email === "" || $telefone === "" || $cidade === "" || $estado === "" || $senha === "" || $confirmarSenha === "") {
+if ($nome === "" || $sobrenome === "" || $dataNascimentoRaw === "" || $email === "" || $telefoneRaw === "" || $cidade === "" || $estado === "" || $senha === "" || $confirmarSenha === "") {
     fail("Preencha todos os campos.");
 }
 
@@ -340,6 +406,8 @@ if (strlen($estado) !== 2) {
 }
 
 // Higiene mínima (sem “inventar” regra de negócio)
+$dataNascimento = normalize_data_nascimento($dataNascimentoRaw);
+$telefone = normalize_telefone($telefoneRaw);
 $email = mb_strtolower($email, 'UTF-8');
 $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
 
@@ -361,11 +429,11 @@ try {
         fail("Já existe uma conta com esse email.", 409);
     }
 
-    $sql = "INSERT INTO usuarios (nome, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo)
-            VALUES (?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
+        $sql = "INSERT INTO usuarios (nome, data_nascimento, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
 
     $ins = $pdo->prepare($sql);
-    $ins->execute([$nomeCompleto, $email, $telefone, $cidade, $estado, $senhaHash]);
+        $ins->execute([$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $senhaHash]);
 
     $newUserId = (int)$pdo->lastInsertId();
 

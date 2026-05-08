@@ -8,6 +8,78 @@ document.addEventListener("DOMContentLoaded", () => {
     window.BOLAO.initFloatingLabels();
   }
 
+  function countDigits(value) {
+    const match = String(value || "").match(/\d/g);
+    return match ? match.length : 0;
+  }
+
+  function cursorForDigitCount(value, digitCount) {
+    if (digitCount <= 0) return 0;
+
+    let seen = 0;
+    for (let i = 0; i < value.length; i += 1) {
+      if (/\d/.test(value.charAt(i))) {
+        seen += 1;
+        if (seen >= digitCount) return i + 1;
+      }
+    }
+
+    return value.length;
+  }
+
+  function applyMaskedValue(input, formatter) {
+    if (!input || typeof formatter !== "function") return "";
+
+    const rawValue = String(input.value || "");
+    const selectionStart = typeof input.selectionStart === "number" ? input.selectionStart : rawValue.length;
+    const digitsBeforeCursor = countDigits(rawValue.slice(0, selectionStart));
+    const formatted = formatter(rawValue);
+
+    input.value = formatted;
+
+    const nextCursor = cursorForDigitCount(formatted, digitsBeforeCursor);
+    try {
+      input.setSelectionRange(nextCursor, nextCursor);
+    } catch (e) {}
+
+    return formatted;
+  }
+
+  function stripDigits(value) {
+    return String(value || "").replace(/\D+/g, "");
+  }
+
+  function isoToBrDate(isoDate) {
+    const match = String(isoDate || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return "";
+    return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+
+  function parseBrDate(value) {
+    const trimmed = String(value || "").trim();
+    const match = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    const date = new Date(year, month - 1, day);
+
+    if (
+      !Number.isInteger(day) ||
+      !Number.isInteger(month) ||
+      !Number.isInteger(year) ||
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
+      return null;
+    }
+
+    const iso = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return { day, month, year, iso };
+  }
+
   // =========================================================
   // CUSTOM SELECT (UF)
   // =========================================================
@@ -401,6 +473,173 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     setDisplayText();
+  })();
+
+  // =========================================================
+  // DATA DE NASCIMENTO: máscara DD/MM/AAAA + calendário nativo
+  // =========================================================
+  (function initBirthDateField() {
+    const form = document.querySelector(".login-form");
+    if (!form) return;
+
+    const input = form.querySelector('input[name="data_nascimento"]');
+    const picker = form.querySelector("#data_nascimento_picker");
+    const toggle = form.querySelector(".date-picker-toggle");
+    if (!input) return;
+
+    function formatBirthDate(rawValue) {
+      const digits = stripDigits(rawValue).slice(0, 8);
+      if (digits.length <= 2) return digits;
+      if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+    }
+
+    function syncPickerFromInput() {
+      if (!picker) return;
+      const parsed = parseBrDate(input.value);
+      picker.value = parsed ? parsed.iso : "";
+    }
+
+    function validateBirthDate() {
+      const value = String(input.value || "").trim();
+      if (value === "") {
+        input.setCustomValidity("Preencha a data de nascimento.");
+        syncPickerFromInput();
+        return false;
+      }
+
+      const parsed = parseBrDate(value);
+      if (!parsed) {
+        input.setCustomValidity("Informe uma data válida no formato DD/MM/AAAA.");
+        syncPickerFromInput();
+        return false;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const birthDate = new Date(parsed.year, parsed.month - 1, parsed.day);
+      birthDate.setHours(0, 0, 0, 0);
+
+      if (birthDate > today) {
+        input.setCustomValidity("A data de nascimento não pode ser futura.");
+        syncPickerFromInput();
+        return false;
+      }
+
+      input.setCustomValidity("");
+      syncPickerFromInput();
+      return true;
+    }
+
+    input.addEventListener("input", () => {
+      applyMaskedValue(input, formatBirthDate);
+      validateBirthDate();
+    });
+
+    input.addEventListener("blur", () => {
+      validateBirthDate();
+    });
+
+    if (picker) {
+      picker.addEventListener("change", () => {
+        if (!picker.value) return;
+        input.value = isoToBrDate(picker.value);
+        validateBirthDate();
+        try { input.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
+      });
+    }
+
+    if (toggle && picker) {
+      toggle.addEventListener("click", (ev) => {
+        ev.preventDefault();
+
+        if (typeof picker.showPicker === "function") {
+          picker.showPicker();
+          return;
+        }
+
+        try { picker.focus({ preventScroll: true }); } catch (e) {}
+        picker.click();
+      });
+    }
+
+    form.addEventListener("submit", (ev) => {
+      if (!validateBirthDate()) {
+        ev.preventDefault();
+        input.reportValidity();
+      }
+    });
+
+    validateBirthDate();
+  })();
+
+  // =========================================================
+  // TELEFONE: máscara com DDD entre parênteses
+  // =========================================================
+  (function initPhoneMask() {
+    const form = document.querySelector(".login-form");
+    if (!form) return;
+
+    const input = form.querySelector('input[name="telefone"]');
+    if (!input) return;
+
+    function formatPhone(rawValue) {
+      let digits = stripDigits(rawValue);
+      if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
+        digits = digits.slice(2);
+      }
+      digits = digits.slice(0, 11);
+
+      if (digits.length === 0) return "";
+      if (digits.length < 3) return `(${digits}`;
+
+      const ddd = digits.slice(0, 2);
+      const number = digits.slice(2);
+
+      if (number.length === 0) return `(${ddd})`;
+      if (number.length <= 4) return `(${ddd}) ${number}`;
+      if (number.length <= 8) return `(${ddd}) ${number.slice(0, 4)}-${number.slice(4)}`;
+      return `(${ddd}) ${number.slice(0, 5)}-${number.slice(5, 9)}`;
+    }
+
+    function validatePhone() {
+      let digits = stripDigits(input.value);
+      if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
+        digits = digits.slice(2);
+      }
+
+      if (digits.length === 0) {
+        input.setCustomValidity("Preencha o telefone.");
+        return false;
+      }
+
+      if (digits.length !== 10 && digits.length !== 11) {
+        input.setCustomValidity("Informe um telefone com DDD válido.");
+        return false;
+      }
+
+      input.setCustomValidity("");
+      return true;
+    }
+
+    input.addEventListener("input", () => {
+      applyMaskedValue(input, formatPhone);
+      validatePhone();
+    });
+
+    input.addEventListener("blur", () => {
+      validatePhone();
+    });
+
+    form.addEventListener("submit", (ev) => {
+      if (!validatePhone()) {
+        ev.preventDefault();
+        input.reportValidity();
+      }
+    });
+
+    validatePhone();
   })();
 
   // =========================================================

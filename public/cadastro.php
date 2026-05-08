@@ -52,12 +52,34 @@ if ($sucesso) {
                 </div>
 
                 <div class="input-group">
+                    <input
+                        type="text"
+                        id="data_nascimento"
+                        name="data_nascimento"
+                        class="has-inline-action"
+                        required
+                        inputmode="numeric"
+                        autocomplete="bday"
+                        maxlength="10"
+                        pattern="\d{2}/\d{2}/\d{4}">
+                    <label>Data de nascimento</label>
+                    <button type="button" class="password-toggle date-picker-toggle" data-open-date-picker="data_nascimento_picker" aria-label="Abrir calendário para data de nascimento">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M7 2v3M17 2v3M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="2"/>
+                            <path d="M8 13h3M8 17h3M13 13h3M13 17h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <input type="date" id="data_nascimento_picker" class="date-picker-native" tabindex="-1" aria-hidden="true" max="<?php echo date('Y-m-d'); ?>">
+                </div>
+
+                <div class="input-group">
                     <input type="email" name="email" required autocomplete="email">
                     <label>Email</label>
                 </div>
 
                 <div class="input-group">
-                    <input type="text" name="telefone" required autocomplete="tel">
+                    <input type="text" name="telefone" required autocomplete="tel" inputmode="tel" maxlength="15">
                     <label>Telefone</label>
                 </div>
 

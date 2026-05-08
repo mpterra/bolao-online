@@ -133,6 +133,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const menu = document.getElementById("menuFases");
   const blocks = Array.from(document.querySelectorAll("[data-fase-block]"));
 
+  function scrollPageToTop() {
+    const scrollRoot = document.scrollingElement || document.documentElement || document.body;
+    if (typeof window.scrollTo === "function") {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
+    if (!scrollRoot) return;
+    scrollRoot.scrollTop = 0;
+    scrollRoot.scrollLeft = 0;
+  }
+
   function setActivePhase(faseCode, options = {}) {
     const shouldScroll = options.scroll !== false;
     const fc = String(faseCode || "");
@@ -153,8 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (shouldScroll) {
-      const head = document.getElementById("mmContentHead");
-      if (head) head.scrollIntoView({ behavior: "smooth", block: "start" });
+      scrollPageToTop();
     }
   }
 
