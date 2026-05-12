@@ -36,6 +36,7 @@ $tokenValido = preg_match('/^[0-9a-f]{64}$/', $token) === 1;
     <title>Redefinir senha — Bolão do Thiago</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="stylesheet" href="/css/login.css">
+    <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>
 
 <body

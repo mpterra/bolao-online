@@ -164,6 +164,7 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
     <link rel="stylesheet" href="/css/base.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/base.css'); ?>">
     <link rel="stylesheet" href="/css/cadastro.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/cadastro.css'); ?>">
     <link rel="stylesheet" href="/css/meus_dados.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/meus_dados.css'); ?>">
+    <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>
 <body data-reg-success="0">
 

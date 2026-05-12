@@ -177,6 +177,7 @@ function build_row_class(int $uid, int $meId, int $pos): string {
   <!-- ✅ HOSTGATOR: sem /bolao-da-copa -->
   <link rel="stylesheet" href="/css/base.css?v=1">
   <link rel="stylesheet" href="/css/ranking.css?v=1">
+  <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>
 <body>
 

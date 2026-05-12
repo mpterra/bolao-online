@@ -24,6 +24,7 @@ if ($isLoggedIn) {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="stylesheet" href="css/base.css">
 	<link rel="stylesheet" href="css/regulamento.css">
+	<link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>
 <body class="<?php echo $isLoggedIn ? 'rules-authenticated' : 'rules-public'; ?>">
 	<div class="rules-page">

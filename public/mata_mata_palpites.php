@@ -576,6 +576,7 @@ require_once __DIR__ . "/partials/app_header.php";
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 	<link rel="stylesheet" href="/css/app.css?v=<?php echo filemtime(__DIR__ . '/css/app.css'); ?>">
 	<link rel="stylesheet" href="/css/mata_mata_palpites.css?v=<?php echo filemtime(__DIR__ . '/css/mata_mata_palpites.css'); ?>">
+	<link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>
 <body>
 

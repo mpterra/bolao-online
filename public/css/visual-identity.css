@@ -1,0 +1,393 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap");
+
+/* Bolao do Thiago - Copa do Mundo 2026 visual identity */
+:root{
+  --bt-green:#00c853;
+  --bt-yellow:#ffd600;
+  --bt-red:#e53935;
+  --bt-blue:#0082ff;
+  --bt-turquoise:#00f2d1;
+  --bt-white:#fff7e8;
+  --bt-black:#0d1117;
+  --bt-gold:#ffc107;
+  --bt-ink:#05070b;
+  --bt-panel:#0a1018;
+  --bt-panel-2:#101923;
+  --bt-line:rgba(255,247,232,.24);
+  --bt-shadow:rgba(0,0,0,.72);
+  --font-pixel:"Press Start 2P","Pixel Emulator","Silkscreen","Lucida Console",Monaco,Consolas,monospace;
+  --font-text:"Share Tech Mono","Lucida Console",Monaco,Consolas,monospace;
+
+  --bg0:var(--bt-black) !important;
+  --bg1:#071019 !important;
+  --bg2:#02050a !important;
+  --green:var(--bt-green) !important;
+  --green2:#39f27b !important;
+  --gold:var(--bt-yellow) !important;
+  --gold2:var(--bt-gold) !important;
+  --ice:var(--bt-turquoise) !important;
+  --text:var(--bt-white) !important;
+  --muted:rgba(255,247,232,.72) !important;
+  --card:rgba(10,16,24,.92) !important;
+  --card2:rgba(16,25,35,.96) !important;
+  --stroke:rgba(255,247,232,.22) !important;
+  --app-glass:rgba(10,16,24,.92) !important;
+  --app-glass2:rgba(16,25,35,.96) !important;
+  --app-stroke:rgba(255,247,232,.24) !important;
+  --head-grad:linear-gradient(90deg, rgba(0,200,83,.28), rgba(255,214,0,.22)) !important;
+  --foot-grad:linear-gradient(90deg, rgba(0,130,255,.16), rgba(0,242,209,.16), rgba(255,193,7,.14)) !important;
+  --card-grad:linear-gradient(180deg, rgba(16,25,35,.96), rgba(5,7,11,.94)) !important;
+  --ok:var(--bt-green) !important;
+  --warn:var(--bt-yellow) !important;
+  --bad:var(--bt-red) !important;
+}
+
+*{
+  font-family:var(--font-text) !important;
+  letter-spacing:0 !important;
+}
+
+html,
+body{
+  background-color:var(--bt-black) !important;
+}
+
+body{
+  color:var(--bt-white) !important;
+  background:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+    radial-gradient(circle at 16% 12%, rgba(0,200,83,.20), transparent 24%),
+    radial-gradient(circle at 84% 16%, rgba(255,214,0,.16), transparent 26%),
+    radial-gradient(circle at 50% 100%, rgba(0,130,255,.14), transparent 32%),
+    linear-gradient(180deg, #0d1117 0%, #070b10 48%, #02050a 100%) !important;
+  background-size:18px 18px, 18px 18px, auto, auto, auto, auto !important;
+  text-rendering:geometricPrecision;
+}
+
+body::before{
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,214,0,.70) 50%, transparent 55%),
+    radial-gradient(1px 1px at 70% 40%, rgba(0,200,83,.62) 50%, transparent 55%),
+    radial-gradient(1px 1px at 40% 80%, rgba(0,130,255,.60) 50%, transparent 55%),
+    radial-gradient(1px 1px at 86% 76%, rgba(229,57,53,.58) 50%, transparent 55%) !important;
+  background-size:210px 210px !important;
+  opacity:.22 !important;
+}
+
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:linear-gradient(180deg, rgba(255,255,255,.045) 0 1px, transparent 1px 4px);
+  mix-blend-mode:screen;
+  opacity:.18;
+}
+
+.app-wrap,
+.page,
+.toast-host{
+  position:relative;
+  z-index:2;
+}
+
+h1,h2,h3,h4,h5,h6,
+.content-h1,
+.menu-title,
+.section-title,
+.login-card h1,
+.bh-header__title,
+.bh-header__mobile-current,
+.champ-card-head .h1,
+.panel-title,
+.card-title,
+.ranking-title,
+.title{
+  font-family:var(--font-pixel) !important;
+  color:var(--bt-green) !important;
+  text-transform:uppercase;
+  line-height:1.55 !important;
+  text-shadow:
+    2px 2px 0 #000,
+    0 0 12px rgba(0,200,83,.34) !important;
+}
+
+.login-card h1,
+.content-h1{
+  color:var(--bt-yellow) !important;
+}
+
+p,
+span,
+label,
+li,
+td,
+th,
+.content-sub,
+.champ-hint{
+  line-height:1.55;
+}
+
+a{
+  color:var(--bt-turquoise);
+  text-decoration-color:rgba(0,242,209,.42);
+}
+
+::selection{
+  color:#05070b !important;
+  background:var(--bt-yellow) !important;
+}
+
+.login-card,
+.card-glass,
+.app-content,
+.app-menu,
+.bh-header,
+.champ-card,
+.champ-card-head,
+.champ-footer,
+.team-tile,
+.user-chip,
+.toast,
+.badge,
+.card,
+.panel,
+.box,
+.modal,
+.game-card,
+.match-card,
+.ranking-card,
+.group-card,
+.rule-card,
+.admin-card,
+.summary-card,
+.result-card,
+.fixture-card,
+.palpite-card,
+table{
+  border-radius:8px !important;
+  border-color:var(--bt-line) !important;
+  background:
+    linear-gradient(180deg, rgba(16,25,35,.96), rgba(5,7,11,.96)) !important;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.72),
+    0 0 0 3px rgba(255,247,232,.10),
+    6px 6px 0 rgba(0,0,0,.42),
+    0 22px 48px rgba(0,0,0,.42) !important;
+  backdrop-filter:none !important;
+}
+
+.app-content,
+.login-card,
+.champ-card,
+.app-menu{
+  position:relative;
+}
+
+.app-content::before,
+.login-card::before,
+.champ-card::before,
+.app-menu::before{
+  content:"";
+  position:absolute;
+  inset:6px;
+  pointer-events:none;
+  border:1px solid rgba(0,200,83,.28);
+  box-shadow:inset 0 0 0 1px rgba(255,214,0,.12);
+  border-radius:4px;
+}
+
+button,
+.btn-login,
+.btn-save-champ,
+.btn-back,
+.btn-logout,
+.topnav-link,
+.bh-header__nav-link,
+.bh-header__logout,
+.bh-header__mobile-link,
+.bh-header__mobile-logout,
+input[type="submit"],
+input[type="button"]{
+  font-family:var(--font-pixel) !important;
+  text-transform:uppercase;
+  border-radius:6px !important;
+  border:2px solid rgba(255,247,232,.34) !important;
+  background:
+    linear-gradient(180deg, rgba(255,214,0,.98), rgba(255,193,7,.95)) !important;
+  color:#111111 !important;
+  text-shadow:none !important;
+  box-shadow:
+    inset 0 -3px 0 rgba(0,0,0,.22),
+    4px 4px 0 #000,
+    0 10px 22px rgba(0,0,0,.36) !important;
+}
+
+button:hover,
+.btn-login:hover,
+.btn-save-champ:hover,
+.btn-back:hover,
+.btn-logout:hover,
+.topnav-link:hover,
+.bh-header__nav-link:hover,
+.bh-header__logout:hover,
+.bh-header__mobile-link:hover,
+.bh-header__mobile-logout:hover{
+  filter:saturate(1.08) brightness(1.06);
+  transform:translateY(-1px);
+}
+
+button:disabled,
+.btn-save-champ:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled{
+  opacity:.58 !important;
+  filter:grayscale(.35) !important;
+  cursor:not-allowed !important;
+}
+
+input,
+select,
+textarea{
+  border-radius:6px !important;
+  border:2px solid rgba(255,247,232,.22) !important;
+  background:#05070b !important;
+  color:var(--bt-white) !important;
+  box-shadow:inset 3px 3px 0 rgba(0,0,0,.32) !important;
+}
+
+input::placeholder,
+textarea::placeholder{
+  color:rgba(255,247,232,.56) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+  outline:none !important;
+  border-color:var(--bt-turquoise) !important;
+  box-shadow:
+    inset 3px 3px 0 rgba(0,0,0,.32),
+    0 0 0 3px rgba(0,242,209,.18),
+    0 0 16px rgba(0,242,209,.22) !important;
+}
+
+.badge,
+.topnav-link.is-active,
+.bh-header__nav-link.is-active,
+.bh-header__mobile-badge,
+.team-tile.is-selected .check{
+  background:linear-gradient(180deg, var(--bt-green), #009a42) !important;
+  color:#ffffff !important;
+  border-color:rgba(255,214,0,.72) !important;
+  text-shadow:2px 2px 0 #000 !important;
+}
+
+.btn-back,
+.btn-logout,
+.bh-header__logout,
+.topnav-link:not(.is-active),
+.bh-header__nav-link:not(.is-active),
+.bh-header__mobile-link:not(.is-active),
+.bh-header__mobile-logout{
+  background:
+    linear-gradient(180deg, rgba(16,25,35,.98), rgba(5,7,11,.96)) !important;
+  color:var(--bt-white) !important;
+  border-color:rgba(255,247,232,.24) !important;
+  text-shadow:2px 2px 0 #000 !important;
+}
+
+.topnav-link.is-admin,
+.bh-header__nav-link.is-admin,
+.bh-header__mobile-link.is-admin{
+  background:linear-gradient(180deg, var(--bt-blue), #0056b8) !important;
+  color:#ffffff !important;
+}
+
+.champ-card-head,
+.champ-footer,
+.content-head,
+thead,
+th{
+  background:
+    linear-gradient(90deg, rgba(0,200,83,.24), rgba(255,214,0,.18), rgba(0,130,255,.16)) !important;
+}
+
+.team-tile{
+  min-height:74px;
+  background:
+    radial-gradient(180px 70px at 12% 0%, rgba(0,242,209,.10), transparent 64%),
+    linear-gradient(180deg, rgba(16,25,35,.98), rgba(5,7,11,.96)) !important;
+  color:var(--bt-white) !important;
+  text-shadow:none !important;
+}
+
+.team-tile,
+.team-tile *{
+  font-family:var(--font-text) !important;
+  text-transform:none !important;
+}
+
+.team-tile:hover,
+.team-tile:focus{
+  border-color:var(--bt-yellow) !important;
+  background:
+    linear-gradient(180deg, rgba(0,200,83,.18), rgba(16,25,35,.96)) !important;
+}
+
+.team-tile.is-selected{
+  border-color:var(--bt-green) !important;
+  background:
+    linear-gradient(180deg, rgba(0,200,83,.28), rgba(5,7,11,.94)) !important;
+}
+
+.flag,
+.logo-wrapper img,
+.bh-header__logo,
+.app-brand img{
+  image-rendering:auto;
+  filter:
+    drop-shadow(3px 3px 0 rgba(0,0,0,.84))
+    drop-shadow(0 0 12px rgba(255,193,7,.22)) !important;
+}
+
+.meta .sigla,
+.bh-header__subtitle,
+.bh-header__mobile-subtitle,
+.bh-header__user-meta,
+.bh-header__mobile-user-meta,
+.content-sub,
+.champ-hint,
+.text-muted{
+  color:rgba(255,247,232,.74) !important;
+}
+
+hr,
+.divider{
+  border-color:rgba(255,247,232,.18) !important;
+}
+
+@media (max-width:560px){
+  h1,h2,h3,h4,h5,h6,
+  .content-h1,
+  .login-card h1{
+    font-size:clamp(13px, 3.5vw, 18px) !important;
+  }
+
+  button,
+  .btn-login,
+  .btn-save-champ,
+  .btn-back,
+  .btn-logout,
+  .topnav-link,
+  .bh-header__nav-link,
+  .bh-header__logout,
+  .bh-header__mobile-link,
+  .bh-header__mobile-logout{
+    font-size:10px !important;
+    line-height:1.45 !important;
+  }
+}

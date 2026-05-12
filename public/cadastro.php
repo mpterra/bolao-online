@@ -26,6 +26,7 @@ if ($sucesso) {
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/login.css">
     <link rel="stylesheet" href="/css/cadastro.css">
+    <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>
 
 <body data-reg-success="<?php echo $sucesso ? '1' : '0'; ?>">

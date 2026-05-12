@@ -30,6 +30,11 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			"href"  => "/app.php",
 		],
 		[
+			"key"   => "campeao",
+			"label" => "Campeão",
+			"href"  => "/campeao.php",
+		],
+		[
 			"key"   => "mata_mata",
 			"label" => "Mata-Mata",
 			"href"  => "/mata_mata_palpites.php",
@@ -585,7 +590,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				<a class="bh-header__brand-link" href="/app.php" aria-label="Ir para a página principal do Bolão da Copa">
 					<img class="bh-header__logo" src="/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
 					<div class="bh-header__title-wrap">
-						<div class="bh-header__title">Bolão da Copa</div>
+						<div class="bh-header__title">Bolão do Thiago</div>
 						<div class="bh-header__subtitle"><?php echo strh($subtitle); ?></div>
 					</div>
 				</a>
