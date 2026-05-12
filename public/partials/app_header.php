@@ -105,7 +105,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 
 			.bh-header__bar{
 				display:grid;
-				grid-template-columns:minmax(138px, 190px) minmax(0, 1fr) auto;
+				grid-template-columns:minmax(238px, 258px) minmax(0, 1fr) auto;
 				align-items:center;
 				gap:8px;
 				padding:8px 10px;
@@ -125,8 +125,8 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			}
 
 			.bh-header__logo{
-				width:34px;
-				height:34px;
+				width:42px;
+				height:42px;
 				object-fit:contain;
 				flex:0 0 auto;
 				display:block;
@@ -139,7 +139,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			}
 
 			.bh-header__title{
-				font-size:13px;
+				font-size:14px;
 				font-weight:900;
 				line-height:1.1;
 				letter-spacing:.2px;
@@ -150,13 +150,13 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			}
 
 			.bh-header__subtitle{
-				font-size:10px;
+				font-size:11px;
 				line-height:1.15;
 				color:rgba(255,255,255,.68);
 				white-space:nowrap;
 				overflow:hidden;
 				text-overflow:ellipsis;
-				max-width:160px;
+				max-width:190px;
 			}
 
 			.bh-header__nav{
