@@ -486,7 +486,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				}
 			}
 
-			@media (max-width: 860px){
+			@media (max-width: 1180px){
 				.bh-header__bar{
 					grid-template-columns:minmax(0, 1fr) auto;
 					gap:10px;
@@ -588,7 +588,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 					});
 
 					window.addEventListener("resize", function () {
-						if (window.innerWidth > 860) {
+						if (window.innerWidth > 1180) {
 							closeMenu();
 						}
 					});
