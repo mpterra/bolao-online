@@ -273,7 +273,7 @@
   min-height: 100%;
   padding: 18px;
   display: grid;
-  grid-template-rows: minmax(112px, auto) minmax(232px, auto) minmax(98px, auto) auto auto;
+  grid-template-rows: minmax(148px, auto) minmax(232px, auto) minmax(106px, auto) auto auto;
   gap: 12px;
   align-content: start;
   background:
@@ -289,7 +289,7 @@
   display: grid;
   align-content: start;
   gap: 6px;
-  min-height: 112px;
+  min-height: 148px;
 }
 
 .access-card__header h2{
@@ -297,6 +297,8 @@
   font-size: clamp(22px, 2.1vw, 28px);
   line-height: 1.02;
   letter-spacing: -.03em;
+  min-height: calc(2 * 1.02em);
+  text-wrap: balance;
 }
 
 .access-card__header p{
@@ -305,6 +307,7 @@
   line-height: 1.4;
   max-width: 34ch;
   font-size: 14px;
+  min-height: calc(3 * 1.4em);
 }
 
 .access-pill{
@@ -360,7 +363,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
-  min-height: 98px;
+  min-height: 106px;
   align-content: start;
 }
 
@@ -393,6 +396,7 @@
   line-height: 1.35;
   color: rgba(255,255,255,.96);
   word-break: break-word;
+  min-height: calc(2 * 1.35em);
 }
 
 .action-row{
@@ -570,11 +574,11 @@
   }
 
   .access-card{
-    grid-template-rows: minmax(100px, auto) minmax(212px, auto) minmax(90px, auto) auto auto;
+    grid-template-rows: minmax(134px, auto) minmax(212px, auto) minmax(96px, auto) auto auto;
   }
 
   .access-card__header{
-    min-height: 100px;
+    min-height: 134px;
   }
 
   .hero-layout{
@@ -614,7 +618,7 @@
   }
 
   .detail-list{
-    min-height: 90px;
+    min-height: 96px;
   }
 
   .qr-frame img{
@@ -634,6 +638,18 @@
   .hero-layout,
   .qr-grid{
     grid-template-columns: 1fr;
+  }
+
+  .access-card{
+    grid-template-rows: auto auto auto auto auto;
+  }
+
+  .access-card__header,
+  .access-card__header h2,
+  .access-card__header p,
+  .detail-list,
+  .detail-list dd{
+    min-height: 0;
   }
 
   .hero-layout{
