@@ -232,23 +232,19 @@ require_once __DIR__ . "/partials/app_header.php";
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
     <style>
-        .users-page-wrap {
-            width: min(1580px, 100%) !important;
-        }
-
         .users-page-content .content-head {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .users-page-content .content-h1 {
-            font-size: clamp(1.56rem, 3vw, 2.38rem) !important;
-            line-height: 1.18 !important;
-            margin-bottom: 4px;
+            font-size: clamp(1.36rem, 2.35vw, 1.98rem) !important;
+            line-height: 1.14 !important;
+            margin-bottom: 3px;
         }
 
         .users-page-content .content-sub {
-            font-size: 0.86rem;
-            line-height: 1.4;
+            font-size: 0.8rem;
+            line-height: 1.35;
             color: rgba(255, 255, 255, 0.72);
         }
 
@@ -263,7 +259,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .users-layout {
             display: grid;
-            gap: 14px;
+            gap: 12px;
             min-width: 0;
         }
 
@@ -271,7 +267,7 @@ require_once __DIR__ . "/partials/app_header.php";
         .users-data-card {
             min-width: 0;
             border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 20px;
+            border-radius: 18px;
             background:
                 radial-gradient(900px 320px at 18% 10%, rgba(16, 208, 138, 0.12), transparent 58%),
                 radial-gradient(760px 300px at 82% 18%, rgba(247, 201, 72, 0.10), transparent 58%),
@@ -280,39 +276,39 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .users-toolbar-card {
-            padding: 14px 16px;
+            padding: 12px 14px;
             display: grid;
-            gap: 12px;
+            gap: 10px;
         }
 
         .users-summary {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 10px;
+            gap: 8px;
         }
 
         .users-metric {
             min-width: 0;
-            padding: 10px 12px;
-            border-radius: 12px;
+            padding: 8px 10px;
+            border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.12);
             background: rgba(255, 255, 255, 0.05);
             display: grid;
-            gap: 4px;
+            gap: 3px;
         }
 
         .users-metric span {
             display: block;
             margin-bottom: 0;
             color: rgba(255, 255, 255, 0.68);
-            font-size: 0.66rem;
+            font-size: 0.62rem;
             letter-spacing: 0.05em;
             text-transform: uppercase;
         }
 
         .users-metric strong {
             display: block;
-            font-size: 1.08rem;
+            font-size: 0.98rem;
             line-height: 1;
             color: #ffffff;
         }
@@ -320,28 +316,28 @@ require_once __DIR__ . "/partials/app_header.php";
         .filter-controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
             justify-content: space-between;
             align-items: center;
         }
 
         .stats-info {
             color: rgba(255, 255, 255, 0.72);
-            font-size: 0.84rem;
-            line-height: 1.4;
+            font-size: 0.78rem;
+            line-height: 1.3;
         }
 
         .toolbar-actions {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 7px;
             align-items: center;
         }
 
         .btn-toggle-filter {
-            padding: 8px 14px;
-            min-height: 38px;
-            border-radius: 10px;
+            padding: 7px 12px;
+            min-height: 34px;
+            border-radius: 9px;
             border: 1px solid rgba(255, 255, 255, 0.18);
             background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
@@ -349,7 +345,7 @@ require_once __DIR__ . "/partials/app_header.php";
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.86rem;
+            font-size: 0.8rem;
             transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
         }
 
@@ -366,22 +362,22 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .users-data-card {
-            padding: 14px 16px 16px;
+            padding: 12px 14px 14px;
             overflow: visible;
         }
 
         .users-data-head {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .users-data-head h2 {
             margin: 0;
-            font-size: 0.96rem;
+            font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.95);
         }
 
@@ -389,16 +385,16 @@ require_once __DIR__ . "/partials/app_header.php";
             display: flex;
             flex-wrap: wrap;
             justify-content: flex-end;
-            gap: 8px;
+            gap: 6px;
             color: rgba(255, 255, 255, 0.66);
-            font-size: 0.8rem;
+            font-size: 0.74rem;
         }
 
         .users-data-meta span {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 6px 10px;
+            padding: 5px 8px;
             border-radius: 999px;
             border: 1px solid rgba(255, 255, 255, 0.10);
             background: rgba(255, 255, 255, 0.04);
@@ -411,9 +407,9 @@ require_once __DIR__ . "/partials/app_header.php";
             overscroll-behavior-x: contain;
             -webkit-overflow-scrolling: touch;
             scrollbar-gutter: stable both-edges;
-            padding: 2px 0 14px;
+            padding: 2px 0 12px;
             border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 16px;
+            border-radius: 14px;
             background: rgba(255, 255, 255, 0.03);
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
             scrollbar-width: auto;
@@ -426,7 +422,7 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .users-grid-viewport::-webkit-scrollbar {
-            height: 16px;
+            height: 14px;
         }
 
         .users-grid-viewport::-webkit-scrollbar-thumb {
@@ -442,19 +438,19 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .users-board {
-            width: 1842px;
-            min-width: 1842px;
+            width: 1602px;
+            min-width: 1602px;
             display: grid;
-            gap: 10px;
-            padding: 10px;
+            gap: 8px;
+            padding: 8px;
         }
 
         .users-board-row {
             display: grid;
-            grid-template-columns: 72px 360px 320px 170px 200px 90px 150px 120px 180px 180px;
-            min-width: 1842px;
+            grid-template-columns: 64px 280px 270px 150px 170px 70px 120px 96px 150px 150px;
+            min-width: 1602px;
             border: 1px solid rgba(255, 255, 255, 0.10);
-            border-radius: 16px;
+            border-radius: 14px;
             overflow: hidden;
             background: rgba(255, 255, 255, 0.02);
         }
@@ -469,13 +465,13 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .users-cell {
             min-width: 0;
-            padding: 12px 14px;
+            padding: 10px 12px;
             border-right: 1px solid rgba(255, 255, 255, 0.08);
             color: rgba(255, 255, 255, 0.9);
             display: flex;
             align-items: center;
-            line-height: 1.35;
-            font-size: 0.92rem;
+            line-height: 1.25;
+            font-size: 0.86rem;
         }
 
         .users-board-row .users-cell:last-child {
@@ -484,8 +480,8 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .users-cell-head {
             background: linear-gradient(180deg, rgba(140, 120, 255, 0.28) 0%, rgba(70, 220, 255, 0.18) 100%);
-            padding-top: 14px;
-            padding-bottom: 14px;
+            padding-top: 12px;
+            padding-bottom: 12px;
         }
 
         .users-sort-link {
@@ -493,10 +489,10 @@ require_once __DIR__ . "/partials/app_header.php";
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 8px;
             color: inherit;
             text-decoration: none;
-            font-size: 0.8rem;
+            font-size: 0.74rem;
             font-weight: 700;
             text-transform: uppercase;
         }
@@ -511,7 +507,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .users-sort-indicator {
             opacity: 0.75;
-            font-size: 0.95rem;
+            font-size: 0.88rem;
         }
 
         .users-cell--mono {
@@ -539,9 +535,9 @@ require_once __DIR__ . "/partials/app_header.php";
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 5px 10px;
+            padding: 4px 8px;
             border-radius: 999px;
-            font-size: 0.82rem;
+            font-size: 0.74rem;
             font-weight: 700;
             text-transform: uppercase;
             white-space: nowrap;
@@ -591,7 +587,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
             .users-toolbar-card,
             .users-data-card {
-                padding: 14px;
+                padding: 12px;
             }
 
             .filter-controls {
@@ -619,11 +615,11 @@ require_once __DIR__ . "/partials/app_header.php";
 
         @media (max-width: 640px) {
             .users-page-content .content-h1 {
-                font-size: 1.26rem !important;
+                font-size: 1.14rem !important;
             }
 
             .users-page-content .content-sub {
-                font-size: 0.78rem;
+                font-size: 0.72rem;
             }
 
             .users-summary {
@@ -631,15 +627,15 @@ require_once __DIR__ . "/partials/app_header.php";
             }
 
             .users-metric {
-                padding: 9px 10px;
+                padding: 8px 9px;
             }
 
             .users-metric strong {
-                font-size: 0.96rem;
+                font-size: 0.9rem;
             }
 
             .users-metric span {
-                font-size: 0.6rem;
+                font-size: 0.56rem;
             }
 
             .filter-controls {
@@ -648,8 +644,8 @@ require_once __DIR__ . "/partials/app_header.php";
 
             .btn-toggle-filter {
                 width: 100%;
-                min-height: 36px;
-                font-size: 0.82rem;
+                min-height: 34px;
+                font-size: 0.78rem;
             }
 
             .users-grid-viewport {
@@ -664,7 +660,7 @@ require_once __DIR__ . "/partials/app_header.php";
             .users-data-meta {
                 width: 100%;
                 gap: 6px;
-                font-size: 0.74rem;
+                font-size: 0.7rem;
             }
 
             .users-data-meta span {
@@ -674,15 +670,15 @@ require_once __DIR__ . "/partials/app_header.php";
             }
 
             .users-board {
-                gap: 8px;
-                padding: 6px;
+                gap: 6px;
+                padding: 5px;
             }
         }
     </style>
 </head>
 <body>
 
-<div class="app-wrap users-page-wrap">
+<div class="app-wrap">
 
     <?php
         render_app_header(
