@@ -265,6 +265,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+  grid-auto-rows: 1fr;
   align-items: stretch;
 }
 
@@ -272,8 +273,9 @@
   min-height: 100%;
   padding: 18px;
   display: grid;
-  grid-template-rows: auto auto auto auto 1fr;
+  grid-template-rows: minmax(112px, auto) minmax(232px, auto) minmax(98px, auto) auto auto;
   gap: 12px;
+  align-content: start;
   background:
     linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03)),
     linear-gradient(135deg, rgba(8,47,52,.68), rgba(15,66,74,.42));
@@ -283,8 +285,15 @@
 .access-card--pix{ animation-delay: 80ms; }
 .access-card--whatsapp{ animation-delay: 160ms; }
 
+.access-card__header{
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 112px;
+}
+
 .access-card__header h2{
-  margin: 8px 0 0;
+  margin: 0;
   font-size: clamp(22px, 2.1vw, 28px);
   line-height: 1.02;
   letter-spacing: -.03em;
@@ -351,6 +360,8 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
+  min-height: 98px;
+  align-content: start;
 }
 
 .detail-list--single{
@@ -362,6 +373,9 @@
   border-radius: 14px;
   background: rgba(255,255,255,.06);
   border: 1px solid rgba(255,255,255,.10);
+  min-height: 45px;
+  display: grid;
+  align-content: start;
 }
 
 .detail-list dt{
@@ -386,6 +400,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
+  align-self: start;
 }
 
 .action-row--single{
@@ -440,6 +455,7 @@
 .field-label{
   display: block;
   margin-bottom: 6px;
+  min-height: 13px;
   color: rgba(255,255,255,.72);
   font-size: 11px;
   font-weight: 800;
@@ -553,6 +569,14 @@
     padding: 16px;
   }
 
+  .access-card{
+    grid-template-rows: minmax(100px, auto) minmax(212px, auto) minmax(90px, auto) auto auto;
+  }
+
+  .access-card__header{
+    min-height: 100px;
+  }
+
   .hero-layout{
     grid-template-columns: minmax(186px, 220px) minmax(0, 1fr);
     gap: 14px;
@@ -587,6 +611,10 @@
 
   .qr-frame{
     min-height: 212px;
+  }
+
+  .detail-list{
+    min-height: 90px;
   }
 
   .qr-frame img{
@@ -774,6 +802,7 @@
 
   .access-card{
     padding: 16px 14px;
+    grid-template-rows: auto auto auto auto auto;
     gap: 10px;
     background:
       linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.03)),
@@ -792,6 +821,7 @@
   .access-card__header{
     display: grid;
     gap: 8px;
+    min-height: 0;
   }
 
   .access-card__header h2{
@@ -826,6 +856,12 @@
     padding: 10px 12px;
     border-radius: 16px;
     background: rgba(255,255,255,.07);
+    min-height: auto;
+  }
+
+  .detail-list{
+    min-height: 0;
+    gap: 10px;
   }
 
   .detail-list dt{
@@ -843,10 +879,17 @@
     border-radius: 16px;
   }
 
+  .field-label{
+    margin-bottom: 8px;
+    min-height: 0;
+    font-size: 12px;
+  }
+
   .copy-field{
     border-radius: 18px;
     padding: 12px;
     font-size: 13px;
+    line-height: 1.45;
   }
 
   .copy-field--tall{
