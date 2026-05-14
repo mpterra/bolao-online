@@ -29,6 +29,108 @@ function strh(?string $s): string {
     return htmlspecialchars($s ?? "", ENT_QUOTES, "UTF-8");
 }
 
+function format_datetime_br(?string $value): string {
+    if ($value === null || trim($value) === "") {
+        return "";
+    }
+
+    $timestamp = strtotime($value);
+
+    return $timestamp !== false ? date("d/m/Y H:i", $timestamp) : $value;
+}
+
+function resolve_users_listing_state(array $query): array {
+    $allowedCols = [
+        "id",
+        "nome",
+        "email",
+        "telefone",
+        "cidade",
+        "estado",
+        "tipo_usuario",
+        "ativo",
+        "criado_em",
+        "atualizado_em"
+    ];
+
+    $sortCol = isset($query["sort"]) ? (string)$query["sort"] : "tipo_usuario";
+    $sortOrder = isset($query["order"]) ? (string)$query["order"] : "desc";
+    $ativoParam = isset($query["ativo"]) ? (string)$query["ativo"] : "all";
+
+    if (!in_array($sortCol, $allowedCols, true)) {
+        $sortCol = "tipo_usuario";
+    }
+
+    if ($sortOrder !== "asc" && $sortOrder !== "desc") {
+        $sortOrder = "desc";
+    }
+
+    return [
+        "sort" => $sortCol,
+        "order" => $sortOrder,
+        "somente_ativos" => in_array($ativoParam, ["1", "active", "ativos"], true),
+    ];
+}
+
+function build_users_order_by(string $sortCol, string $sortOrder): string {
+    if ($sortCol === "tipo_usuario" && $sortOrder === "desc") {
+        return "CASE WHEN tipo_usuario='ADMIN' THEN 0 ELSE 1 END ASC, nome ASC";
+    }
+
+    return "`" . $sortCol . "` " . strtoupper($sortOrder);
+}
+
+function fetch_users(PDO $pdo, bool $somenteAtivos, string $orderBy): array {
+    $sql = "
+        SELECT id, nome, email, telefone, cidade, estado, tipo_usuario, ativo, criado_em, atualizado_em
+        FROM usuarios
+    ";
+
+    if ($somenteAtivos) {
+        $sql .= " WHERE ativo = 1";
+    }
+
+    $sql .= " ORDER BY " . $orderBy;
+
+    $stmt = $pdo->query($sql);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function build_users_list_query(array $state, array $overrides = []): string {
+    $params = [
+        "sort" => (string)$state["sort"],
+        "order" => (string)$state["order"],
+    ];
+
+    if (!empty($state["somente_ativos"])) {
+        $params["ativo"] = "1";
+    }
+
+    foreach ($overrides as $key => $value) {
+        if ($value === null || $value === "") {
+            unset($params[$key]);
+            continue;
+        }
+
+        $params[$key] = (string)$value;
+    }
+
+    return http_build_query($params);
+}
+
+function next_sort_order(string $column, array $state): string {
+    return ($state["sort"] === $column && $state["order"] === "asc") ? "desc" : "asc";
+}
+
+function sort_indicator(string $column, array $state): string {
+    if ($state["sort"] !== $column) {
+        return "↕";
+    }
+
+    return $state["order"] === "asc" ? "↑" : "↓";
+}
+
 require_login();
 require_admin();
 
@@ -43,141 +145,81 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
     exit;
 }
 
-if (isset($_GET["export"]) && $_GET["export"] === "csv") {
-    $sortCol = isset($_GET["sort"]) ? (string)$_GET["sort"] : "tipo_usuario";
-    $sortOrder = isset($_GET["order"]) ? (string)$_GET["order"] : "desc";
-    $mostrarInativos = isset($_GET["ativo"]) && $_GET["ativo"] === "all";
-
-    $allowedCols = [
-        "id",
-        "nome",
-        "email",
-        "telefone",
-        "cidade",
-        "estado",
-        "tipo_usuario",
-        "ativo",
-        "criado_em",
-        "atualizado_em"
-    ];
-
-    if (!in_array($sortCol, $allowedCols, true)) {
-        $sortCol = "tipo_usuario";
-    }
-
-    if ($sortOrder !== "asc" && $sortOrder !== "desc") {
-        $sortOrder = "desc";
-    }
-
-    if ($sortCol === "tipo_usuario" && $sortOrder === "desc") {
-        $orderBy = "CASE WHEN tipo_usuario='ADMIN' THEN 0 ELSE 1 END ASC, nome ASC";
-    } else {
-        $orderBy = "`" . $sortCol . "` " . strtoupper($sortOrder);
-    }
-
-    try {
-        $sql = "
-            SELECT id, nome, email, telefone, cidade, estado, tipo_usuario, ativo, criado_em, atualizado_em
-            FROM usuarios
-        ";
-
-        if (!$mostrarInativos) {
-            $sql .= " WHERE ativo = 1";
-        }
-
-        $sql .= " ORDER BY " . $orderBy;
-
-        $stmt = $pdo->query($sql);
-        $usuariosExport = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $filename = "usuarios_" . date("Y-m-d_H-i") . ".csv";
-        header("Content-Type: text/csv; charset=UTF-8");
-        header("Content-Disposition: attachment; filename=\"{$filename}\"");
-        header("Pragma: no-cache");
-        header("Expires: 0");
-
-        $output = fopen("php://output", "w");
-        fwrite($output, "\xEF\xBB\xBF");
-        fputcsv($output, ["ID", "Nome", "Email", "Telefone", "Cidade", "Estado", "Tipo", "Ativo", "Criado em", "Atualizado em"], ";");
-
-        foreach ($usuariosExport as $u) {
-            fputcsv($output, [
-                (string)($u["id"] ?? ""),
-                (string)($u["nome"] ?? ""),
-                (string)($u["email"] ?? ""),
-                (string)($u["telefone"] ?? ""),
-                (string)($u["cidade"] ?? ""),
-                (string)($u["estado"] ?? ""),
-                (string)($u["tipo_usuario"] ?? ""),
-                ((int)($u["ativo"] ?? 0) === 1 ? "ATIVO" : "INATIVO"),
-                (string)($u["criado_em"] ?? ""),
-                (string)($u["atualizado_em"] ?? ""),
-            ], ";");
-        }
-
-        fclose($output);
-        exit;
-    } catch (Throwable $e) {
-        http_response_code(500);
-        echo "Erro ao exportar usuários.";
-        exit;
-    }
-}
-
-// Get sort parameters
-$sortCol = isset($_GET["sort"]) ? (string)$_GET["sort"] : "tipo_usuario";
-$sortOrder = isset($_GET["order"]) ? (string)$_GET["order"] : "desc";
-$mostrarInativos = isset($_GET["ativo"]) && $_GET["ativo"] === "all";
-
-// Whitelist allowed sort columns for security
-$allowedCols = [
-    "id",
-    "nome",
-    "email",
-    "telefone",
-    "cidade",
-    "estado",
-    "tipo_usuario",
-    "ativo",
-    "criado_em",
-    "atualizado_em"
-];
-
-if (!in_array($sortCol, $allowedCols, true)) {
-    $sortCol = "tipo_usuario";
-}
-
-// Validate sort order
-if ($sortOrder !== "asc" && $sortOrder !== "desc") {
-    $sortOrder = "desc";
-}
-
-// Special case: sort by tipo_usuario should be DESC (admins first), then by name
-if ($sortCol === "tipo_usuario" && $sortOrder === "desc") {
-    $orderBy = "CASE WHEN tipo_usuario='ADMIN' THEN 0 ELSE 1 END ASC, nome ASC";
-} else {
-    $orderBy = "`" . $sortCol . "` " . strtoupper($sortOrder);
-}
+$listState = resolve_users_listing_state($_GET);
+$sortCol = (string)$listState["sort"];
+$sortOrder = (string)$listState["order"];
+$somenteAtivos = (bool)$listState["somente_ativos"];
+$orderBy = build_users_order_by($sortCol, $sortOrder);
 
 try {
-    $sql = "
-        SELECT id, nome, email, telefone, cidade, estado, tipo_usuario, ativo, criado_em, atualizado_em
-        FROM usuarios
-    ";
-    
-    if (!$mostrarInativos) {
-        $sql .= " WHERE ativo = 1";
-    }
-    
-    $sql .= " ORDER BY " . $orderBy;
-    
-    $stmt = $pdo->query($sql);
-    $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $usuarios = fetch_users($pdo, $somenteAtivos, $orderBy);
 } catch (Throwable $e) {
     http_response_code(500);
     echo "Erro ao carregar usuários.";
     exit;
 }
+
+if (isset($_GET["export"]) && $_GET["export"] === "csv") {
+    $filename = "usuarios_" . date("Y-m-d_H-i") . ".csv";
+    header("Content-Type: text/csv; charset=UTF-8");
+    header("Content-Disposition: attachment; filename=\"{$filename}\"");
+    header("Pragma: no-cache");
+    header("Expires: 0");
+
+    $output = fopen("php://output", "w");
+    fwrite($output, "\xEF\xBB\xBF");
+    fputcsv($output, ["ID", "Nome", "Email", "Telefone", "Cidade", "Estado", "Tipo", "Ativo", "Criado em", "Atualizado em"], ";");
+
+    foreach ($usuarios as $u) {
+        fputcsv($output, [
+            (string)($u["id"] ?? ""),
+            (string)($u["nome"] ?? ""),
+            (string)($u["email"] ?? ""),
+            (string)($u["telefone"] ?? ""),
+            (string)($u["cidade"] ?? ""),
+            (string)($u["estado"] ?? ""),
+            (string)($u["tipo_usuario"] ?? ""),
+            ((int)($u["ativo"] ?? 0) === 1 ? "ATIVO" : "INATIVO"),
+            (string)($u["criado_em"] ?? ""),
+            (string)($u["atualizado_em"] ?? ""),
+        ], ";");
+    }
+
+    fclose($output);
+    exit;
+}
+
+$totalUsuarios = count($usuarios);
+$totalAdmins = 0;
+$totalAtivos = 0;
+
+foreach ($usuarios as $usuarioResumo) {
+    $tipoResumo = isset($usuarioResumo["tipo_usuario"]) ? (string)$usuarioResumo["tipo_usuario"] : "";
+    $ativoResumo = (int)($usuarioResumo["ativo"] ?? 0);
+
+    if (mb_strtoupper($tipoResumo, "UTF-8") === "ADMIN") {
+        $totalAdmins++;
+    }
+
+    if ($ativoResumo === 1) {
+        $totalAtivos++;
+    }
+}
+
+$totalInativos = $totalUsuarios - $totalAtivos;
+
+$columns = [
+    ["key" => "id", "label" => "ID", "class" => "users-col-id"],
+    ["key" => "nome", "label" => "Nome", "class" => "users-col-nome"],
+    ["key" => "email", "label" => "Email", "class" => "users-col-email"],
+    ["key" => "telefone", "label" => "Telefone", "class" => "users-col-telefone"],
+    ["key" => "cidade", "label" => "Cidade", "class" => "users-col-cidade"],
+    ["key" => "estado", "label" => "Estado", "class" => "users-col-estado"],
+    ["key" => "tipo_usuario", "label" => "Tipo", "class" => "users-col-tipo"],
+    ["key" => "ativo", "label" => "Ativo", "class" => "users-col-ativo"],
+    ["key" => "criado_em", "label" => "Criado em", "class" => "users-col-criado"],
+    ["key" => "atualizado_em", "label" => "Atualizado em", "class" => "users-col-atualizado"],
+];
 
 require_once __DIR__ . "/partials/app_header.php";
 ?>
@@ -190,157 +232,307 @@ require_once __DIR__ . "/partials/app_header.php";
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
     <style>
-        .table-usuarios {
-            width: 1600px;
-            min-width: 1600px;
-            table-layout: fixed;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 0;
+        .users-page-wrap {
+            width: min(1580px, 100%) !important;
         }
 
-        .table-usuarios thead {
-            position: sticky;
-            top: 0;
-            background: linear-gradient(180deg, rgba(140, 120, 255, 0.3) 0%, rgba(70, 220, 255, 0.2) 100%);
-            backdrop-filter: blur(10px);
-            z-index: 10;
+        .users-page-shell {
+            grid-template-columns: 240px minmax(0, 1fr);
         }
 
-        .table-usuarios thead th:first-child {
-            border-top-left-radius: 14px;
+        .users-page-content {
+            min-width: 0;
+            overflow: visible;
         }
 
-        .table-usuarios thead th:last-child {
-            border-top-right-radius: 14px;
+        .users-layout {
+            display: grid;
+            gap: 18px;
+            min-width: 0;
         }
 
-        .table-usuarios th {
-            padding: 11px 10px;
-            text-align: left;
-            font-weight: 600;
+        .users-toolbar-card,
+        .users-data-card {
+            min-width: 0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            background:
+                radial-gradient(900px 320px at 18% 10%, rgba(16, 208, 138, 0.12), transparent 58%),
+                radial-gradient(760px 300px at 82% 18%, rgba(247, 201, 72, 0.10), transparent 58%),
+                var(--card-grad);
+            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.26);
+        }
+
+        .users-toolbar-card {
+            padding: 18px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .users-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .users-metric {
+            min-width: 136px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .users-metric span {
+            display: block;
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 0.76rem;
+            text-transform: uppercase;
+        }
+
+        .users-metric strong {
+            display: block;
+            font-size: 1.34rem;
+            line-height: 1;
             color: #ffffff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats-info {
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-toggle-filter {
+            padding: 10px 16px;
+            min-height: 42px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
+        }
+
+        .btn-toggle-filter:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.34);
+            transform: translateY(-1px);
+        }
+
+        .btn-toggle-filter.active {
+            background: rgba(0, 200, 122, 0.28);
+            border-color: rgba(0, 200, 122, 0.48);
+            color: rgba(100, 255, 180, 1);
+        }
+
+        .users-data-card {
+            padding: 18px;
+            overflow: visible;
+        }
+
+        .users-data-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+
+        .users-data-head h2 {
+            margin: 0 0 6px;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .users-data-head p {
+            margin: 0;
+            max-width: 64ch;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.45;
+        }
+
+        .users-scroll-hint {
+            max-width: 40ch;
+            color: rgba(255, 255, 255, 0.58);
             font-size: 0.84rem;
-            cursor: pointer;
-            user-select: none;
-            transition: background-color 0.2s;
-            vertical-align: middle;
-            white-space: nowrap;
+            line-height: 1.45;
+            text-align: right;
         }
 
-        .table-usuarios th:hover {
-            background-color: rgba(255, 255, 255, 0.08);
+        .users-grid-viewport {
+            min-width: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            overscroll-behavior-x: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-gutter: stable both-edges;
+            padding: 2px 0 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            scrollbar-width: auto;
+            scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.08);
         }
 
-        .table-usuarios th.sortable::after {
-            content: " ↕";
-            opacity: 0.5;
+        .users-grid-viewport:focus-visible {
+            outline: 2px solid rgba(70, 220, 255, 0.42);
+            outline-offset: 2px;
         }
 
-        .table-usuarios th.sort-asc::after {
-            content: " ↑";
-            opacity: 1;
+        .users-grid-viewport::-webkit-scrollbar {
+            height: 16px;
         }
 
-        .table-usuarios th.sort-desc::after {
-            content: " ↓";
-            opacity: 1;
+        .users-grid-viewport::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.24);
+            border-radius: 999px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
         }
 
-        .table-usuarios td {
-            padding: 11px 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 0.92rem;
-            line-height: 1.25;
+        .users-grid-viewport::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+        }
+
+        .users-board {
+            width: 1842px;
+            min-width: 1842px;
+            display: grid;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .users-board-row {
+            display: grid;
+            grid-template-columns: 72px 360px 320px 170px 200px 90px 150px 120px 180px 180px;
+            min-width: 1842px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .users-board-data:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.035);
+        }
+
+        .users-board-data:hover {
+            background: rgba(255, 255, 255, 0.055);
+        }
+
+        .users-cell {
+            min-width: 0;
+            padding: 12px 14px;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
             color: rgba(255, 255, 255, 0.9);
-            vertical-align: middle;
-            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            line-height: 1.35;
+            font-size: 0.92rem;
         }
 
-        .col-id,
-        .col-estado,
-        .col-tipo,
-        .col-ativo {
-            white-space: nowrap;
+        .users-board-row .users-cell:last-child {
+            border-right: 0;
         }
 
-        .col-nome {
-            width: 420px;
+        .users-cell-head {
+            background: linear-gradient(180deg, rgba(140, 120, 255, 0.28) 0%, rgba(70, 220, 255, 0.18) 100%);
+            padding-top: 14px;
+            padding-bottom: 14px;
+        }
+
+        .users-sort-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: inherit;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .users-sort-link:hover {
+            color: #ffffff;
+        }
+
+        .users-sort-link.is-active {
+            color: rgba(255, 255, 255, 1);
+        }
+
+        .users-sort-indicator {
+            opacity: 0.75;
+            font-size: 0.95rem;
+        }
+
+        .users-cell--mono {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .users-cell--wrap {
+            align-items: flex-start;
             white-space: normal;
             overflow-wrap: anywhere;
             word-break: break-word;
-            line-height: 1.2;
+        }
+
+        .users-cell--strong {
             font-weight: 700;
+            color: #ffffff;
         }
 
-        .col-email,
-        .col-telefone,
-        .col-cidade,
-        .col-estado,
-        .col-criado,
-        .col-atualizado {
-            white-space: nowrap;
-        }
-
-        .col-email {
-            width: 250px;
-        }
-
-        .col-telefone {
-            width: 150px;
-        }
-
-        .col-cidade {
-            width: 150px;
-        }
-
-        .col-criado,
-        .col-atualizado {
-            width: 170px;
-        }
-
-        .table-usuarios tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.04);
-        }
-
-        .table-usuarios tbody tr:nth-child(even) {
-            background-color: rgba(255, 255, 255, 0.02);
-        }
-
-        .table-usuarios tbody td:first-child,
-        .table-usuarios thead th:first-child {
-            padding-left: 14px;
-        }
-
-        .table-usuarios tbody td:last-child,
-        .table-usuarios thead th:last-child {
-            padding-right: 14px;
+        .users-cell--center {
+            justify-content: center;
+            text-align: center;
         }
 
         .badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
             white-space: nowrap;
         }
 
         .badge-admin {
             background: rgba(140, 120, 255, 0.3);
-            color: rgba(200, 150, 255, 1);
-            border: 1px solid rgba(140, 120, 255, 0.5);
+            color: rgba(215, 180, 255, 1);
+            border: 1px solid rgba(140, 120, 255, 0.48);
         }
 
         .badge-apostador {
             background: rgba(100, 100, 120, 0.2);
-            color: rgba(180, 180, 200, 1);
-            border: 1px solid rgba(100, 100, 120, 0.4);
+            color: rgba(190, 190, 205, 1);
+            border: 1px solid rgba(100, 100, 120, 0.38);
         }
 
         .badge-ativo {
@@ -351,147 +543,70 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .badge-inativo {
             background: rgba(200, 80, 80, 0.2);
-            color: rgba(255, 150, 150, 1);
+            color: rgba(255, 160, 160, 1);
             border: 1px solid rgba(200, 80, 80, 0.4);
         }
 
-        .users-list-card {
-            overflow: visible;
-        }
-
-        .table-inner {
-            width: max-content;
-            min-width: 1600px;
-        }
-
-        .table-wrapper {
-            display: block;
-            width: 100%;
-            max-width: 100%;
-            overflow-x: scroll;
-            overflow-y: hidden;
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior-x: contain;
-            margin-top: 16px;
-            padding-bottom: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.10);
+        .users-empty-state {
+            padding: 46px 24px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.66);
+            border: 1px dashed rgba(255, 255, 255, 0.16);
             border-radius: 16px;
             background: rgba(255, 255, 255, 0.03);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-            scrollbar-width: auto;
-            scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.08);
         }
 
-        .table-wrapper::-webkit-scrollbar {
-            height: 14px;
-        }
-
-        .table-wrapper::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.24);
-            border-radius: 999px;
-            border: 3px solid transparent;
-            background-clip: padding-box;
-        }
-
-        .table-wrapper::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 999px;
-        }
-
-        .filter-controls {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
-            align-items: center;
-        }
-
-        .btn-toggle-filter {
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-toggle-filter:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        .btn-toggle-filter.active {
-            background: rgba(0, 200, 122, 0.3);
-            border-color: rgba(0, 200, 122, 0.5);
-            color: rgba(100, 255, 180, 1);
-        }
-
-        .stats-info {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.95rem;
-        }
-
-        .toolbar-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .col-id { width: 60px; }
-        .col-nome { width: 420px; }
-        .col-email { width: 250px; }
-        .col-telefone { width: 150px; }
-        .col-cidade { width: 150px; }
-        .col-estado { width: 70px; }
-        .col-tipo { width: 120px; }
-        .col-ativo { width: 80px; }
-        .col-criado { width: 170px; }
-        .col-atualizado { width: 170px; }
-
-        @media (max-width: 1200px) {
-            .table-usuarios {
-                width: 1600px;
-                min-width: 1600px;
+        @media (max-width: 920px) {
+            .users-page-shell {
+                grid-template-columns: 1fr;
             }
 
-            .table-usuarios {
-                font-size: 0.9rem;
+            .users-toolbar-card,
+            .users-data-card {
+                padding: 14px;
             }
 
-            .table-usuarios td,
-            .table-usuarios th {
-                padding: 8px 6px;
+            .users-scroll-hint {
+                text-align: left;
+                max-width: none;
             }
         }
 
-        @media (max-width: 768px) {
-            .table-usuarios {
-                width: 1600px;
-                min-width: 1600px;
+        @media (max-width: 640px) {
+            .users-summary {
+                gap: 10px;
             }
 
-            .table-wrapper {
+            .users-metric {
+                flex: 1 1 calc(50% - 10px);
+                min-width: 0;
+            }
+
+            .filter-controls {
+                align-items: flex-start;
+            }
+
+            .toolbar-actions {
+                width: 100%;
+            }
+
+            .btn-toggle-filter {
+                flex: 1 1 100%;
+            }
+
+            .users-grid-viewport {
                 border-radius: 12px;
             }
 
-            .table-usuarios {
-                font-size: 0.86rem;
-            }
-
-            .col-nome {
-                min-width: 300px;
-                max-width: 400px;
+            .users-board {
+                padding: 8px;
             }
         }
     </style>
 </head>
 <body>
 
-<div class="app-wrap">
+<div class="app-wrap users-page-wrap">
 
     <?php
         render_app_header(
@@ -503,7 +618,7 @@ require_once __DIR__ . "/partials/app_header.php";
         );
     ?>
 
-    <div class="app-shell">
+    <div class="app-shell users-page-shell">
         <aside class="app-menu">
             <div class="menu-title">Ações</div>
 
@@ -511,7 +626,7 @@ require_once __DIR__ . "/partials/app_header.php";
                 <a class="btn-receipt" href="/admin.php">
                     Exportar apostas por usuário
                 </a>
-                <a class="btn-receipt" href="/admin_usuarios_cadastro.php">
+                <a class="btn-receipt" href="/admin_usuarios_cadastro.php" aria-current="page">
                     Lista de usuários
                 </a>
                 <a class="btn-receipt" href="/php/export_apostas_todas_zip.php">
@@ -526,160 +641,129 @@ require_once __DIR__ . "/partials/app_header.php";
             </div>
         </aside>
 
-        <main class="app-content">
+        <main class="app-content users-page-content">
             <div class="content-head">
                 <h1 class="content-h1">Cadastro de Usuários</h1>
-                <p class="content-sub">Todos os dados cadastrais dos usuários do sistema. Clique nos cabeçalhos para ordenar.</p>
+                <p class="content-sub">Todos os dados cadastrais de todos os usuários do sistema, com ordenação, filtro rápido e exportação.</p>
             </div>
 
-            <div class="admin-card users-list-card">
-                <div class="filter-controls">
-                    <span class="stats-info">
-                        Total: <strong><?php echo count($usuarios); ?></strong> usuário<?php echo count($usuarios) !== 1 ? "s" : ""; ?>
-                    </span>
-                    <div class="toolbar-actions">
-                        <?php
-                            $filterParam = $mostrarInativos ? "" : "&ativo=all";
-                            $filterText = $mostrarInativos ? "Ocultar inativos" : "Mostrar inativos";
-                            $filterClass = $mostrarInativos ? "active" : "";
-                            $baseQuery = "sort=" . urlencode($sortCol) . "&order=" . urlencode($sortOrder) . $filterParam;
-                        ?>
-                        <a class="btn-toggle-filter <?php echo $filterClass; ?>"
-                           href="?<?php echo $baseQuery; ?>">
-                            <?php echo $filterText; ?>
-                        </a>
-                        <a class="btn-toggle-filter"
-                           href="?<?php echo $baseQuery; ?>&export=csv">
-                            Exportar CSV
-                        </a>
+            <div class="users-layout">
+                <section class="users-toolbar-card" aria-label="Resumo e filtros da lista de usuários">
+                    <div class="users-summary">
+                        <div class="users-metric">
+                            <span>Total exibido</span>
+                            <strong><?php echo $totalUsuarios; ?></strong>
+                        </div>
+                        <div class="users-metric">
+                            <span>Admins</span>
+                            <strong><?php echo $totalAdmins; ?></strong>
+                        </div>
+                        <div class="users-metric">
+                            <span>Ativos</span>
+                            <strong><?php echo $totalAtivos; ?></strong>
+                        </div>
+                        <div class="users-metric">
+                            <span>Inativos</span>
+                            <strong><?php echo $totalInativos; ?></strong>
+                        </div>
                     </div>
-                </div>
 
-                <div style="margin: 0 2px 10px; color: rgba(255,255,255,0.58); font-size: 0.84rem; line-height: 1.4;">
-                    Use a barra horizontal logo abaixo da tabela para navegar por todas as colunas. Nome, email e cidade ficam visíveis sem truncamento; os demais campos mantêm largura estável para leitura rápida.
-                </div>
+                    <div class="filter-controls">
+                        <span class="stats-info">
+                            <?php echo $somenteAtivos
+                                ? "Filtro atual: somente usuários ativos."
+                                : "Filtro atual: todos os usuários cadastrados, incluindo inativos."; ?>
+                        </span>
+                        <div class="toolbar-actions">
+                            <a class="btn-toggle-filter <?php echo $somenteAtivos ? "active" : ""; ?>"
+                               href="?<?php echo strh(build_users_list_query($listState, ["ativo" => $somenteAtivos ? null : "1"])); ?>">
+                                <?php echo $somenteAtivos ? "Mostrar todos" : "Somente ativos"; ?>
+                            </a>
+                            <a class="btn-toggle-filter"
+                               href="?<?php echo strh(build_users_list_query($listState, ["export" => "csv"])); ?>">
+                                Exportar CSV
+                            </a>
+                        </div>
+                    </div>
+                </section>
 
-                <div class="table-wrapper" id="usuarios-table-wrapper">
-                    <div class="table-inner">
-                        <table class="table-usuarios" aria-label="Tabela de usuários cadastrados">
-                            <colgroup>
-                                <col class="col-id" />
-                                <col class="col-nome" />
-                                <col class="col-email" />
-                                <col class="col-telefone" />
-                                <col class="col-cidade" />
-                                <col class="col-estado" />
-                                <col class="col-tipo" />
-                                <col class="col-ativo" />
-                                <col class="col-criado" />
-                                <col class="col-atualizado" />
-                            </colgroup>
-                            <thead>
-                                <tr>
-                                    <th class="col-id sortable <?php echo ($sortCol === "id" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=id&order=" . (($sortCol === "id" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            ID
-                                        </a>
-                                    </th>
-                                    <th class="col-nome sortable <?php echo ($sortCol === "nome" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=nome&order=" . (($sortCol === "nome" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            Nome
-                                        </a>
-                                    </th>
-                                    <th class="col-email sortable <?php echo ($sortCol === "email" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=email&order=" . (($sortCol === "email" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            Email
-                                        </a>
-                                    </th>
-                                    <th class="col-telefone sortable <?php echo ($sortCol === "telefone" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=telefone&order=" . (($sortCol === "telefone" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            Telefone
-                                        </a>
-                                    </th>
-                                    <th class="col-cidade sortable <?php echo ($sortCol === "cidade" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=cidade&order=" . (($sortCol === "cidade" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            Cidade
-                                        </a>
-                                    </th>
-                                    <th class="col-estado sortable <?php echo ($sortCol === "estado" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=estado&order=" . (($sortCol === "estado" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            Estado
-                                        </a>
-                                    </th>
-                                    <th class="col-tipo sortable <?php echo ($sortCol === "tipo_usuario" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=tipo_usuario&order=" . (($sortCol === "tipo_usuario" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            Tipo
-                                        </a>
-                                    </th>
-                                    <th class="col-ativo sortable <?php echo ($sortCol === "ativo" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=ativo&order=" . (($sortCol === "ativo" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            Ativo
-                                        </a>
-                                    </th>
-                                    <th class="col-criado sortable <?php echo ($sortCol === "criado_em" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=criado_em&order=" . (($sortCol === "criado_em" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            Criado em
-                                        </a>
-                                    </th>
-                                    <th class="col-atualizado sortable <?php echo ($sortCol === "atualizado_em" ? "sort-" . $sortOrder : ""); ?>">
-                                        <a href="?<?php echo "sort=atualizado_em&order=" . (($sortCol === "atualizado_em" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                            Atualizado em
-                                        </a>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                <section class="users-data-card">
+                    <div class="users-data-head">
+                        <div>
+                            <h2>Painel completo de usuários</h2>
+                            <p>Área isolada do layout principal para a grade gerar o próprio overflow horizontal, sem corte da coluna de conteúdo nem truncamento dos campos principais.</p>
+                        </div>
+                        <div class="users-scroll-hint">
+                            Use a barra horizontal da própria grade para percorrer todas as colunas. Nome, email e cidade podem quebrar linha dentro da célula para preservar o conteúdo inteiro.
+                        </div>
+                    </div>
+
+                    <?php if (!empty($usuarios)): ?>
+                        <div class="users-grid-viewport" tabindex="0" aria-label="Grade com os dados cadastrais dos usuários">
+                            <div class="users-board" role="table" aria-label="Lista de usuários cadastrados">
+                                <div class="users-board-row users-board-header" role="row">
+                                    <?php foreach ($columns as $column): ?>
+                                        <?php
+                                            $sortQuery = build_users_list_query($listState, [
+                                                "sort" => $column["key"],
+                                                "order" => next_sort_order((string)$column["key"], $listState),
+                                            ]);
+                                            $isSortActive = ($sortCol === $column["key"]);
+                                        ?>
+                                        <div class="users-cell users-cell-head <?php echo strh((string)$column["class"]); ?>" role="columnheader">
+                                            <a class="users-sort-link <?php echo $isSortActive ? "is-active" : ""; ?>"
+                                               href="?<?php echo strh($sortQuery); ?>">
+                                                <span><?php echo strh((string)$column["label"]); ?></span>
+                                                <span class="users-sort-indicator"><?php echo strh(sort_indicator((string)$column["key"], $listState)); ?></span>
+                                            </a>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+
                                 <?php foreach ($usuarios as $u): ?>
                                     <?php
-                                        $uid = (int)$u["id"];
-                                        $nome = (string)$u["nome"];
-                                        $email = (string)$u["email"];
-                                        $telefone = (string)$u["telefone"];
-                                        $cidade = (string)$u["cidade"];
-                                        $estado = (string)$u["estado"];
-                                        $tipo = (string)$u["tipo_usuario"];
-                                        $ativo = (int)$u["ativo"];
-                                        $criado = (string)$u["criado_em"];
-                                        $atualizado = (string)$u["atualizado_em"];
+                                        $uid = (int)($u["id"] ?? 0);
+                                        $nome = (string)($u["nome"] ?? "");
+                                        $email = (string)($u["email"] ?? "");
+                                        $telefone = (string)($u["telefone"] ?? "");
+                                        $cidade = (string)($u["cidade"] ?? "");
+                                        $estado = (string)($u["estado"] ?? "");
+                                        $tipo = (string)($u["tipo_usuario"] ?? "");
+                                        $ativo = (int)($u["ativo"] ?? 0);
+                                        $criado = isset($u["criado_em"]) ? (string)$u["criado_em"] : null;
+                                        $atualizado = isset($u["atualizado_em"]) ? (string)$u["atualizado_em"] : null;
 
-                                        $tipoBadge = (mb_strtoupper($tipo, "UTF-8") === "ADMIN") ? "badge-admin" : "badge-apostador";
-                                        $ativoBadge = $ativo ? "badge-ativo" : "badge-inativo";
-                                        $ativoText = $ativo ? "Ativo" : "Inativo";
-
-                                        $criadoFormatado = date('d/m/Y H:i', strtotime($criado));
-                                        $atualizadoFormatado = date('d/m/Y H:i', strtotime($atualizado));
+                                        $tipoUpper = mb_strtoupper($tipo, "UTF-8");
+                                        $tipoBadge = ($tipoUpper === "ADMIN") ? "badge-admin" : "badge-apostador";
+                                        $tipoLabel = ($tipoUpper === "ADMIN") ? "ADMIN" : "APOSTADOR";
+                                        $ativoBadge = ($ativo === 1) ? "badge-ativo" : "badge-inativo";
+                                        $ativoText = ($ativo === 1) ? "Ativo" : "Inativo";
                                     ?>
-                                    <tr>
-                                        <td class="col-id"><?php echo $uid; ?></td>
-                                        <td class="col-nome"><?php echo strh($nome); ?></td>
-                                        <td class="col-email"><?php echo strh($email); ?></td>
-                                        <td class="col-telefone"><?php echo strh($telefone); ?></td>
-                                        <td class="col-cidade"><?php echo strh($cidade); ?></td>
-                                        <td class="col-estado"><?php echo strh($estado); ?></td>
-                                        <td class="col-tipo">
-                                            <span class="badge <?php echo $tipoBadge; ?>">
-                                                <?php echo strh($tipo); ?>
-                                            </span>
-                                        </td>
-                                        <td class="col-ativo">
-                                            <span class="badge <?php echo $ativoBadge; ?>">
-                                                <?php echo $ativoText; ?>
-                                            </span>
-                                        </td>
-                                        <td class="col-criado"><?php echo strh($criadoFormatado); ?></td>
-                                        <td class="col-atualizado"><?php echo strh($atualizadoFormatado); ?></td>
-                                    </tr>
+                                    <div class="users-board-row users-board-data" role="row">
+                                        <div class="users-cell users-cell--mono users-cell--center" role="cell"><?php echo $uid; ?></div>
+                                        <div class="users-cell users-cell--wrap users-cell--strong" role="cell"><?php echo strh($nome); ?></div>
+                                        <div class="users-cell users-cell--wrap" role="cell"><?php echo strh($email); ?></div>
+                                        <div class="users-cell users-cell--mono" role="cell"><?php echo strh($telefone); ?></div>
+                                        <div class="users-cell users-cell--wrap" role="cell"><?php echo strh($cidade); ?></div>
+                                        <div class="users-cell users-cell--center" role="cell"><?php echo strh($estado); ?></div>
+                                        <div class="users-cell users-cell--center" role="cell">
+                                            <span class="badge <?php echo $tipoBadge; ?>"><?php echo strh($tipoLabel); ?></span>
+                                        </div>
+                                        <div class="users-cell users-cell--center" role="cell">
+                                            <span class="badge <?php echo $ativoBadge; ?>"><?php echo $ativoText; ?></span>
+                                        </div>
+                                        <div class="users-cell users-cell--mono" role="cell"><?php echo strh(format_datetime_br($criado)); ?></div>
+                                        <div class="users-cell users-cell--mono" role="cell"><?php echo strh(format_datetime_br($atualizado)); ?></div>
+                                    </div>
                                 <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <?php if (empty($usuarios)): ?>
-                    <div style="padding: 40px 20px; text-align: center; color: rgba(255,255,255,0.6);">
-                        <p>Nenhum usuário encontrado.</p>
-                    </div>
-                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="users-empty-state">
+                            Nenhum usuário encontrado com o filtro atual.
+                        </div>
+                    <?php endif; ?>
+                </section>
             </div>
 
         </main>
