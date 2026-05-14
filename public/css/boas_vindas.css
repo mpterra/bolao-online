@@ -670,7 +670,7 @@
 
 @media (max-width: 760px){
   .welcome-shell{
-    padding: 10px 0 112px;
+    padding: 10px 0 28px;
     gap: 12px;
   }
 
@@ -913,16 +913,16 @@
   }
 
   .next-step{
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: calc(10px + var(--safe-bottom));
-    z-index: 12;
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    z-index: 1;
     gap: 10px;
     padding: 14px;
     border-radius: 22px;
-    backdrop-filter: blur(18px);
-    box-shadow: 0 20px 36px rgba(0,0,0,.28);
+    backdrop-filter: none;
+    box-shadow: none;
   }
 
   .next-step__body{
@@ -942,7 +942,7 @@
   .copy-toast{
     left: 12px;
     right: 12px;
-    bottom: calc(110px + var(--safe-bottom));
+    bottom: calc(12px + var(--safe-bottom));
     max-width: none;
   }
 }
@@ -968,15 +968,15 @@
   }
 
   .next-step{
-    left: 8px;
-    right: 8px;
-    bottom: calc(8px + var(--safe-bottom));
+    left: auto;
+    right: auto;
+    bottom: auto;
     padding: 12px;
   }
 
   .copy-toast{
     left: 10px;
     right: 10px;
-    bottom: calc(102px + var(--safe-bottom));
+    bottom: calc(10px + var(--safe-bottom));
   }
 }
