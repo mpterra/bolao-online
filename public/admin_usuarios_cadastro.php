@@ -191,9 +191,10 @@ require_once __DIR__ . "/partials/app_header.php";
     <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
     <style>
         .table-usuarios {
-            width: max-content;
-            min-width: 1320px;
-            table-layout: auto;
+            display: block;
+            width: 1600px;
+            min-width: 1600px;
+            table-layout: fixed;
             border-collapse: separate;
             border-spacing: 0;
             margin-top: 0;
@@ -227,7 +228,8 @@ require_once __DIR__ . "/partials/app_header.php";
             transition: background-color 0.2s;
             vertical-align: middle;
             white-space: nowrap;
-            min-width: fit-content;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .table-usuarios th:hover {
@@ -256,6 +258,8 @@ require_once __DIR__ . "/partials/app_header.php";
             line-height: 1.25;
             color: rgba(255, 255, 255, 0.9);
             vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
         }
 
@@ -267,11 +271,10 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .col-nome {
-            min-width: 320px;
-            max-width: 520px;
+            width: 420px;
             white-space: normal;
             overflow-wrap: anywhere;
-            word-break: normal;
+            word-break: break-word;
             line-height: 1.2;
             font-weight: 700;
         }
@@ -286,28 +289,20 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .col-email {
-            min-width: 250px;
+            width: 250px;
         }
 
         .col-telefone {
-            min-width: 150px;
+            width: 150px;
         }
 
         .col-cidade {
-            min-width: 150px;
+            width: 150px;
         }
 
         .col-criado,
         .col-atualizado {
-            min-width: 170px;
-        }
-
-        .table-usuarios td.col-email,
-        .table-usuarios td.col-telefone,
-        .table-usuarios td.col-cidade,
-        .table-usuarios td.col-criado,
-        .table-usuarios td.col-atualizado {
-            overflow-wrap: anywhere;
+            width: 170px;
         }
 
         .table-usuarios tbody tr:hover {
@@ -373,6 +368,7 @@ require_once __DIR__ . "/partials/app_header.php";
             overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain;
+            scrollbar-gutter: stable both-edges;
             margin-top: 16px;
             border: 1px solid rgba(255, 255, 255, 0.10);
             border-radius: 16px;
@@ -436,7 +432,8 @@ require_once __DIR__ . "/partials/app_header.php";
 
         @media (max-width: 1200px) {
             .table-usuarios {
-                min-width: 1220px;
+                width: 1600px;
+                min-width: 1600px;
             }
 
             .table-usuarios {
@@ -451,7 +448,8 @@ require_once __DIR__ . "/partials/app_header.php";
 
         @media (max-width: 768px) {
             .table-usuarios {
-                min-width: 1160px;
+                width: 1600px;
+                min-width: 1600px;
             }
 
             .table-wrapper {
@@ -488,6 +486,9 @@ require_once __DIR__ . "/partials/app_header.php";
             <div class="menu-title">Ações</div>
 
             <div class="menu-actions menu-actions-tight">
+                <a class="btn-receipt" href="/admin_usuarios_cadastro.php">
+                    Lista de usuários
+                </a>
                 <a class="btn-receipt" href="/php/export_participantes_excel.php">
                     Lista de participantes
                 </a>
