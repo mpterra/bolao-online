@@ -191,7 +191,7 @@ require_once __DIR__ . "/partials/app_header.php";
     <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
     <style>
         .table-usuarios {
-            width: 100%;
+            width: max-content;
             min-width: 1320px;
             table-layout: auto;
             border-collapse: separate;
@@ -227,6 +227,7 @@ require_once __DIR__ . "/partials/app_header.php";
             transition: background-color 0.2s;
             vertical-align: middle;
             white-space: nowrap;
+            min-width: fit-content;
         }
 
         .table-usuarios th:hover {
@@ -255,6 +256,7 @@ require_once __DIR__ . "/partials/app_header.php";
             line-height: 1.25;
             color: rgba(255, 255, 255, 0.9);
             vertical-align: middle;
+            white-space: nowrap;
         }
 
         .col-id,
@@ -266,7 +268,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .col-nome {
             min-width: 320px;
-            max-width: 420px;
+            max-width: 520px;
             white-space: normal;
             overflow-wrap: anywhere;
             word-break: normal;
@@ -364,7 +366,13 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .table-wrapper {
+            display: block;
+            width: 100%;
+            max-width: 100%;
             overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
             margin-top: 16px;
             border: 1px solid rgba(255, 255, 255, 0.10);
             border-radius: 16px;
@@ -416,6 +424,7 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .col-id { width: 60px; }
+        .col-nome { width: 420px; }
         .col-email { width: 250px; }
         .col-telefone { width: 150px; }
         .col-cidade { width: 150px; }
@@ -427,7 +436,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
         @media (max-width: 1200px) {
             .table-usuarios {
-                min-width: 1180px;
+                min-width: 1220px;
             }
 
             .table-usuarios {
@@ -442,7 +451,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
         @media (max-width: 768px) {
             .table-usuarios {
-                min-width: 1040px;
+                min-width: 1160px;
             }
 
             .table-wrapper {
@@ -454,8 +463,8 @@ require_once __DIR__ . "/partials/app_header.php";
             }
 
             .col-nome {
-                min-width: 280px;
-                max-width: 340px;
+                min-width: 300px;
+                max-width: 400px;
             }
         }
     </style>
