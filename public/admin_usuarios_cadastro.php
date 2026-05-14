@@ -355,51 +355,45 @@ require_once __DIR__ . "/partials/app_header.php";
             border: 1px solid rgba(200, 80, 80, 0.4);
         }
 
+        .users-list-card {
+            overflow: visible;
+        }
+
+        .table-inner {
+            width: max-content;
+            min-width: 1600px;
+        }
+
         .table-wrapper {
             display: block;
             width: 100%;
             max-width: 100%;
-            overflow-x: auto;
+            overflow-x: scroll;
             overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain;
             margin-top: 16px;
+            padding-bottom: 4px;
             border: 1px solid rgba(255, 255, 255, 0.10);
             border-radius: 16px;
             background: rgba(255, 255, 255, 0.03);
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-            scrollbar-width: none;
+            scrollbar-width: auto;
+            scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.08);
         }
 
         .table-wrapper::-webkit-scrollbar {
-            height: 0;
-        }
-
-        .table-scrollbar {
-            overflow-x: auto;
-            overflow-y: hidden;
-            height: 18px;
-            margin-top: 8px;
-            padding-bottom: 2px;
-            scrollbar-gutter: stable;
-        }
-
-        .table-scrollbar-track {
-            height: 1px;
-        }
-
-        .table-scrollbar::-webkit-scrollbar {
             height: 14px;
         }
 
-        .table-scrollbar::-webkit-scrollbar-thumb {
+        .table-wrapper::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.24);
             border-radius: 999px;
             border: 3px solid transparent;
             background-clip: padding-box;
         }
 
-        .table-scrollbar::-webkit-scrollbar-track {
+        .table-wrapper::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.06);
             border-radius: 999px;
         }
@@ -538,7 +532,7 @@ require_once __DIR__ . "/partials/app_header.php";
                 <p class="content-sub">Todos os dados cadastrais dos usuários do sistema. Clique nos cabeçalhos para ordenar.</p>
             </div>
 
-            <div class="admin-card">
+            <div class="admin-card users-list-card">
                 <div class="filter-controls">
                     <span class="stats-info">
                         Total: <strong><?php echo count($usuarios); ?></strong> usuário<?php echo count($usuarios) !== 1 ? "s" : ""; ?>
@@ -562,126 +556,123 @@ require_once __DIR__ . "/partials/app_header.php";
                 </div>
 
                 <div style="margin: 0 2px 10px; color: rgba(255,255,255,0.58); font-size: 0.84rem; line-height: 1.4;">
-                    A tabela usa rolagem horizontal quando necessário. Nome, email e cidade ficam visíveis sem truncamento; os demais campos mantêm largura estável para leitura rápida.
+                    Use a barra horizontal logo abaixo da tabela para navegar por todas as colunas. Nome, email e cidade ficam visíveis sem truncamento; os demais campos mantêm largura estável para leitura rápida.
                 </div>
 
                 <div class="table-wrapper" id="usuarios-table-wrapper">
-                    <table class="table-usuarios" aria-label="Tabela de usuários cadastrados">
-                        <colgroup>
-                            <col class="col-id" />
-                            <col class="col-nome" />
-                            <col class="col-email" />
-                            <col class="col-telefone" />
-                            <col class="col-cidade" />
-                            <col class="col-estado" />
-                            <col class="col-tipo" />
-                            <col class="col-ativo" />
-                            <col class="col-criado" />
-                            <col class="col-atualizado" />
-                        </colgroup>
-                        <thead>
-                            <tr>
-                                <th class="col-id sortable <?php echo ($sortCol === "id" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=id&order=" . (($sortCol === "id" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        ID
-                                    </a>
-                                </th>
-                                <th class="col-nome sortable <?php echo ($sortCol === "nome" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=nome&order=" . (($sortCol === "nome" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        Nome
-                                    </a>
-                                </th>
-                                <th class="col-email sortable <?php echo ($sortCol === "email" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=email&order=" . (($sortCol === "email" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        Email
-                                    </a>
-                                </th>
-                                <th class="col-telefone sortable <?php echo ($sortCol === "telefone" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=telefone&order=" . (($sortCol === "telefone" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        Telefone
-                                    </a>
-                                </th>
-                                <th class="col-cidade sortable <?php echo ($sortCol === "cidade" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=cidade&order=" . (($sortCol === "cidade" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        Cidade
-                                    </a>
-                                </th>
-                                <th class="col-estado sortable <?php echo ($sortCol === "estado" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=estado&order=" . (($sortCol === "estado" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        Estado
-                                    </a>
-                                </th>
-                                <th class="col-tipo sortable <?php echo ($sortCol === "tipo_usuario" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=tipo_usuario&order=" . (($sortCol === "tipo_usuario" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        Tipo
-                                    </a>
-                                </th>
-                                <th class="col-ativo sortable <?php echo ($sortCol === "ativo" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=ativo&order=" . (($sortCol === "ativo" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        Ativo
-                                    </a>
-                                </th>
-                                <th class="col-criado sortable <?php echo ($sortCol === "criado_em" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=criado_em&order=" . (($sortCol === "criado_em" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        Criado em
-                                    </a>
-                                </th>
-                                <th class="col-atualizado sortable <?php echo ($sortCol === "atualizado_em" ? "sort-" . $sortOrder : ""); ?>">
-                                    <a href="?<?php echo "sort=atualizado_em&order=" . (($sortCol === "atualizado_em" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
-                                        Atualizado em
-                                    </a>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($usuarios as $u): ?>
-                                <?php
-                                    $uid = (int)$u["id"];
-                                    $nome = (string)$u["nome"];
-                                    $email = (string)$u["email"];
-                                    $telefone = (string)$u["telefone"];
-                                    $cidade = (string)$u["cidade"];
-                                    $estado = (string)$u["estado"];
-                                    $tipo = (string)$u["tipo_usuario"];
-                                    $ativo = (int)$u["ativo"];
-                                    $criado = (string)$u["criado_em"];
-                                    $atualizado = (string)$u["atualizado_em"];
-
-                                    $tipoBadge = (mb_strtoupper($tipo, "UTF-8") === "ADMIN") ? "badge-admin" : "badge-apostador";
-                                    $ativoBadge = $ativo ? "badge-ativo" : "badge-inativo";
-                                    $ativoText = $ativo ? "Ativo" : "Inativo";
-
-                                    // Format timestamps
-                                    $criadoFormatado = date('d/m/Y H:i', strtotime($criado));
-                                    $atualizadoFormatado = date('d/m/Y H:i', strtotime($atualizado));
-                                ?>
+                    <div class="table-inner">
+                        <table class="table-usuarios" aria-label="Tabela de usuários cadastrados">
+                            <colgroup>
+                                <col class="col-id" />
+                                <col class="col-nome" />
+                                <col class="col-email" />
+                                <col class="col-telefone" />
+                                <col class="col-cidade" />
+                                <col class="col-estado" />
+                                <col class="col-tipo" />
+                                <col class="col-ativo" />
+                                <col class="col-criado" />
+                                <col class="col-atualizado" />
+                            </colgroup>
+                            <thead>
                                 <tr>
-                                    <td class="col-id"><?php echo $uid; ?></td>
-                                    <td class="col-nome"><?php echo strh($nome); ?></td>
-                                    <td class="col-email"><?php echo strh($email); ?></td>
-                                    <td class="col-telefone"><?php echo strh($telefone); ?></td>
-                                    <td class="col-cidade"><?php echo strh($cidade); ?></td>
-                                    <td class="col-estado"><?php echo strh($estado); ?></td>
-                                    <td class="col-tipo">
-                                        <span class="badge <?php echo $tipoBadge; ?>">
-                                            <?php echo strh($tipo); ?>
-                                        </span>
-                                    </td>
-                                    <td class="col-ativo">
-                                        <span class="badge <?php echo $ativoBadge; ?>">
-                                            <?php echo $ativoText; ?>
-                                        </span>
-                                    </td>
-                                    <td class="col-criado"><?php echo strh($criadoFormatado); ?></td>
-                                    <td class="col-atualizado"><?php echo strh($atualizadoFormatado); ?></td>
+                                    <th class="col-id sortable <?php echo ($sortCol === "id" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=id&order=" . (($sortCol === "id" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            ID
+                                        </a>
+                                    </th>
+                                    <th class="col-nome sortable <?php echo ($sortCol === "nome" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=nome&order=" . (($sortCol === "nome" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            Nome
+                                        </a>
+                                    </th>
+                                    <th class="col-email sortable <?php echo ($sortCol === "email" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=email&order=" . (($sortCol === "email" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            Email
+                                        </a>
+                                    </th>
+                                    <th class="col-telefone sortable <?php echo ($sortCol === "telefone" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=telefone&order=" . (($sortCol === "telefone" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            Telefone
+                                        </a>
+                                    </th>
+                                    <th class="col-cidade sortable <?php echo ($sortCol === "cidade" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=cidade&order=" . (($sortCol === "cidade" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            Cidade
+                                        </a>
+                                    </th>
+                                    <th class="col-estado sortable <?php echo ($sortCol === "estado" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=estado&order=" . (($sortCol === "estado" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            Estado
+                                        </a>
+                                    </th>
+                                    <th class="col-tipo sortable <?php echo ($sortCol === "tipo_usuario" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=tipo_usuario&order=" . (($sortCol === "tipo_usuario" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            Tipo
+                                        </a>
+                                    </th>
+                                    <th class="col-ativo sortable <?php echo ($sortCol === "ativo" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=ativo&order=" . (($sortCol === "ativo" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            Ativo
+                                        </a>
+                                    </th>
+                                    <th class="col-criado sortable <?php echo ($sortCol === "criado_em" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=criado_em&order=" . (($sortCol === "criado_em" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            Criado em
+                                        </a>
+                                    </th>
+                                    <th class="col-atualizado sortable <?php echo ($sortCol === "atualizado_em" ? "sort-" . $sortOrder : ""); ?>">
+                                        <a href="?<?php echo "sort=atualizado_em&order=" . (($sortCol === "atualizado_em" && $sortOrder === "asc") ? "desc" : "asc"); ?><?php echo $mostrarInativos ? "&ativo=all" : ""; ?>" style="color: inherit; text-decoration: none;">
+                                            Atualizado em
+                                        </a>
+                                    </th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($usuarios as $u): ?>
+                                    <?php
+                                        $uid = (int)$u["id"];
+                                        $nome = (string)$u["nome"];
+                                        $email = (string)$u["email"];
+                                        $telefone = (string)$u["telefone"];
+                                        $cidade = (string)$u["cidade"];
+                                        $estado = (string)$u["estado"];
+                                        $tipo = (string)$u["tipo_usuario"];
+                                        $ativo = (int)$u["ativo"];
+                                        $criado = (string)$u["criado_em"];
+                                        $atualizado = (string)$u["atualizado_em"];
 
-                <div class="table-scrollbar" id="usuarios-table-scrollbar" aria-hidden="true">
-                    <div class="table-scrollbar-track" id="usuarios-table-scrollbar-track"></div>
+                                        $tipoBadge = (mb_strtoupper($tipo, "UTF-8") === "ADMIN") ? "badge-admin" : "badge-apostador";
+                                        $ativoBadge = $ativo ? "badge-ativo" : "badge-inativo";
+                                        $ativoText = $ativo ? "Ativo" : "Inativo";
+
+                                        $criadoFormatado = date('d/m/Y H:i', strtotime($criado));
+                                        $atualizadoFormatado = date('d/m/Y H:i', strtotime($atualizado));
+                                    ?>
+                                    <tr>
+                                        <td class="col-id"><?php echo $uid; ?></td>
+                                        <td class="col-nome"><?php echo strh($nome); ?></td>
+                                        <td class="col-email"><?php echo strh($email); ?></td>
+                                        <td class="col-telefone"><?php echo strh($telefone); ?></td>
+                                        <td class="col-cidade"><?php echo strh($cidade); ?></td>
+                                        <td class="col-estado"><?php echo strh($estado); ?></td>
+                                        <td class="col-tipo">
+                                            <span class="badge <?php echo $tipoBadge; ?>">
+                                                <?php echo strh($tipo); ?>
+                                            </span>
+                                        </td>
+                                        <td class="col-ativo">
+                                            <span class="badge <?php echo $ativoBadge; ?>">
+                                                <?php echo $ativoText; ?>
+                                            </span>
+                                        </td>
+                                        <td class="col-criado"><?php echo strh($criadoFormatado); ?></td>
+                                        <td class="col-atualizado"><?php echo strh($atualizadoFormatado); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <?php if (empty($usuarios)): ?>
@@ -694,52 +685,6 @@ require_once __DIR__ . "/partials/app_header.php";
         </main>
     </div>
 </div>
-
-<script>
-(() => {
-    const tableViewport = document.getElementById("usuarios-table-wrapper");
-    const table = tableViewport ? tableViewport.querySelector(".table-usuarios") : null;
-    const bottomScrollbar = document.getElementById("usuarios-table-scrollbar");
-    const bottomTrack = document.getElementById("usuarios-table-scrollbar-track");
-
-    if (!tableViewport || !table || !bottomScrollbar || !bottomTrack) {
-        return;
-    }
-
-    let syncing = false;
-
-    const syncWidths = () => {
-        const width = table.scrollWidth;
-        bottomTrack.style.width = width + "px";
-        bottomScrollbar.style.display = width > tableViewport.clientWidth ? "block" : "none";
-    };
-
-    const syncScroll = (source, target) => {
-        if (syncing) {
-            return;
-        }
-
-        syncing = true;
-        target.scrollLeft = source.scrollLeft;
-        window.requestAnimationFrame(() => {
-            syncing = false;
-        });
-    };
-
-    tableViewport.addEventListener("scroll", () => syncScroll(tableViewport, bottomScrollbar));
-    bottomScrollbar.addEventListener("scroll", () => syncScroll(bottomScrollbar, tableViewport));
-
-    if (window.ResizeObserver) {
-        const resizeObserver = new ResizeObserver(syncWidths);
-        resizeObserver.observe(tableViewport);
-        resizeObserver.observe(table);
-    }
-
-    window.addEventListener("load", syncWidths);
-    window.addEventListener("resize", syncWidths);
-    syncWidths();
-})();
-</script>
 
 </body>
 </html>
