@@ -191,7 +191,6 @@ require_once __DIR__ . "/partials/app_header.php";
     <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
     <style>
         .table-usuarios {
-            display: block;
             width: 1600px;
             min-width: 1600px;
             table-layout: fixed;
@@ -228,8 +227,6 @@ require_once __DIR__ . "/partials/app_header.php";
             transition: background-color 0.2s;
             vertical-align: middle;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .table-usuarios th:hover {
@@ -258,8 +255,6 @@ require_once __DIR__ . "/partials/app_header.php";
             line-height: 1.25;
             color: rgba(255, 255, 255, 0.9);
             vertical-align: middle;
-            overflow: hidden;
-            text-overflow: ellipsis;
             white-space: nowrap;
         }
 
@@ -368,12 +363,45 @@ require_once __DIR__ . "/partials/app_header.php";
             overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain;
-            scrollbar-gutter: stable both-edges;
             margin-top: 16px;
             border: 1px solid rgba(255, 255, 255, 0.10);
             border-radius: 16px;
             background: rgba(255, 255, 255, 0.03);
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            scrollbar-width: none;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            height: 0;
+        }
+
+        .table-scrollbar {
+            overflow-x: auto;
+            overflow-y: hidden;
+            height: 18px;
+            margin-top: 8px;
+            padding-bottom: 2px;
+            scrollbar-gutter: stable;
+        }
+
+        .table-scrollbar-track {
+            height: 1px;
+        }
+
+        .table-scrollbar::-webkit-scrollbar {
+            height: 14px;
+        }
+
+        .table-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.24);
+            border-radius: 999px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+        }
+
+        .table-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
         }
 
         .filter-controls {
@@ -486,11 +514,11 @@ require_once __DIR__ . "/partials/app_header.php";
             <div class="menu-title">Ações</div>
 
             <div class="menu-actions menu-actions-tight">
+                <a class="btn-receipt" href="/admin.php">
+                    Exportar apostas por usuário
+                </a>
                 <a class="btn-receipt" href="/admin_usuarios_cadastro.php">
                     Lista de usuários
-                </a>
-                <a class="btn-receipt" href="/php/export_participantes_excel.php">
-                    Lista de participantes
                 </a>
                 <a class="btn-receipt" href="/php/export_apostas_todas_zip.php">
                     Baixar todas apostas
@@ -537,7 +565,7 @@ require_once __DIR__ . "/partials/app_header.php";
                     A tabela usa rolagem horizontal quando necessário. Nome, email e cidade ficam visíveis sem truncamento; os demais campos mantêm largura estável para leitura rápida.
                 </div>
 
-                <div class="table-wrapper">
+                <div class="table-wrapper" id="usuarios-table-wrapper">
                     <table class="table-usuarios" aria-label="Tabela de usuários cadastrados">
                         <colgroup>
                             <col class="col-id" />
@@ -652,6 +680,10 @@ require_once __DIR__ . "/partials/app_header.php";
                     </table>
                 </div>
 
+                <div class="table-scrollbar" id="usuarios-table-scrollbar" aria-hidden="true">
+                    <div class="table-scrollbar-track" id="usuarios-table-scrollbar-track"></div>
+                </div>
+
                 <?php if (empty($usuarios)): ?>
                     <div style="padding: 40px 20px; text-align: center; color: rgba(255,255,255,0.6);">
                         <p>Nenhum usuário encontrado.</p>
@@ -662,6 +694,52 @@ require_once __DIR__ . "/partials/app_header.php";
         </main>
     </div>
 </div>
+
+<script>
+(() => {
+    const tableViewport = document.getElementById("usuarios-table-wrapper");
+    const table = tableViewport ? tableViewport.querySelector(".table-usuarios") : null;
+    const bottomScrollbar = document.getElementById("usuarios-table-scrollbar");
+    const bottomTrack = document.getElementById("usuarios-table-scrollbar-track");
+
+    if (!tableViewport || !table || !bottomScrollbar || !bottomTrack) {
+        return;
+    }
+
+    let syncing = false;
+
+    const syncWidths = () => {
+        const width = table.scrollWidth;
+        bottomTrack.style.width = width + "px";
+        bottomScrollbar.style.display = width > tableViewport.clientWidth ? "block" : "none";
+    };
+
+    const syncScroll = (source, target) => {
+        if (syncing) {
+            return;
+        }
+
+        syncing = true;
+        target.scrollLeft = source.scrollLeft;
+        window.requestAnimationFrame(() => {
+            syncing = false;
+        });
+    };
+
+    tableViewport.addEventListener("scroll", () => syncScroll(tableViewport, bottomScrollbar));
+    bottomScrollbar.addEventListener("scroll", () => syncScroll(bottomScrollbar, tableViewport));
+
+    if (window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver(syncWidths);
+        resizeObserver.observe(tableViewport);
+        resizeObserver.observe(table);
+    }
+
+    window.addEventListener("load", syncWidths);
+    window.addEventListener("resize", syncWidths);
+    syncWidths();
+})();
+</script>
 
 </body>
 </html>
