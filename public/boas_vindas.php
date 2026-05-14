@@ -18,6 +18,7 @@ $whatsappLink = 'https://chat.whatsapp.com/CmzZCNsNenY8RKFxeOVwLA';
 
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/boas_vindas.css">
+    <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>
 <body>
     <div class="welcome-page">

@@ -467,6 +467,7 @@ require_once __DIR__ . "/partials/app_header.php";
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Cadastrar Mata-Mata — Admin</title>
   <link rel="stylesheet" href="<?php echo strh($cssHref); ?>">
+  <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>
 <body>
 

@@ -30,6 +30,11 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			"href"  => "/app.php",
 		],
 		[
+			"key"   => "campeao",
+			"label" => "Campeão",
+			"href"  => "/campeao.php",
+		],
+		[
 			"key"   => "mata_mata",
 			"label" => "Mata-Mata",
 			"href"  => "/mata_mata_palpites.php",
@@ -100,27 +105,28 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 
 			.bh-header__bar{
 				display:grid;
-				grid-template-columns:minmax(0, auto) minmax(0, 1fr) auto;
+				grid-template-columns:minmax(238px, 258px) minmax(0, 1fr) auto;
 				align-items:center;
-				gap:14px;
-				padding:10px 14px;
+				gap:8px;
+				padding:8px 10px;
 			}
 
 			.bh-header__brand{
 				min-width:0;
+				overflow:hidden;
 			}
 
 			.bh-header__brand-link{
 				display:flex;
 				align-items:center;
-				gap:10px;
+				gap:8px;
 				text-decoration:none;
 				min-width:0;
 			}
 
 			.bh-header__logo{
-				width:40px;
-				height:40px;
+				width:42px;
+				height:42px;
 				object-fit:contain;
 				flex:0 0 auto;
 				display:block;
@@ -133,12 +139,14 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			}
 
 			.bh-header__title{
-				font-size:15px;
+				font-size:14px;
 				font-weight:900;
 				line-height:1.1;
 				letter-spacing:.2px;
 				color:rgba(255,255,255,.96);
 				white-space:nowrap;
+				overflow:hidden;
+				text-overflow:ellipsis;
 			}
 
 			.bh-header__subtitle{
@@ -148,16 +156,24 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				white-space:nowrap;
 				overflow:hidden;
 				text-overflow:ellipsis;
-				max-width:260px;
+				max-width:190px;
 			}
 
 			.bh-header__nav{
 				display:flex;
 				align-items:center;
-				justify-content:center;
-				gap:2px;
+				justify-content:flex-start;
+				gap:4px;
 				min-width:0;
 				flex-wrap:nowrap;
+				overflow-x:auto;
+				overscroll-behavior-x:contain;
+				-webkit-overflow-scrolling:touch;
+				scrollbar-width:none;
+			}
+
+			.bh-header__nav::-webkit-scrollbar{
+				display:none;
 			}
 
 			.bh-header__nav-link{
@@ -165,13 +181,13 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				display:inline-flex;
 				align-items:center;
 				justify-content:center;
-				padding:8px 10px;
-				border-radius:10px;
+				padding:7px 8px;
+				border-radius:8px;
 				text-decoration:none;
 				color:rgba(255,255,255,.78);
-				font-size:13px;
+				font-size:11px;
 				font-weight:800;
-				line-height:1;
+				line-height:1.1;
 				white-space:nowrap;
 				transition:background .18s ease,color .18s ease,transform .18s ease;
 			}
@@ -204,8 +220,9 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			.bh-header__right{
 				display:flex;
 				align-items:center;
-				gap:10px;
+				gap:6px;
 				flex:0 0 auto;
+				min-width:0;
 			}
 
 			.bh-header__user{
@@ -213,8 +230,8 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				align-items:center;
 				gap:8px;
 				min-width:0;
-				padding:7px 10px;
-				border-radius:999px;
+				padding:6px 8px;
+				border-radius:10px;
 				border:1px solid rgba(255,255,255,.10);
 				background:rgba(255,255,255,.05);
 			}
@@ -246,7 +263,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			}
 
 			.bh-header__user-name{
-				max-width:150px;
+				max-width:96px;
 				overflow:hidden;
 				text-overflow:ellipsis;
 				white-space:nowrap;
@@ -275,10 +292,10 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				display:inline-flex;
 				align-items:center;
 				justify-content:center;
-				padding:8px 10px;
-				border-radius:10px;
+				padding:7px 8px;
+				border-radius:8px;
 				text-decoration:none;
-				font-size:12px;
+				font-size:11px;
 				font-weight:800;
 				color:rgba(255,255,255,.86);
 				border:1px solid rgba(255,255,255,.10);
@@ -455,17 +472,21 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			}
 
 			@media (max-width: 1100px){
+				.bh-header__bar{
+					grid-template-columns:minmax(120px, 170px) minmax(0, 1fr) auto;
+				}
+
 				.bh-header__nav-link{
-					padding:8px 8px;
-					font-size:12px;
+					padding:7px 7px;
+					font-size:10px;
 				}
 
 				.bh-header__user-name{
-					max-width:110px;
+					max-width:72px;
 				}
 			}
 
-			@media (max-width: 860px){
+			@media (max-width: 1180px){
 				.bh-header__bar{
 					grid-template-columns:minmax(0, 1fr) auto;
 					gap:10px;
@@ -567,7 +588,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 					});
 
 					window.addEventListener("resize", function () {
-						if (window.innerWidth > 860) {
+						if (window.innerWidth > 1180) {
 							closeMenu();
 						}
 					});
@@ -585,7 +606,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				<a class="bh-header__brand-link" href="/app.php" aria-label="Ir para a página principal do Bolão da Copa">
 					<img class="bh-header__logo" src="/img/logo.png" alt="Bolão" onerror="this.style.display='none'">
 					<div class="bh-header__title-wrap">
-						<div class="bh-header__title">Bolão da Copa</div>
+						<div class="bh-header__title">Bolão do Thiago</div>
 						<div class="bh-header__subtitle"><?php echo strh($subtitle); ?></div>
 					</div>
 				</a>

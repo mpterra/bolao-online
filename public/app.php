@@ -1141,6 +1141,7 @@ require_once __DIR__ . "/partials/app_header.php";
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 	<link rel="stylesheet" href="<?php echo strh($ASSET_WEB_BASE . "/css/app.css?v=" . (string)@filemtime($ASSET_FS_BASE . "/css/app.css")); ?>">
 	<link rel="stylesheet" href="<?php echo strh($ASSET_WEB_BASE . "/css/palpites_por_dia.css?v=" . (string)@filemtime($ASSET_FS_BASE . "/css/palpites_por_dia.css")); ?>">
+	<link rel="stylesheet" href="<?php echo strh($ASSET_WEB_BASE . "/css/visual-identity.css?v=" . (string)@filemtime($ASSET_FS_BASE . "/css/visual-identity.css")); ?>">
 </head>
 <body data-page="app" data-view-mode="<?php echo strh($activeMode); ?>">
 
@@ -1775,4 +1776,3 @@ require_once __DIR__ . "/partials/app_header.php";
 
 </body>
 </html>
-

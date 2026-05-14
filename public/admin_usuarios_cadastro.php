@@ -98,16 +98,6 @@ try {
     exit;
 }
 
-// Helper function to toggle sort order
-function toggleSort(string $col, string $current, string $currentOrder): string {
-    $newOrder = ($current === $col && $currentOrder === "asc") ? "desc" : "asc";
-    $params = "sort=" . urlencode($col) . "&order=" . $newOrder;
-    if ($mostrarInativos = isset($_GET["ativo"]) && $_GET["ativo"] === "all") {
-        $params .= "&ativo=all";
-    }
-    return $params;
-}
-
 require_once __DIR__ . "/partials/app_header.php";
 ?>
 <!DOCTYPE html>
@@ -117,6 +107,7 @@ require_once __DIR__ . "/partials/app_header.php";
     <title>Bolão da Copa - Cadastro de Usuários</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
     <style>
         .table-usuarios {
             width: 100%;
