@@ -255,6 +255,9 @@ require_once __DIR__ . "/partials/app_header.php";
         .users-page-content {
             min-width: 0;
             overflow: visible;
+            --users-grid-columns: 64px 260px 245px 138px 150px 60px 112px 92px 148px 148px;
+            --users-grid-inner-width: 1417px;
+            --users-grid-pad-x: 8px;
         }
 
         .users-layout {
@@ -406,7 +409,7 @@ require_once __DIR__ . "/partials/app_header.php";
             overflow-y: hidden;
             overscroll-behavior-x: contain;
             -webkit-overflow-scrolling: touch;
-            scrollbar-gutter: stable both-edges;
+            scrollbar-gutter: stable;
             padding: 2px 0 12px;
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 14px;
@@ -438,8 +441,8 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .users-board {
-            width: 1602px;
-            min-width: 1602px;
+            width: calc(var(--users-grid-inner-width) + (var(--users-grid-pad-x) * 2));
+            min-width: calc(var(--users-grid-inner-width) + (var(--users-grid-pad-x) * 2));
             display: grid;
             gap: 8px;
             padding: 8px;
@@ -447,8 +450,8 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .users-board-row {
             display: grid;
-            grid-template-columns: 64px 280px 270px 150px 170px 70px 120px 96px 150px 150px;
-            min-width: 1602px;
+            grid-template-columns: var(--users-grid-columns);
+            min-width: var(--users-grid-inner-width);
             border: 1px solid rgba(255, 255, 255, 0.10);
             border-radius: 14px;
             overflow: hidden;
@@ -614,6 +617,10 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         @media (max-width: 640px) {
+            .users-page-content {
+                --users-grid-pad-x: 5px;
+            }
+
             .users-page-content .content-h1 {
                 font-size: 1.14rem !important;
             }
