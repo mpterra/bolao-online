@@ -4,5 +4,8 @@
 # Ignorar arquivos temporários
 /public/gerar_hash.php
 
+# Ambiente virtual local
+.venv/
+
 # Sistema
 .DS_Store
