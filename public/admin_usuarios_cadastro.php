@@ -43,7 +43,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
     exit;
 }
 
-if (isset($_GET["export"]) && $_GET["export"] === "xls") {
+if (isset($_GET["export"]) && $_GET["export"] === "csv") {
     $sortCol = isset($_GET["sort"]) ? (string)$_GET["sort"] : "tipo_usuario";
     $sortOrder = isset($_GET["order"]) ? (string)$_GET["order"] : "desc";
     $mostrarInativos = isset($_GET["ativo"]) && $_GET["ativo"] === "all";
@@ -192,10 +192,11 @@ require_once __DIR__ . "/partials/app_header.php";
     <style>
         .table-usuarios {
             width: 100%;
-            min-width: 1120px;
-            table-layout: fixed;
-            border-collapse: collapse;
-            margin-top: 20px;
+            min-width: 1320px;
+            table-layout: auto;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 0;
         }
 
         .table-usuarios thead {
@@ -206,17 +207,26 @@ require_once __DIR__ . "/partials/app_header.php";
             z-index: 10;
         }
 
+        .table-usuarios thead th:first-child {
+            border-top-left-radius: 14px;
+        }
+
+        .table-usuarios thead th:last-child {
+            border-top-right-radius: 14px;
+        }
+
         .table-usuarios th {
-            padding: 10px 8px;
+            padding: 11px 10px;
             text-align: left;
             font-weight: 600;
             color: #ffffff;
             border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-            font-size: 0.86rem;
+            font-size: 0.84rem;
             cursor: pointer;
             user-select: none;
             transition: background-color 0.2s;
             vertical-align: middle;
+            white-space: nowrap;
         }
 
         .table-usuarios th:hover {
@@ -239,9 +249,9 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .table-usuarios td {
-            padding: 10px 8px;
+            padding: 11px 10px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             line-height: 1.25;
             color: rgba(255, 255, 255, 0.9);
             vertical-align: middle;
@@ -255,38 +265,47 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .col-nome {
-            width: 260px;
+            min-width: 320px;
+            max-width: 420px;
             white-space: normal;
             overflow-wrap: anywhere;
             word-break: normal;
-            line-height: 1.15;
+            line-height: 1.2;
+            font-weight: 700;
         }
 
         .col-email,
         .col-telefone,
         .col-cidade,
+        .col-estado,
         .col-criado,
         .col-atualizado {
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .col-email {
-            width: 210px;
+            min-width: 250px;
         }
 
         .col-telefone {
-            width: 130px;
+            min-width: 150px;
         }
 
         .col-cidade {
-            width: 120px;
+            min-width: 150px;
         }
 
         .col-criado,
         .col-atualizado {
-            width: 150px;
+            min-width: 170px;
+        }
+
+        .table-usuarios td.col-email,
+        .table-usuarios td.col-telefone,
+        .table-usuarios td.col-cidade,
+        .table-usuarios td.col-criado,
+        .table-usuarios td.col-atualizado {
+            overflow-wrap: anywhere;
         }
 
         .table-usuarios tbody tr:hover {
@@ -295,6 +314,16 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .table-usuarios tbody tr:nth-child(even) {
             background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .table-usuarios tbody td:first-child,
+        .table-usuarios thead th:first-child {
+            padding-left: 14px;
+        }
+
+        .table-usuarios tbody td:last-child,
+        .table-usuarios thead th:last-child {
+            padding-right: 14px;
         }
 
         .badge {
@@ -336,7 +365,11 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .table-wrapper {
             overflow-x: auto;
-            margin-top: 20px;
+            margin-top: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
 
         .filter-controls {
@@ -383,20 +416,18 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .col-id { width: 60px; }
-        .col-email { width: 200px; }
-        .col-telefone { width: 130px; }
-        .col-cidade { width: 120px; }
+        .col-email { width: 250px; }
+        .col-telefone { width: 150px; }
+        .col-cidade { width: 150px; }
         .col-estado { width: 70px; }
         .col-tipo { width: 120px; }
         .col-ativo { width: 80px; }
-        .col-criado { width: 160px; }
-        .col-atualizado { width: 160px; }
+        .col-criado { width: 170px; }
+        .col-atualizado { width: 170px; }
 
         @media (max-width: 1200px) {
-            .col-telefone,
-            .col-criado,
-            .col-atualizado {
-                display: none;
+            .table-usuarios {
+                min-width: 1180px;
             }
 
             .table-usuarios {
@@ -410,19 +441,21 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         @media (max-width: 768px) {
-            .col-cidade,
-            .col-estado {
-                display: none;
+            .table-usuarios {
+                min-width: 1040px;
             }
 
-            .col-email {
-                width: 150px;
-                overflow: hidden;
-                text-overflow: ellipsis;
+            .table-wrapper {
+                border-radius: 12px;
             }
 
             .table-usuarios {
-                font-size: 0.85rem;
+                font-size: 0.86rem;
+            }
+
+            .col-nome {
+                min-width: 280px;
+                max-width: 340px;
             }
         }
     </style>
@@ -484,14 +517,30 @@ require_once __DIR__ . "/partials/app_header.php";
                             <?php echo $filterText; ?>
                         </a>
                         <a class="btn-toggle-filter"
-                           href="?<?php echo $baseQuery; ?>&export=xls">
-                            Exportar tabela
+                           href="?<?php echo $baseQuery; ?>&export=csv">
+                            Exportar CSV
                         </a>
                     </div>
                 </div>
 
+                <div style="margin: 0 2px 10px; color: rgba(255,255,255,0.58); font-size: 0.84rem; line-height: 1.4;">
+                    A tabela usa rolagem horizontal quando necessário. Nome, email e cidade ficam visíveis sem truncamento; os demais campos mantêm largura estável para leitura rápida.
+                </div>
+
                 <div class="table-wrapper">
-                    <table class="table-usuarios">
+                    <table class="table-usuarios" aria-label="Tabela de usuários cadastrados">
+                        <colgroup>
+                            <col class="col-id" />
+                            <col class="col-nome" />
+                            <col class="col-email" />
+                            <col class="col-telefone" />
+                            <col class="col-cidade" />
+                            <col class="col-estado" />
+                            <col class="col-tipo" />
+                            <col class="col-ativo" />
+                            <col class="col-criado" />
+                            <col class="col-atualizado" />
+                        </colgroup>
                         <thead>
                             <tr>
                                 <th class="col-id sortable <?php echo ($sortCol === "id" ? "sort-" . $sortOrder : ""); ?>">
