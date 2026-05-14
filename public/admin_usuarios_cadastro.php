@@ -111,6 +111,8 @@ require_once __DIR__ . "/partials/app_header.php";
     <style>
         .table-usuarios {
             width: 100%;
+            min-width: 1080px;
+            table-layout: fixed;
             border-collapse: collapse;
             margin-top: 20px;
         }
@@ -124,15 +126,16 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .table-usuarios th {
-            padding: 12px 8px;
+            padding: 10px 8px;
             text-align: left;
             font-weight: 600;
             color: #ffffff;
             border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-            font-size: 0.9rem;
+            font-size: 0.86rem;
             cursor: pointer;
             user-select: none;
             transition: background-color 0.2s;
+            vertical-align: middle;
         }
 
         .table-usuarios th:hover {
@@ -155,10 +158,51 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .table-usuarios td {
-            padding: 12px 8px;
+            padding: 10px 8px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            line-height: 1.25;
             color: rgba(255, 255, 255, 0.9);
+            vertical-align: middle;
+        }
+
+        .col-id,
+        .col-estado,
+        .col-tipo,
+        .col-ativo {
+            white-space: nowrap;
+        }
+
+        .col-nome,
+        .col-email,
+        .col-telefone,
+        .col-cidade,
+        .col-criado,
+        .col-atualizado {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .col-nome {
+            width: 170px;
+        }
+
+        .col-email {
+            width: 210px;
+        }
+
+        .col-telefone {
+            width: 130px;
+        }
+
+        .col-cidade {
+            width: 120px;
+        }
+
+        .col-criado,
+        .col-atualizado {
+            width: 150px;
         }
 
         .table-usuarios tbody tr:hover {
@@ -170,13 +214,16 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .badge {
-            display: inline-block;
-            padding: 4px 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
 
         .badge-admin {
