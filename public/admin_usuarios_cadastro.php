@@ -53,16 +53,16 @@ function resolve_users_listing_state(array $query): array {
         "atualizado_em"
     ];
 
-    $sortCol = isset($query["sort"]) ? (string)$query["sort"] : "tipo_usuario";
-    $sortOrder = isset($query["order"]) ? (string)$query["order"] : "desc";
+    $sortCol = isset($query["sort"]) ? (string)$query["sort"] : "id";
+    $sortOrder = isset($query["order"]) ? (string)$query["order"] : "asc";
     $ativoParam = isset($query["ativo"]) ? (string)$query["ativo"] : "all";
 
     if (!in_array($sortCol, $allowedCols, true)) {
-        $sortCol = "tipo_usuario";
+        $sortCol = "id";
     }
 
     if ($sortOrder !== "asc" && $sortOrder !== "desc") {
-        $sortOrder = "desc";
+        $sortOrder = "asc";
     }
 
     return [
