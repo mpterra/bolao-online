@@ -43,6 +43,87 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
     exit;
 }
 
+if (isset($_GET["export"]) && $_GET["export"] === "xls") {
+    $sortCol = isset($_GET["sort"]) ? (string)$_GET["sort"] : "tipo_usuario";
+    $sortOrder = isset($_GET["order"]) ? (string)$_GET["order"] : "desc";
+    $mostrarInativos = isset($_GET["ativo"]) && $_GET["ativo"] === "all";
+
+    $allowedCols = [
+        "id",
+        "nome",
+        "email",
+        "telefone",
+        "cidade",
+        "estado",
+        "tipo_usuario",
+        "ativo",
+        "criado_em",
+        "atualizado_em"
+    ];
+
+    if (!in_array($sortCol, $allowedCols, true)) {
+        $sortCol = "tipo_usuario";
+    }
+
+    if ($sortOrder !== "asc" && $sortOrder !== "desc") {
+        $sortOrder = "desc";
+    }
+
+    if ($sortCol === "tipo_usuario" && $sortOrder === "desc") {
+        $orderBy = "CASE WHEN tipo_usuario='ADMIN' THEN 0 ELSE 1 END ASC, nome ASC";
+    } else {
+        $orderBy = "`" . $sortCol . "` " . strtoupper($sortOrder);
+    }
+
+    try {
+        $sql = "
+            SELECT id, nome, email, telefone, cidade, estado, tipo_usuario, ativo, criado_em, atualizado_em
+            FROM usuarios
+        ";
+
+        if (!$mostrarInativos) {
+            $sql .= " WHERE ativo = 1";
+        }
+
+        $sql .= " ORDER BY " . $orderBy;
+
+        $stmt = $pdo->query($sql);
+        $usuariosExport = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $filename = "usuarios_" . date("Y-m-d_H-i") . ".csv";
+        header("Content-Type: text/csv; charset=UTF-8");
+        header("Content-Disposition: attachment; filename=\"{$filename}\"");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        $output = fopen("php://output", "w");
+        fwrite($output, "\xEF\xBB\xBF");
+        fputcsv($output, ["ID", "Nome", "Email", "Telefone", "Cidade", "Estado", "Tipo", "Ativo", "Criado em", "Atualizado em"], ";");
+
+        foreach ($usuariosExport as $u) {
+            fputcsv($output, [
+                (string)($u["id"] ?? ""),
+                (string)($u["nome"] ?? ""),
+                (string)($u["email"] ?? ""),
+                (string)($u["telefone"] ?? ""),
+                (string)($u["cidade"] ?? ""),
+                (string)($u["estado"] ?? ""),
+                (string)($u["tipo_usuario"] ?? ""),
+                ((int)($u["ativo"] ?? 0) === 1 ? "ATIVO" : "INATIVO"),
+                (string)($u["criado_em"] ?? ""),
+                (string)($u["atualizado_em"] ?? ""),
+            ], ";");
+        }
+
+        fclose($output);
+        exit;
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo "Erro ao exportar usuários.";
+        exit;
+    }
+}
+
 // Get sort parameters
 $sortCol = isset($_GET["sort"]) ? (string)$_GET["sort"] : "tipo_usuario";
 $sortOrder = isset($_GET["order"]) ? (string)$_GET["order"] : "desc";
@@ -111,7 +192,7 @@ require_once __DIR__ . "/partials/app_header.php";
     <style>
         .table-usuarios {
             width: 100%;
-            min-width: 1080px;
+            min-width: 1120px;
             table-layout: fixed;
             border-collapse: collapse;
             margin-top: 20px;
@@ -173,7 +254,14 @@ require_once __DIR__ . "/partials/app_header.php";
             white-space: nowrap;
         }
 
-        .col-nome,
+        .col-nome {
+            width: 260px;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: normal;
+            line-height: 1.15;
+        }
+
         .col-email,
         .col-telefone,
         .col-cidade,
@@ -182,10 +270,6 @@ require_once __DIR__ . "/partials/app_header.php";
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-
-        .col-nome {
-            width: 170px;
         }
 
         .col-email {
@@ -291,8 +375,14 @@ require_once __DIR__ . "/partials/app_header.php";
             font-size: 0.95rem;
         }
 
+        .toolbar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
         .col-id { width: 60px; }
-        .col-nome { width: 180px; }
         .col-email { width: 200px; }
         .col-telefone { width: 130px; }
         .col-cidade { width: 120px; }
@@ -382,15 +472,22 @@ require_once __DIR__ . "/partials/app_header.php";
                     <span class="stats-info">
                         Total: <strong><?php echo count($usuarios); ?></strong> usuário<?php echo count($usuarios) !== 1 ? "s" : ""; ?>
                     </span>
-                    <?php
-                        $filterParam = $mostrarInativos ? "" : "&ativo=all";
-                        $filterText = $mostrarInativos ? "Ocultar inativos" : "Mostrar inativos";
-                        $filterClass = $mostrarInativos ? "active" : "";
-                    ?>
-                    <a class="btn-toggle-filter <?php echo $filterClass; ?>"
-                       href="?sort=<?php echo urlencode($sortCol); ?>&order=<?php echo $sortOrder; ?><?php echo $filterParam; ?>">
-                        <?php echo $filterText; ?>
-                    </a>
+                    <div class="toolbar-actions">
+                        <?php
+                            $filterParam = $mostrarInativos ? "" : "&ativo=all";
+                            $filterText = $mostrarInativos ? "Ocultar inativos" : "Mostrar inativos";
+                            $filterClass = $mostrarInativos ? "active" : "";
+                            $baseQuery = "sort=" . urlencode($sortCol) . "&order=" . urlencode($sortOrder) . $filterParam;
+                        ?>
+                        <a class="btn-toggle-filter <?php echo $filterClass; ?>"
+                           href="?<?php echo $baseQuery; ?>">
+                            <?php echo $filterText; ?>
+                        </a>
+                        <a class="btn-toggle-filter"
+                           href="?<?php echo $baseQuery; ?>&export=xls">
+                            Exportar tabela
+                        </a>
+                    </div>
                 </div>
 
                 <div class="table-wrapper">
