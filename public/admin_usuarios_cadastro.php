@@ -236,6 +236,22 @@ require_once __DIR__ . "/partials/app_header.php";
             width: min(1580px, 100%) !important;
         }
 
+        .users-page-content .content-head {
+            margin-bottom: 12px;
+        }
+
+        .users-page-content .content-h1 {
+            font-size: clamp(1.56rem, 3vw, 2.38rem) !important;
+            line-height: 1.18 !important;
+            margin-bottom: 4px;
+        }
+
+        .users-page-content .content-sub {
+            font-size: 0.86rem;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
         .users-page-shell {
             grid-template-columns: 240px minmax(0, 1fr);
         }
@@ -247,7 +263,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
         .users-layout {
             display: grid;
-            gap: 18px;
+            gap: 14px;
             min-width: 0;
         }
 
@@ -264,36 +280,39 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .users-toolbar-card {
-            padding: 18px;
+            padding: 14px 16px;
             display: grid;
-            gap: 16px;
-        }
-
-        .users-summary {
-            display: flex;
-            flex-wrap: wrap;
             gap: 12px;
         }
 
+        .users-summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+        }
+
         .users-metric {
-            min-width: 136px;
-            padding: 14px 16px;
-            border-radius: 14px;
+            min-width: 0;
+            padding: 10px 12px;
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.12);
             background: rgba(255, 255, 255, 0.05);
+            display: grid;
+            gap: 4px;
         }
 
         .users-metric span {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 0;
             color: rgba(255, 255, 255, 0.68);
-            font-size: 0.76rem;
+            font-size: 0.66rem;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
         }
 
         .users-metric strong {
             display: block;
-            font-size: 1.34rem;
+            font-size: 1.08rem;
             line-height: 1;
             color: #ffffff;
         }
@@ -301,27 +320,27 @@ require_once __DIR__ . "/partials/app_header.php";
         .filter-controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
             justify-content: space-between;
             align-items: center;
         }
 
         .stats-info {
             color: rgba(255, 255, 255, 0.72);
-            font-size: 0.95rem;
+            font-size: 0.84rem;
             line-height: 1.4;
         }
 
         .toolbar-actions {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
         }
 
         .btn-toggle-filter {
-            padding: 10px 16px;
-            min-height: 42px;
+            padding: 8px 14px;
+            min-height: 38px;
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.18);
             background: rgba(255, 255, 255, 0.08);
@@ -330,6 +349,7 @@ require_once __DIR__ . "/partials/app_header.php";
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.86rem;
             transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
         }
 
@@ -346,38 +366,42 @@ require_once __DIR__ . "/partials/app_header.php";
         }
 
         .users-data-card {
-            padding: 18px;
+            padding: 14px 16px 16px;
             overflow: visible;
         }
 
         .users-data-head {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 8px;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 14px;
+            align-items: center;
+            margin-bottom: 10px;
         }
 
         .users-data-head h2 {
-            margin: 0 0 6px;
-            font-size: 1rem;
+            margin: 0;
+            font-size: 0.96rem;
             color: rgba(255, 255, 255, 0.95);
         }
 
-        .users-data-head p {
-            margin: 0;
-            max-width: 64ch;
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.45;
+        .users-data-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.66);
+            font-size: 0.8rem;
         }
 
-        .users-scroll-hint {
-            max-width: 40ch;
-            color: rgba(255, 255, 255, 0.58);
-            font-size: 0.84rem;
-            line-height: 1.45;
-            text-align: right;
+        .users-data-meta span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .users-grid-viewport {
@@ -561,45 +585,97 @@ require_once __DIR__ . "/partials/app_header.php";
                 grid-template-columns: 1fr;
             }
 
+            .users-summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
             .users-toolbar-card,
             .users-data-card {
                 padding: 14px;
-            }
-
-            .users-scroll-hint {
-                text-align: left;
-                max-width: none;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .users-summary {
-                gap: 10px;
-            }
-
-            .users-metric {
-                flex: 1 1 calc(50% - 10px);
-                min-width: 0;
             }
 
             .filter-controls {
                 align-items: flex-start;
             }
 
-            .toolbar-actions {
+            .stats-info {
                 width: 100%;
             }
 
+            .toolbar-actions {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .users-data-head {
+                align-items: flex-start;
+            }
+
+            .users-data-meta {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .users-page-content .content-h1 {
+                font-size: 1.26rem !important;
+            }
+
+            .users-page-content .content-sub {
+                font-size: 0.78rem;
+            }
+
+            .users-summary {
+                gap: 8px;
+            }
+
+            .users-metric {
+                padding: 9px 10px;
+            }
+
+            .users-metric strong {
+                font-size: 0.96rem;
+            }
+
+            .users-metric span {
+                font-size: 0.6rem;
+            }
+
+            .filter-controls {
+                gap: 8px;
+            }
+
             .btn-toggle-filter {
-                flex: 1 1 100%;
+                width: 100%;
+                min-height: 36px;
+                font-size: 0.82rem;
             }
 
             .users-grid-viewport {
                 border-radius: 12px;
             }
 
+            .toolbar-actions {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .users-data-meta {
+                width: 100%;
+                gap: 6px;
+                font-size: 0.74rem;
+            }
+
+            .users-data-meta span {
+                width: 100%;
+                justify-content: center;
+                padding: 6px 8px;
+            }
+
             .users-board {
-                padding: 8px;
+                gap: 8px;
+                padding: 6px;
             }
         }
     </style>
@@ -644,7 +720,7 @@ require_once __DIR__ . "/partials/app_header.php";
         <main class="app-content users-page-content">
             <div class="content-head">
                 <h1 class="content-h1">Cadastro de Usuários</h1>
-                <p class="content-sub">Todos os dados cadastrais de todos os usuários do sistema, com ordenação, filtro rápido e exportação.</p>
+                <p class="content-sub">Listagem administrativa com ordenação e exportação.</p>
             </div>
 
             <div class="users-layout">
@@ -671,8 +747,8 @@ require_once __DIR__ . "/partials/app_header.php";
                     <div class="filter-controls">
                         <span class="stats-info">
                             <?php echo $somenteAtivos
-                                ? "Filtro atual: somente usuários ativos."
-                                : "Filtro atual: todos os usuários cadastrados, incluindo inativos."; ?>
+                                ? "Mostrando somente ativos."
+                                : "Mostrando todos os usuários."; ?>
                         </span>
                         <div class="toolbar-actions">
                             <a class="btn-toggle-filter <?php echo $somenteAtivos ? "active" : ""; ?>"
@@ -689,12 +765,10 @@ require_once __DIR__ . "/partials/app_header.php";
 
                 <section class="users-data-card">
                     <div class="users-data-head">
-                        <div>
-                            <h2>Painel completo de usuários</h2>
-                            <p>Área isolada do layout principal para a grade gerar o próprio overflow horizontal, sem corte da coluna de conteúdo nem truncamento dos campos principais.</p>
-                        </div>
-                        <div class="users-scroll-hint">
-                            Use a barra horizontal da própria grade para percorrer todas as colunas. Nome, email e cidade podem quebrar linha dentro da célula para preservar o conteúdo inteiro.
+                        <h2>Lista de usuários</h2>
+                        <div class="users-data-meta">
+                            <span><?php echo $totalUsuarios; ?> registro<?php echo $totalUsuarios !== 1 ? "s" : ""; ?></span>
+                            <span>Deslize para ver mais colunas</span>
                         </div>
                     </div>
 
