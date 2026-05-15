@@ -92,7 +92,7 @@ $whatsappLink = 'https://chat.whatsapp.com/CmzZCNsNenY8RKFxeOVwLA';
                     <div class="access-card__header">
                         <span class="access-pill">PIX</span>
                         <h2>Pague sua entrada</h2>
-                        <p>Escaneie o QR code no app do banco ou copie o PIX completo abaixo.</p>
+                        <p>Use o QR do banco ou copie o PIX completo abaixo.</p>
                     </div>
 
                     <div class="qr-frame">
@@ -131,8 +131,8 @@ $whatsappLink = 'https://chat.whatsapp.com/CmzZCNsNenY8RKFxeOVwLA';
                 <article class="access-card card-glass access-card--whatsapp">
                     <div class="access-card__header">
                         <span class="access-pill access-pill--whatsapp">WhatsApp</span>
-                        <h2>Entre no grupo do bolão</h2>
-                        <p>Use o QR code para abrir o convite ou entre direto pelo link oficial do grupo.</p>
+                        <h2>Entre no grupo</h2>
+                        <p>Use o QR do convite ou copie o link oficial abaixo.</p>
                     </div>
 
                     <div class="qr-frame qr-frame--whatsapp">
@@ -141,12 +141,12 @@ $whatsappLink = 'https://chat.whatsapp.com/CmzZCNsNenY8RKFxeOVwLA';
 
                     <dl class="detail-list">
                         <div>
-                            <dt>Convite oficial</dt>
-                            <dd>Grupo do WhatsApp do Bolão da Copa 2026</dd>
+                            <dt>Convite</dt>
+                            <dd>Grupo oficial do bolão</dd>
                         </div>
                         <div>
-                            <dt>Como entrar</dt>
-                            <dd>Abra pelo QR code ou pelo link direto logo abaixo.</dd>
+                            <dt>Acesso</dt>
+                            <dd>Abra pelo QR ou link</dd>
                         </div>
                     </dl>
 
