@@ -233,8 +233,8 @@ try {
     // Saída XLS (HTML)
     // =========================================================
     $slug = filename_slug($usuarioNome);
-    $ts = date("Y-m-d_H-i");
-    $filename = "apostas_{$slug}_{$ts}.xls";
+    $tsPack = date("Y-m-d_H-i");
+    $filename = "apostas_{$slug}_id{$usuarioDbId}_{$tsPack}.xls";
 
     header("Content-Type: application/vnd.ms-excel; charset=UTF-8");
     header("Content-Disposition: attachment; filename=\"{$filename}\"");
