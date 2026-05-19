@@ -2,41 +2,41 @@
 
 /* Bolao do Thiago - Copa do Mundo 2026 visual identity */
 :root{
-  --bt-green:#12c85f;
+  --bt-green:#00b85a;
   --bt-yellow:#ffd600;
   --bt-red:#e53935;
-  --bt-blue:#087fd3;
+  --bt-blue:#12a7b8;
   --bt-turquoise:#3ee7c5;
   --bt-white:#fff7e8;
-  --bt-black:#123820;
+  --bt-black:#0e542d;
   --bt-gold:#ffc107;
-  --bt-ink:#082013;
-  --bt-panel:#164b2a;
-  --bt-panel-2:#1e6437;
-  --bt-line:rgba(255,247,232,.30);
-  --bt-shadow:rgba(7,44,20,.42);
+  --bt-ink:#064221;
+  --bt-panel:#55cf61;
+  --bt-panel-2:#37b961;
+  --bt-line:rgba(232,255,220,.34);
+  --bt-shadow:rgba(4,89,39,.26);
   --font-pixel:"Press Start 2P","Pixel Emulator","Silkscreen","Lucida Console",Monaco,Consolas,monospace;
   --font-text:"Share Tech Mono","Lucida Console",Monaco,Consolas,monospace;
 
-  --bg0:#4fbe55 !important;
-  --bg1:#31a84f !important;
-  --bg2:#17733b !important;
+  --bg0:#6edb62 !important;
+  --bg1:#43c964 !important;
+  --bg2:#1e9d51 !important;
   --green:var(--bt-green) !important;
   --green2:#39f27b !important;
   --gold:var(--bt-yellow) !important;
   --gold2:var(--bt-gold) !important;
   --ice:var(--bt-turquoise) !important;
   --text:var(--bt-white) !important;
-  --muted:rgba(255,247,232,.78) !important;
-  --card:rgba(18,76,39,.88) !important;
-  --card2:rgba(28,103,52,.92) !important;
-  --stroke:rgba(255,247,232,.28) !important;
-  --app-glass:rgba(18,76,39,.88) !important;
-  --app-glass2:rgba(28,103,52,.92) !important;
-  --app-stroke:rgba(255,247,232,.30) !important;
-  --head-grad:linear-gradient(90deg, rgba(18,200,95,.34), rgba(255,214,0,.24)) !important;
-  --foot-grad:linear-gradient(90deg, rgba(62,231,197,.16), rgba(255,214,0,.14), rgba(8,127,211,.13)) !important;
-  --card-grad:linear-gradient(180deg, rgba(28,103,52,.94), rgba(11,59,31,.92)) !important;
+  --muted:rgba(242,255,234,.82) !important;
+  --card:rgba(92,211,101,.78) !important;
+  --card2:rgba(62,190,100,.74) !important;
+  --stroke:rgba(232,255,220,.30) !important;
+  --app-glass:rgba(92,211,101,.78) !important;
+  --app-glass2:rgba(62,190,100,.74) !important;
+  --app-stroke:rgba(232,255,220,.34) !important;
+  --head-grad:linear-gradient(105deg, rgba(126,224,86,.86), rgba(65,192,107,.78), rgba(44,176,139,.48)) !important;
+  --foot-grad:linear-gradient(90deg, rgba(255,214,0,.18), rgba(62,231,197,.16), rgba(255,247,232,.12)) !important;
+  --card-grad:linear-gradient(180deg, rgba(105,215,103,.78), rgba(57,190,92,.72)) !important;
   --ok:var(--bt-green) !important;
   --warn:var(--bt-yellow) !important;
   --bad:var(--bt-red) !important;
@@ -49,30 +49,26 @@
 
 html,
 body{
-  background-color:#31a84f !important;
+  background-color:#45c862 !important;
 }
 
 body{
   color:var(--bt-white) !important;
   background:
-    linear-gradient(rgba(255,247,232,.075) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,247,232,.045) 1px, transparent 1px),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 2px, transparent 2px 44px),
-    repeating-linear-gradient(0deg, #58c95a 0 56px, #45bd54 56px 112px, #37ad4f 112px 168px),
-    radial-gradient(circle at 18% 14%, rgba(255,214,0,.22), transparent 22%),
-    radial-gradient(circle at 86% 18%, rgba(62,231,197,.18), transparent 26%),
-    linear-gradient(180deg, #67d65f 0%, #31ad50 52%, #1f8843 100%) !important;
-  background-size:18px 18px, 18px 18px, auto, auto, auto, auto, auto !important;
+    linear-gradient(180deg, rgba(31,157,81,.12), rgba(17,122,62,.22)),
+    url("/img/fundo.png"),
+    linear-gradient(180deg, #70dc64 0%, #42c765 48%, #239a51 100%) !important;
+  background-size:auto, cover, auto !important;
+  background-position:center, center, center !important;
+  background-attachment:fixed, fixed, fixed !important;
   text-rendering:geometricPrecision;
 }
 
 body::before{
   background:
-    radial-gradient(1px 1px at 20% 30%, rgba(255,247,232,.56) 50%, transparent 55%),
-    radial-gradient(1px 1px at 70% 40%, rgba(255,214,0,.44) 50%, transparent 55%),
-    radial-gradient(1px 1px at 40% 80%, rgba(62,231,197,.40) 50%, transparent 55%),
-    radial-gradient(1px 1px at 86% 76%, rgba(255,247,232,.34) 50%, transparent 55%) !important;
-  background-size:220px 220px !important;
+    linear-gradient(90deg, rgba(255,255,255,.12) 0 1px, transparent 1px 32px),
+    linear-gradient(0deg, rgba(255,255,255,.08) 0 1px, transparent 1px 32px) !important;
+  background-size:32px 32px, 32px 32px !important;
   opacity:.18 !important;
 }
 
@@ -83,11 +79,9 @@ body::after{
   z-index:1;
   pointer-events:none;
   background:
-    linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,247,232,.30) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
-    radial-gradient(circle at 50% 50%, transparent 0 86px, rgba(255,247,232,.24) 87px 89px, transparent 90px),
-    linear-gradient(90deg, transparent 0 11%, rgba(255,247,232,.18) 11% calc(11% + 2px), transparent calc(11% + 2px) calc(89% - 2px), rgba(255,247,232,.18) calc(89% - 2px) 89%, transparent 89%),
-    linear-gradient(180deg, rgba(255,255,255,.04) 0 1px, transparent 1px 4px);
-  opacity:.34;
+    radial-gradient(900px 460px at 50% 10%, rgba(255,255,255,.10), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,.035) 0 1px, transparent 1px 4px);
+  opacity:.45;
 }
 
 .app-wrap,
@@ -114,12 +108,13 @@ h1,h2,h3,h4,h5,h6,
 .ranking-title,
 .title{
   font-family:var(--font-pixel) !important;
-  color:var(--bt-green) !important;
+  color:var(--bt-turquoise) !important;
   text-transform:uppercase;
   line-height:1.55 !important;
   text-shadow:
-    2px 2px 0 rgba(7,44,20,.92),
-    0 0 12px rgba(255,214,0,.18) !important;
+    2px 2px 0 rgba(255,214,0,.82),
+    3px 3px 0 rgba(6,66,33,.74),
+    0 0 12px rgba(6,66,33,.14) !important;
 }
 
 .login-card h1,
@@ -174,17 +169,79 @@ a{
 .result-card,
 .fixture-card,
 .palpite-card,
+.profile-card,
+.profile-section,
+.profile-chip,
+.profile-note-card,
 table{
   border-radius:8px !important;
   border-color:var(--bt-line) !important;
   background:
-    linear-gradient(180deg, rgba(28,103,52,.94), rgba(11,59,31,.92)) !important;
+    radial-gradient(620px 180px at 12% 0%, rgba(232,255,220,.14), transparent 60%),
+    linear-gradient(180deg, rgba(105,215,103,.78), rgba(57,190,92,.72)) !important;
   box-shadow:
-    0 0 0 2px rgba(7,44,20,.56),
-    0 0 0 3px rgba(255,247,232,.13),
-    5px 5px 0 rgba(7,44,20,.34),
-    0 16px 32px rgba(7,44,20,.28) !important;
+    inset 0 1px 0 rgba(232,255,220,.22),
+    0 0 0 1px rgba(232,255,220,.18),
+    0 18px 42px rgba(4,89,39,.22) !important;
   backdrop-filter:none !important;
+}
+
+.profile-card{
+  border-radius:28px !important;
+}
+
+.profile-section{
+  border-radius:22px !important;
+}
+
+.profile-chip,
+.profile-note-card{
+  border-radius:18px !important;
+}
+
+.profile-head{
+  background:var(--head-grad) !important;
+  border-radius:18px !important;
+  padding:18px 20px !important;
+}
+
+.profile-eyebrow,
+.profile-card .input-group label{
+  border-color:rgba(232,255,220,.32) !important;
+  background:linear-gradient(180deg, rgba(137,221,105,.86), rgba(72,174,92,.78)) !important;
+  color:rgba(255,247,232,.94) !important;
+  text-shadow:1px 1px 0 rgba(6,66,33,.58) !important;
+}
+
+.profile-lead,
+.profile-section-text,
+.profile-note,
+.profile-card .input-hint{
+  color:rgba(255,247,232,.88) !important;
+  text-shadow:1px 1px 0 rgba(6,66,33,.32);
+}
+
+.profile-chip-label,
+.profile-note-title{
+  color:rgba(255,247,232,.82) !important;
+}
+
+.profile-card .input-group input,
+.profile-card .input-group select,
+.profile-card .input-group textarea{
+  background:#0a4a28 !important;
+  color:#fff7e8 !important;
+  border-color:rgba(232,255,220,.42) !important;
+}
+
+.profile-card .input-group input:-webkit-autofill{
+  -webkit-text-fill-color:#fff7e8 !important;
+  box-shadow:0 0 0 1000px #0a4a28 inset !important;
+}
+
+.profile-card .input-group select option{
+  background:#0a4a28 !important;
+  color:#fff7e8 !important;
 }
 
 .app-content,
@@ -202,8 +259,8 @@ table{
   position:absolute;
   inset:6px;
   pointer-events:none;
-  border:1px solid rgba(255,247,232,.20);
-  box-shadow:inset 0 0 0 1px rgba(255,214,0,.16);
+  border:1px solid rgba(232,255,220,.20);
+  box-shadow:inset 0 0 0 1px rgba(255,247,232,.10);
   border-radius:4px;
 }
 
@@ -261,10 +318,12 @@ input,
 select,
 textarea{
   border-radius:6px !important;
-  border:2px solid rgba(255,247,232,.22) !important;
-  background:#0b3b1f !important;
+  border:2px solid rgba(232,255,220,.42) !important;
+  background:#0a4a28 !important;
   color:var(--bt-white) !important;
-  box-shadow:inset 3px 3px 0 rgba(7,44,20,.32) !important;
+  box-shadow:
+    inset 3px 3px 0 rgba(3,49,24,.34),
+    0 0 0 1px rgba(21,125,62,.26) !important;
 }
 
 input::placeholder,
@@ -302,10 +361,10 @@ textarea:focus{
 .bh-header__mobile-link:not(.is-active),
 .bh-header__mobile-logout{
   background:
-    linear-gradient(180deg, rgba(28,103,52,.98), rgba(11,59,31,.96)) !important;
+    linear-gradient(180deg, rgba(82,199,98,.92), rgba(31,151,82,.88)) !important;
   color:var(--bt-white) !important;
-  border-color:rgba(255,247,232,.24) !important;
-  text-shadow:2px 2px 0 rgba(7,44,20,.88) !important;
+  border-color:rgba(232,255,220,.34) !important;
+  text-shadow:2px 2px 0 rgba(6,66,33,.70) !important;
 }
 
 .topnav-link.is-admin,
@@ -327,8 +386,8 @@ th{
 .team-tile{
   min-height:74px;
   background:
-    radial-gradient(180px 70px at 12% 0%, rgba(255,214,0,.12), transparent 64%),
-    linear-gradient(180deg, rgba(33,116,58,.98), rgba(13,68,34,.96)) !important;
+    radial-gradient(180px 70px at 12% 0%, rgba(255,214,0,.14), transparent 64%),
+    linear-gradient(180deg, rgba(82,199,98,.92), rgba(31,151,82,.88)) !important;
   color:var(--bt-white) !important;
   text-shadow:none !important;
 }
@@ -343,13 +402,13 @@ th{
 .team-tile:focus{
   border-color:var(--bt-yellow) !important;
   background:
-    linear-gradient(180deg, rgba(46,139,68,.96), rgba(16,81,41,.96)) !important;
+    linear-gradient(180deg, rgba(105,215,103,.94), rgba(43,174,89,.90)) !important;
 }
 
 .team-tile.is-selected{
   border-color:var(--bt-green) !important;
   background:
-    linear-gradient(180deg, rgba(18,200,95,.36), rgba(11,59,31,.94)) !important;
+    linear-gradient(180deg, rgba(255,214,0,.20), rgba(41,171,88,.90)) !important;
 }
 
 .flag,
