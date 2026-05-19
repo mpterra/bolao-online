@@ -5,8 +5,8 @@
   --bt-green:#00b85a;
   --bt-yellow:#ffd600;
   --bt-red:#e53935;
-  --bt-blue:#12a7b8;
-  --bt-turquoise:#3ee7c5;
+  --bt-blue:#1764b8;
+  --bt-turquoise:#f3f8c8;
   --bt-white:#fff7e8;
   --bt-black:#0e542d;
   --bt-gold:#ffc107;
@@ -34,8 +34,8 @@
   --app-glass:rgba(92,211,101,.78) !important;
   --app-glass2:rgba(62,190,100,.74) !important;
   --app-stroke:rgba(232,255,220,.34) !important;
-  --head-grad:linear-gradient(105deg, rgba(126,224,86,.86), rgba(65,192,107,.78), rgba(44,176,139,.48)) !important;
-  --foot-grad:linear-gradient(90deg, rgba(255,214,0,.18), rgba(62,231,197,.16), rgba(255,247,232,.12)) !important;
+  --head-grad:linear-gradient(105deg, rgba(126,224,86,.88), rgba(65,192,92,.80), rgba(255,214,0,.16)) !important;
+  --foot-grad:linear-gradient(90deg, rgba(255,214,0,.20), rgba(37,157,78,.18), rgba(255,247,232,.12)) !important;
   --card-grad:linear-gradient(180deg, rgba(105,215,103,.78), rgba(57,190,92,.72)) !important;
   --ok:var(--bt-green) !important;
   --warn:var(--bt-yellow) !important;
@@ -50,26 +50,31 @@
 html,
 body{
   background-color:#45c862 !important;
+  height:auto !important;
+  min-height:100% !important;
 }
 
 body{
+  min-height:100vh !important;
+  min-height:100dvh !important;
   color:var(--bt-white) !important;
-  background:
-    linear-gradient(180deg, rgba(31,157,81,.12), rgba(17,122,62,.22)),
-    url("/img/fundo.png"),
-    linear-gradient(180deg, #70dc64 0%, #42c765 48%, #239a51 100%) !important;
-  background-size:auto, cover, auto !important;
-  background-position:center, center, center !important;
-  background-attachment:fixed, fixed, fixed !important;
+  background:#239a51 !important;
   text-rendering:geometricPrecision;
 }
 
 body::before{
+  content:"";
+  position:fixed !important;
+  inset:0 !important;
+  z-index:0;
+  pointer-events:none;
   background:
-    linear-gradient(90deg, rgba(255,255,255,.12) 0 1px, transparent 1px 32px),
-    linear-gradient(0deg, rgba(255,255,255,.08) 0 1px, transparent 1px 32px) !important;
-  background-size:32px 32px, 32px 32px !important;
-  opacity:.18 !important;
+    linear-gradient(180deg, rgba(31,157,81,.08), rgba(17,122,62,.16)),
+    url("/img/fundo.png"),
+    linear-gradient(180deg, #70dc64 0%, #42c765 48%, #239a51 100%) !important;
+  background-size:auto, cover, auto !important;
+  background-position:center, center, center !important;
+  opacity:1 !important;
 }
 
 body::after{
@@ -108,7 +113,7 @@ h1,h2,h3,h4,h5,h6,
 .ranking-title,
 .title{
   font-family:var(--font-pixel) !important;
-  color:var(--bt-turquoise) !important;
+  color:var(--bt-yellow) !important;
   text-transform:uppercase;
   line-height:1.55 !important;
   text-shadow:
@@ -134,8 +139,8 @@ th,
 }
 
 a{
-  color:var(--bt-turquoise);
-  text-decoration-color:rgba(0,242,209,.42);
+  color:var(--bt-yellow);
+  text-decoration-color:rgba(255,214,0,.48);
 }
 
 ::selection{
@@ -335,11 +340,11 @@ input:focus,
 select:focus,
 textarea:focus{
   outline:none !important;
-  border-color:var(--bt-turquoise) !important;
+  border-color:var(--bt-yellow) !important;
   box-shadow:
     inset 3px 3px 0 rgba(7,44,20,.32),
-    0 0 0 3px rgba(0,242,209,.18),
-    0 0 16px rgba(0,242,209,.22) !important;
+    0 0 0 3px rgba(255,214,0,.20),
+    0 0 16px rgba(255,214,0,.18) !important;
 }
 
 .badge,
