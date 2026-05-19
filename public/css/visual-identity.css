@@ -2,41 +2,41 @@
 
 /* Bolao do Thiago - Copa do Mundo 2026 visual identity */
 :root{
-  --bt-green:#00c853;
+  --bt-green:#12c85f;
   --bt-yellow:#ffd600;
   --bt-red:#e53935;
-  --bt-blue:#0082ff;
-  --bt-turquoise:#00f2d1;
+  --bt-blue:#087fd3;
+  --bt-turquoise:#3ee7c5;
   --bt-white:#fff7e8;
-  --bt-black:#0d1117;
+  --bt-black:#123820;
   --bt-gold:#ffc107;
-  --bt-ink:#05070b;
-  --bt-panel:#0a1018;
-  --bt-panel-2:#101923;
-  --bt-line:rgba(255,247,232,.24);
-  --bt-shadow:rgba(0,0,0,.72);
+  --bt-ink:#082013;
+  --bt-panel:#164b2a;
+  --bt-panel-2:#1e6437;
+  --bt-line:rgba(255,247,232,.30);
+  --bt-shadow:rgba(7,44,20,.42);
   --font-pixel:"Press Start 2P","Pixel Emulator","Silkscreen","Lucida Console",Monaco,Consolas,monospace;
   --font-text:"Share Tech Mono","Lucida Console",Monaco,Consolas,monospace;
 
-  --bg0:var(--bt-black) !important;
-  --bg1:#071019 !important;
-  --bg2:#02050a !important;
+  --bg0:#4fbe55 !important;
+  --bg1:#31a84f !important;
+  --bg2:#17733b !important;
   --green:var(--bt-green) !important;
   --green2:#39f27b !important;
   --gold:var(--bt-yellow) !important;
   --gold2:var(--bt-gold) !important;
   --ice:var(--bt-turquoise) !important;
   --text:var(--bt-white) !important;
-  --muted:rgba(255,247,232,.72) !important;
-  --card:rgba(10,16,24,.92) !important;
-  --card2:rgba(16,25,35,.96) !important;
-  --stroke:rgba(255,247,232,.22) !important;
-  --app-glass:rgba(10,16,24,.92) !important;
-  --app-glass2:rgba(16,25,35,.96) !important;
-  --app-stroke:rgba(255,247,232,.24) !important;
-  --head-grad:linear-gradient(90deg, rgba(0,200,83,.28), rgba(255,214,0,.22)) !important;
-  --foot-grad:linear-gradient(90deg, rgba(0,130,255,.16), rgba(0,242,209,.16), rgba(255,193,7,.14)) !important;
-  --card-grad:linear-gradient(180deg, rgba(16,25,35,.96), rgba(5,7,11,.94)) !important;
+  --muted:rgba(255,247,232,.78) !important;
+  --card:rgba(18,76,39,.88) !important;
+  --card2:rgba(28,103,52,.92) !important;
+  --stroke:rgba(255,247,232,.28) !important;
+  --app-glass:rgba(18,76,39,.88) !important;
+  --app-glass2:rgba(28,103,52,.92) !important;
+  --app-stroke:rgba(255,247,232,.30) !important;
+  --head-grad:linear-gradient(90deg, rgba(18,200,95,.34), rgba(255,214,0,.24)) !important;
+  --foot-grad:linear-gradient(90deg, rgba(62,231,197,.16), rgba(255,214,0,.14), rgba(8,127,211,.13)) !important;
+  --card-grad:linear-gradient(180deg, rgba(28,103,52,.94), rgba(11,59,31,.92)) !important;
   --ok:var(--bt-green) !important;
   --warn:var(--bt-yellow) !important;
   --bad:var(--bt-red) !important;
@@ -49,30 +49,31 @@
 
 html,
 body{
-  background-color:var(--bt-black) !important;
+  background-color:#31a84f !important;
 }
 
 body{
   color:var(--bt-white) !important;
   background:
-    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
-    radial-gradient(circle at 16% 12%, rgba(0,200,83,.20), transparent 24%),
-    radial-gradient(circle at 84% 16%, rgba(255,214,0,.16), transparent 26%),
-    radial-gradient(circle at 50% 100%, rgba(0,130,255,.14), transparent 32%),
-    linear-gradient(180deg, #0d1117 0%, #070b10 48%, #02050a 100%) !important;
-  background-size:18px 18px, 18px 18px, auto, auto, auto, auto !important;
+    linear-gradient(rgba(255,247,232,.075) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,247,232,.045) 1px, transparent 1px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 2px, transparent 2px 44px),
+    repeating-linear-gradient(0deg, #58c95a 0 56px, #45bd54 56px 112px, #37ad4f 112px 168px),
+    radial-gradient(circle at 18% 14%, rgba(255,214,0,.22), transparent 22%),
+    radial-gradient(circle at 86% 18%, rgba(62,231,197,.18), transparent 26%),
+    linear-gradient(180deg, #67d65f 0%, #31ad50 52%, #1f8843 100%) !important;
+  background-size:18px 18px, 18px 18px, auto, auto, auto, auto, auto !important;
   text-rendering:geometricPrecision;
 }
 
 body::before{
   background:
-    radial-gradient(1px 1px at 20% 30%, rgba(255,214,0,.70) 50%, transparent 55%),
-    radial-gradient(1px 1px at 70% 40%, rgba(0,200,83,.62) 50%, transparent 55%),
-    radial-gradient(1px 1px at 40% 80%, rgba(0,130,255,.60) 50%, transparent 55%),
-    radial-gradient(1px 1px at 86% 76%, rgba(229,57,53,.58) 50%, transparent 55%) !important;
-  background-size:210px 210px !important;
-  opacity:.22 !important;
+    radial-gradient(1px 1px at 20% 30%, rgba(255,247,232,.56) 50%, transparent 55%),
+    radial-gradient(1px 1px at 70% 40%, rgba(255,214,0,.44) 50%, transparent 55%),
+    radial-gradient(1px 1px at 40% 80%, rgba(62,231,197,.40) 50%, transparent 55%),
+    radial-gradient(1px 1px at 86% 76%, rgba(255,247,232,.34) 50%, transparent 55%) !important;
+  background-size:220px 220px !important;
+  opacity:.18 !important;
 }
 
 body::after{
@@ -81,9 +82,12 @@ body::after{
   inset:0;
   z-index:1;
   pointer-events:none;
-  background:linear-gradient(180deg, rgba(255,255,255,.045) 0 1px, transparent 1px 4px);
-  mix-blend-mode:screen;
-  opacity:.18;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,247,232,.30) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    radial-gradient(circle at 50% 50%, transparent 0 86px, rgba(255,247,232,.24) 87px 89px, transparent 90px),
+    linear-gradient(90deg, transparent 0 11%, rgba(255,247,232,.18) 11% calc(11% + 2px), transparent calc(11% + 2px) calc(89% - 2px), rgba(255,247,232,.18) calc(89% - 2px) 89%, transparent 89%),
+    linear-gradient(180deg, rgba(255,255,255,.04) 0 1px, transparent 1px 4px);
+  opacity:.34;
 }
 
 .app-wrap,
@@ -114,8 +118,8 @@ h1,h2,h3,h4,h5,h6,
   text-transform:uppercase;
   line-height:1.55 !important;
   text-shadow:
-    2px 2px 0 #000,
-    0 0 12px rgba(0,200,83,.34) !important;
+    2px 2px 0 rgba(7,44,20,.92),
+    0 0 12px rgba(255,214,0,.18) !important;
 }
 
 .login-card h1,
@@ -140,7 +144,7 @@ a{
 }
 
 ::selection{
-  color:#05070b !important;
+  color:#082013 !important;
   background:var(--bt-yellow) !important;
 }
 
@@ -174,12 +178,12 @@ table{
   border-radius:8px !important;
   border-color:var(--bt-line) !important;
   background:
-    linear-gradient(180deg, rgba(16,25,35,.96), rgba(5,7,11,.96)) !important;
+    linear-gradient(180deg, rgba(28,103,52,.94), rgba(11,59,31,.92)) !important;
   box-shadow:
-    0 0 0 2px rgba(0,0,0,.72),
-    0 0 0 3px rgba(255,247,232,.10),
-    6px 6px 0 rgba(0,0,0,.42),
-    0 22px 48px rgba(0,0,0,.42) !important;
+    0 0 0 2px rgba(7,44,20,.56),
+    0 0 0 3px rgba(255,247,232,.13),
+    5px 5px 0 rgba(7,44,20,.34),
+    0 16px 32px rgba(7,44,20,.28) !important;
   backdrop-filter:none !important;
 }
 
@@ -198,8 +202,8 @@ table{
   position:absolute;
   inset:6px;
   pointer-events:none;
-  border:1px solid rgba(0,200,83,.28);
-  box-shadow:inset 0 0 0 1px rgba(255,214,0,.12);
+  border:1px solid rgba(255,247,232,.20);
+  box-shadow:inset 0 0 0 1px rgba(255,214,0,.16);
   border-radius:4px;
 }
 
@@ -225,8 +229,8 @@ input[type="button"]{
   text-shadow:none !important;
   box-shadow:
     inset 0 -3px 0 rgba(0,0,0,.22),
-    3px 3px 0 #000,
-    0 10px 22px rgba(0,0,0,.36) !important;
+    3px 3px 0 rgba(7,44,20,.78),
+    0 10px 18px rgba(7,44,20,.26) !important;
 }
 
 button:hover,
@@ -258,9 +262,9 @@ select,
 textarea{
   border-radius:6px !important;
   border:2px solid rgba(255,247,232,.22) !important;
-  background:#05070b !important;
+  background:#0b3b1f !important;
   color:var(--bt-white) !important;
-  box-shadow:inset 3px 3px 0 rgba(0,0,0,.32) !important;
+  box-shadow:inset 3px 3px 0 rgba(7,44,20,.32) !important;
 }
 
 input::placeholder,
@@ -274,7 +278,7 @@ textarea:focus{
   outline:none !important;
   border-color:var(--bt-turquoise) !important;
   box-shadow:
-    inset 3px 3px 0 rgba(0,0,0,.32),
+    inset 3px 3px 0 rgba(7,44,20,.32),
     0 0 0 3px rgba(0,242,209,.18),
     0 0 16px rgba(0,242,209,.22) !important;
 }
@@ -287,7 +291,7 @@ textarea:focus{
   background:linear-gradient(180deg, var(--bt-green), #009a42) !important;
   color:#ffffff !important;
   border-color:rgba(255,214,0,.72) !important;
-  text-shadow:2px 2px 0 #000 !important;
+  text-shadow:2px 2px 0 rgba(7,44,20,.90) !important;
 }
 
 .btn-back,
@@ -298,10 +302,10 @@ textarea:focus{
 .bh-header__mobile-link:not(.is-active),
 .bh-header__mobile-logout{
   background:
-    linear-gradient(180deg, rgba(16,25,35,.98), rgba(5,7,11,.96)) !important;
+    linear-gradient(180deg, rgba(28,103,52,.98), rgba(11,59,31,.96)) !important;
   color:var(--bt-white) !important;
   border-color:rgba(255,247,232,.24) !important;
-  text-shadow:2px 2px 0 #000 !important;
+  text-shadow:2px 2px 0 rgba(7,44,20,.88) !important;
 }
 
 .topnav-link.is-admin,
@@ -323,8 +327,8 @@ th{
 .team-tile{
   min-height:74px;
   background:
-    radial-gradient(180px 70px at 12% 0%, rgba(0,242,209,.10), transparent 64%),
-    linear-gradient(180deg, rgba(16,25,35,.98), rgba(5,7,11,.96)) !important;
+    radial-gradient(180px 70px at 12% 0%, rgba(255,214,0,.12), transparent 64%),
+    linear-gradient(180deg, rgba(33,116,58,.98), rgba(13,68,34,.96)) !important;
   color:var(--bt-white) !important;
   text-shadow:none !important;
 }
@@ -339,13 +343,13 @@ th{
 .team-tile:focus{
   border-color:var(--bt-yellow) !important;
   background:
-    linear-gradient(180deg, rgba(0,200,83,.18), rgba(16,25,35,.96)) !important;
+    linear-gradient(180deg, rgba(46,139,68,.96), rgba(16,81,41,.96)) !important;
 }
 
 .team-tile.is-selected{
   border-color:var(--bt-green) !important;
   background:
-    linear-gradient(180deg, rgba(0,200,83,.28), rgba(5,7,11,.94)) !important;
+    linear-gradient(180deg, rgba(18,200,95,.36), rgba(11,59,31,.94)) !important;
 }
 
 .flag,
@@ -415,16 +419,16 @@ th{
   min-height:32px;
   box-shadow:
     inset 0 -2px 0 rgba(0,0,0,.22),
-    2px 2px 0 #000,
-    0 8px 14px rgba(0,0,0,.32) !important;
+    2px 2px 0 rgba(7,44,20,.78),
+    0 8px 14px rgba(7,44,20,.24) !important;
 }
 
 .bh-header__user{
   border-radius:8px !important;
   padding:5px 7px !important;
   box-shadow:
-    0 0 0 2px rgba(0,0,0,.55),
-    2px 2px 0 rgba(0,0,0,.35) !important;
+    0 0 0 2px rgba(7,44,20,.48),
+    2px 2px 0 rgba(7,44,20,.30) !important;
 }
 
 .bh-header__user-dot{
@@ -467,8 +471,8 @@ hr,
   line-height:1.25 !important;
   box-shadow:
     inset 0 -2px 0 rgba(0,0,0,.22),
-    2px 2px 0 #000,
-    0 8px 16px rgba(0,0,0,.30) !important;
+    2px 2px 0 rgba(7,44,20,.78),
+    0 8px 16px rgba(7,44,20,.24) !important;
 }
 
 @media (max-width:1180px){
