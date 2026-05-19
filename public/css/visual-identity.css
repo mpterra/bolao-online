@@ -121,9 +121,8 @@ h1,h2,h3,h4,h5,h6,
   text-transform:uppercase;
   line-height:1.55 !important;
   text-shadow:
-    2px 2px 0 rgba(255,214,0,.82),
-    3px 3px 0 rgba(6,66,33,.74),
-    0 0 12px rgba(6,66,33,.14) !important;
+    2px 2px 0 #064221,
+    3px 3px 0 rgba(3,45,22,.72) !important;
 }
 
 .login-card h1,
@@ -610,6 +609,23 @@ hr,
 }
 
 @media (max-width:560px){
+  body::before{
+    width:100vh !important;
+    height:100vw !important;
+    top:50% !important;
+    left:50% !important;
+    right:auto !important;
+    bottom:auto !important;
+    transform:translate(-50%, -50%) rotate(90deg) !important;
+    transform-origin:center !important;
+    background:
+      linear-gradient(180deg, rgba(31,157,81,.08), rgba(17,122,62,.16)),
+      url("/img/fundo.png"),
+      linear-gradient(180deg, #70dc64 0%, #42c765 48%, #239a51 100%) !important;
+    background-size:auto, cover, auto !important;
+    background-position:center, center, center !important;
+  }
+
   h1,h2,h3,h4,h5,h6,
   .content-h1,
   .login-card h1{
