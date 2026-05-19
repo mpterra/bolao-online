@@ -6,7 +6,7 @@
   --bt-yellow:#ffd600;
   --bt-red:#e53935;
   --bt-blue:#1764b8;
-  --bt-turquoise:#075c2d;
+  --bt-turquoise:#ffffff;
   --bt-white:#ffffff;
   --bt-black:#0e542d;
   --bt-gold:#ffc107;
@@ -25,7 +25,7 @@
   --green2:#39f27b !important;
   --gold:var(--bt-yellow) !important;
   --gold2:var(--bt-gold) !important;
-  --ice:var(--bt-turquoise) !important;
+  --ice:#ffffff !important;
   --text:var(--bt-white) !important;
   --muted:rgba(255,255,255,.78) !important;
   --card:rgba(7,92,45,.90) !important;
@@ -139,6 +139,28 @@ th,
 .content-sub,
 .champ-hint{
   line-height:1.55;
+}
+
+p,
+li,
+td,
+.rules-copy p,
+.rules-list li,
+.rules-ordered-list li,
+.rules-table,
+.rules-table td,
+.rules-aside,
+.content-sub,
+.champ-hint,
+.text-muted{
+  color:rgba(255,255,255,.88) !important;
+}
+
+strong,
+b,
+th,
+.rules-table th{
+  color:#ffffff !important;
 }
 
 a{
