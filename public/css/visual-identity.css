@@ -6,14 +6,14 @@
   --bt-yellow:#ffd600;
   --bt-red:#e53935;
   --bt-blue:#1764b8;
-  --bt-turquoise:#f3f8c8;
-  --bt-white:#fff7e8;
+  --bt-turquoise:#075c2d;
+  --bt-white:#ffffff;
   --bt-black:#0e542d;
   --bt-gold:#ffc107;
   --bt-ink:#064221;
   --bt-panel:#55cf61;
   --bt-panel-2:#37b961;
-  --bt-line:rgba(232,255,220,.34);
+  --bt-line:rgba(5,84,40,.34);
   --bt-shadow:rgba(4,89,39,.26);
   --font-pixel:"Press Start 2P","Pixel Emulator","Silkscreen","Lucida Console",Monaco,Consolas,monospace;
   --font-text:"Share Tech Mono","Lucida Console",Monaco,Consolas,monospace;
@@ -27,15 +27,15 @@
   --gold2:var(--bt-gold) !important;
   --ice:var(--bt-turquoise) !important;
   --text:var(--bt-white) !important;
-  --muted:rgba(242,255,234,.82) !important;
+  --muted:rgba(255,255,255,.78) !important;
   --card:rgba(92,211,101,.78) !important;
   --card2:rgba(62,190,100,.74) !important;
-  --stroke:rgba(232,255,220,.30) !important;
+  --stroke:rgba(5,84,40,.30) !important;
   --app-glass:rgba(92,211,101,.78) !important;
   --app-glass2:rgba(62,190,100,.74) !important;
-  --app-stroke:rgba(232,255,220,.34) !important;
+  --app-stroke:rgba(5,84,40,.34) !important;
   --head-grad:linear-gradient(105deg, rgba(126,224,86,.88), rgba(65,192,92,.80), rgba(255,214,0,.16)) !important;
-  --foot-grad:linear-gradient(90deg, rgba(255,214,0,.20), rgba(37,157,78,.18), rgba(255,247,232,.12)) !important;
+  --foot-grad:linear-gradient(90deg, rgba(255,214,0,.18), rgba(7,92,45,.24), rgba(5,84,40,.16)) !important;
   --card-grad:linear-gradient(180deg, rgba(105,215,103,.78), rgba(57,190,92,.72)) !important;
   --ok:var(--bt-green) !important;
   --warn:var(--bt-yellow) !important;
@@ -68,6 +68,8 @@ body::before{
   inset:0 !important;
   z-index:0;
   pointer-events:none;
+  animation:none !important;
+  transform:none !important;
   background:
     linear-gradient(180deg, rgba(31,157,81,.08), rgba(17,122,62,.16)),
     url("/img/fundo.png"),
@@ -83,6 +85,8 @@ body::after{
   inset:0;
   z-index:1;
   pointer-events:none;
+  animation:none !important;
+  transform:none !important;
   background:
     radial-gradient(900px 460px at 50% 10%, rgba(255,255,255,.10), transparent 62%),
     linear-gradient(180deg, rgba(255,255,255,.035) 0 1px, transparent 1px 4px);
@@ -182,11 +186,11 @@ table{
   border-radius:8px !important;
   border-color:var(--bt-line) !important;
   background:
-    radial-gradient(620px 180px at 12% 0%, rgba(232,255,220,.14), transparent 60%),
+    radial-gradient(620px 180px at 12% 0%, rgba(5,84,40,.12), transparent 60%),
     linear-gradient(180deg, rgba(105,215,103,.78), rgba(57,190,92,.72)) !important;
   box-shadow:
-    inset 0 1px 0 rgba(232,255,220,.22),
-    0 0 0 1px rgba(232,255,220,.18),
+    inset 0 1px 0 rgba(255,255,255,.16),
+    0 0 0 1px rgba(5,84,40,.22),
     0 18px 42px rgba(4,89,39,.22) !important;
   backdrop-filter:none !important;
 }
@@ -212,9 +216,9 @@ table{
 
 .profile-eyebrow,
 .profile-card .input-group label{
-  border-color:rgba(232,255,220,.32) !important;
+  border-color:rgba(5,84,40,.34) !important;
   background:linear-gradient(180deg, rgba(137,221,105,.86), rgba(72,174,92,.78)) !important;
-  color:rgba(255,247,232,.94) !important;
+  color:rgba(255,255,255,.94) !important;
   text-shadow:1px 1px 0 rgba(6,66,33,.58) !important;
 }
 
@@ -222,31 +226,31 @@ table{
 .profile-section-text,
 .profile-note,
 .profile-card .input-hint{
-  color:rgba(255,247,232,.88) !important;
+  color:rgba(255,255,255,.88) !important;
   text-shadow:1px 1px 0 rgba(6,66,33,.32);
 }
 
 .profile-chip-label,
 .profile-note-title{
-  color:rgba(255,247,232,.82) !important;
+  color:rgba(255,255,255,.82) !important;
 }
 
 .profile-card .input-group input,
 .profile-card .input-group select,
 .profile-card .input-group textarea{
   background:#0a4a28 !important;
-  color:#fff7e8 !important;
-  border-color:rgba(232,255,220,.42) !important;
+  color:#ffffff !important;
+  border-color:rgba(5,84,40,.46) !important;
 }
 
 .profile-card .input-group input:-webkit-autofill{
-  -webkit-text-fill-color:#fff7e8 !important;
+  -webkit-text-fill-color:#ffffff !important;
   box-shadow:0 0 0 1000px #0a4a28 inset !important;
 }
 
 .profile-card .input-group select option{
   background:#0a4a28 !important;
-  color:#fff7e8 !important;
+  color:#ffffff !important;
 }
 
 .app-content,
@@ -264,8 +268,8 @@ table{
   position:absolute;
   inset:6px;
   pointer-events:none;
-  border:1px solid rgba(232,255,220,.20);
-  box-shadow:inset 0 0 0 1px rgba(255,247,232,.10);
+  border:1px solid rgba(5,84,40,.22);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
   border-radius:4px;
 }
 
@@ -284,7 +288,7 @@ input[type="button"]{
   font-family:var(--font-pixel) !important;
   text-transform:uppercase;
   border-radius:6px !important;
-  border:2px solid rgba(255,247,232,.34) !important;
+  border:2px solid rgba(5,84,40,.38) !important;
   background:
     linear-gradient(180deg, rgba(255,214,0,.98), rgba(255,193,7,.95)) !important;
   color:#111111 !important;
@@ -323,7 +327,7 @@ input,
 select,
 textarea{
   border-radius:6px !important;
-  border:2px solid rgba(232,255,220,.42) !important;
+  border:2px solid rgba(5,84,40,.46) !important;
   background:#0a4a28 !important;
   color:var(--bt-white) !important;
   box-shadow:
@@ -333,7 +337,7 @@ textarea{
 
 input::placeholder,
 textarea::placeholder{
-  color:rgba(255,247,232,.56) !important;
+  color:rgba(255,255,255,.56) !important;
 }
 
 input:focus,
@@ -368,7 +372,7 @@ textarea:focus{
   background:
     linear-gradient(180deg, rgba(82,199,98,.92), rgba(31,151,82,.88)) !important;
   color:var(--bt-white) !important;
-  border-color:rgba(232,255,220,.34) !important;
+  border-color:rgba(5,84,40,.38) !important;
   text-shadow:2px 2px 0 rgba(6,66,33,.70) !important;
 }
 
@@ -437,7 +441,7 @@ th{
 .bh-header{
   box-shadow:
     0 0 0 2px rgba(0,0,0,.70),
-    0 0 0 3px rgba(255,247,232,.08),
+    0 0 0 3px rgba(255,255,255,.08),
     0 12px 28px rgba(0,0,0,.40) !important;
 }
 
@@ -517,12 +521,12 @@ th{
 .content-sub,
 .champ-hint,
 .text-muted{
-  color:rgba(255,247,232,.74) !important;
+  color:rgba(255,255,255,.74) !important;
 }
 
 hr,
 .divider{
-  border-color:rgba(255,247,232,.18) !important;
+  border-color:rgba(5,84,40,.22) !important;
 }
 
 #btnFinalizeChangesGlobal{
