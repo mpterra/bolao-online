@@ -29,6 +29,7 @@ if ($isLoggedIn) {
 <body class="<?php echo $isLoggedIn ? 'rules-authenticated' : 'rules-public'; ?>">
 	<div class="rules-page">
 		<?php if ($isLoggedIn): ?>
+			<div class="app-wrap rules-header-wrap">
 			<?php
 			render_app_header(
 				$usuarioNome,
@@ -38,6 +39,7 @@ if ($isLoggedIn) {
 				'php/logout.php'
 			);
 			?>
+			</div>
 		<?php endif; ?>
 
 		<main class="rules-shell">
