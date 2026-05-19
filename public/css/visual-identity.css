@@ -11,8 +11,8 @@
   --bt-black:#0e542d;
   --bt-gold:#ffc107;
   --bt-ink:#064221;
-  --bt-panel:#55cf61;
-  --bt-panel-2:#37b961;
+  --bt-panel:#075c2d;
+  --bt-panel-2:#064221;
   --bt-line:rgba(5,84,40,.34);
   --bt-shadow:rgba(4,89,39,.26);
   --font-pixel:"Press Start 2P","Pixel Emulator","Silkscreen","Lucida Console",Monaco,Consolas,monospace;
@@ -28,15 +28,15 @@
   --ice:var(--bt-turquoise) !important;
   --text:var(--bt-white) !important;
   --muted:rgba(255,255,255,.78) !important;
-  --card:rgba(92,211,101,.78) !important;
-  --card2:rgba(62,190,100,.74) !important;
+  --card:rgba(7,92,45,.90) !important;
+  --card2:rgba(6,66,33,.94) !important;
   --stroke:rgba(5,84,40,.30) !important;
-  --app-glass:rgba(92,211,101,.78) !important;
-  --app-glass2:rgba(62,190,100,.74) !important;
+  --app-glass:rgba(7,92,45,.90) !important;
+  --app-glass2:rgba(6,66,33,.94) !important;
   --app-stroke:rgba(5,84,40,.34) !important;
-  --head-grad:linear-gradient(105deg, rgba(126,224,86,.88), rgba(65,192,92,.80), rgba(255,214,0,.16)) !important;
+  --head-grad:linear-gradient(105deg, rgba(7,92,45,.96), rgba(6,66,33,.92), rgba(255,214,0,.14)) !important;
   --foot-grad:linear-gradient(90deg, rgba(255,214,0,.18), rgba(7,92,45,.24), rgba(5,84,40,.16)) !important;
-  --card-grad:linear-gradient(180deg, rgba(105,215,103,.78), rgba(57,190,92,.72)) !important;
+  --card-grad:linear-gradient(180deg, rgba(7,92,45,.92), rgba(6,66,33,.94)) !important;
   --ok:var(--bt-green) !important;
   --warn:var(--bt-yellow) !important;
   --bad:var(--bt-red) !important;
@@ -186,8 +186,8 @@ table{
   border-radius:8px !important;
   border-color:var(--bt-line) !important;
   background:
-    radial-gradient(620px 180px at 12% 0%, rgba(5,84,40,.12), transparent 60%),
-    linear-gradient(180deg, rgba(105,215,103,.78), rgba(57,190,92,.72)) !important;
+    radial-gradient(620px 180px at 12% 0%, rgba(13,116,56,.28), transparent 60%),
+    linear-gradient(180deg, rgba(7,92,45,.92), rgba(6,66,33,.94)) !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.16),
     0 0 0 1px rgba(5,84,40,.22),
@@ -217,7 +217,7 @@ table{
 .profile-eyebrow,
 .profile-card .input-group label{
   border-color:rgba(5,84,40,.34) !important;
-  background:linear-gradient(180deg, rgba(137,221,105,.86), rgba(72,174,92,.78)) !important;
+  background:linear-gradient(180deg, rgba(13,116,56,.94), rgba(6,66,33,.92)) !important;
   color:rgba(255,255,255,.94) !important;
   text-shadow:1px 1px 0 rgba(6,66,33,.58) !important;
 }
@@ -251,6 +251,48 @@ table{
 .profile-card .input-group select option{
   background:#0a4a28 !important;
   color:#ffffff !important;
+}
+
+.menu-view-switch,
+.menu-link,
+.group-block,
+.group-line,
+.match-card,
+.match-head,
+.match-body,
+.group-rank-card,
+.group-rank-head{
+  background:
+    radial-gradient(520px 160px at 16% 0%, rgba(13,116,56,.24), transparent 62%),
+    linear-gradient(180deg, rgba(7,92,45,.94), rgba(6,66,33,.96)) !important;
+  border-color:rgba(5,84,40,.48) !important;
+}
+
+.menu-link:hover,
+.menu-link:focus,
+.match-card:hover,
+.group-rank-card:hover{
+  background:
+    radial-gradient(520px 160px at 16% 0%, rgba(20,138,66,.26), transparent 62%),
+    linear-gradient(180deg, rgba(8,103,50,.96), rgba(5,56,28,.96)) !important;
+}
+
+.menu-link.is-active,
+.menu-view-btn.is-active{
+  background:linear-gradient(180deg, #075c2d, #04381d) !important;
+  color:#ffffff !important;
+  border-color:rgba(255,214,0,.68) !important;
+}
+
+.group-pill,
+.group-count,
+.badge,
+.match-status,
+.round-pill,
+.fifa-pill{
+  background:linear-gradient(180deg, #0d7438, #064221) !important;
+  color:#ffffff !important;
+  border-color:rgba(5,84,40,.52) !important;
 }
 
 .app-content,
@@ -370,7 +412,7 @@ textarea:focus{
 .bh-header__mobile-link:not(.is-active),
 .bh-header__mobile-logout{
   background:
-    linear-gradient(180deg, rgba(82,199,98,.92), rgba(31,151,82,.88)) !important;
+    linear-gradient(180deg, rgba(7,92,45,.94), rgba(6,66,33,.96)) !important;
   color:var(--bt-white) !important;
   border-color:rgba(5,84,40,.38) !important;
   text-shadow:2px 2px 0 rgba(6,66,33,.70) !important;
@@ -396,7 +438,7 @@ th{
   min-height:74px;
   background:
     radial-gradient(180px 70px at 12% 0%, rgba(255,214,0,.14), transparent 64%),
-    linear-gradient(180deg, rgba(82,199,98,.92), rgba(31,151,82,.88)) !important;
+    linear-gradient(180deg, rgba(7,92,45,.92), rgba(6,66,33,.94)) !important;
   color:var(--bt-white) !important;
   text-shadow:none !important;
 }
@@ -411,13 +453,13 @@ th{
 .team-tile:focus{
   border-color:var(--bt-yellow) !important;
   background:
-    linear-gradient(180deg, rgba(105,215,103,.94), rgba(43,174,89,.90)) !important;
+    linear-gradient(180deg, rgba(13,116,56,.96), rgba(6,66,33,.94)) !important;
 }
 
 .team-tile.is-selected{
   border-color:var(--bt-green) !important;
   background:
-    linear-gradient(180deg, rgba(255,214,0,.20), rgba(41,171,88,.90)) !important;
+    linear-gradient(180deg, rgba(7,92,45,.98), rgba(4,47,24,.96)) !important;
 }
 
 .flag,
