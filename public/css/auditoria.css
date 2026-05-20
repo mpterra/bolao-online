@@ -11,7 +11,7 @@
 .audit-shell{
   display:flex;
   flex-direction:column;
-  gap:12px;
+  gap:14px;
 }
 
 .audit-hero{
@@ -19,10 +19,12 @@
   grid-template-columns:1fr;
   gap:12px;
   padding:16px;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:18px;
-  background:rgba(7,26,31,.72);
-  box-shadow:0 16px 38px rgba(0,0,0,.22);
+  border:2px solid rgba(255,214,0,.28);
+  border-radius:8px;
+  background:#064221;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.58),
+    0 14px 30px rgba(0,0,0,.34);
 }
 
 .audit-kicker{
@@ -42,7 +44,7 @@
 .audit-hero p{
   margin:8px 0 0;
   max-width:620px;
-  color:rgba(255,255,255,.72);
+  color:rgba(255,255,255,.90);
   font-size:13px;
   font-weight:800;
 }
@@ -50,11 +52,11 @@
 .audit-search input{
   width:100%;
   min-height:46px;
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:14px;
+  border:2px solid rgba(255,214,0,.34);
+  border-radius:8px;
   padding:12px 14px;
   color:rgba(255,255,255,.96);
-  background:rgba(0,0,0,.20);
+  background:#042f18;
   outline:none;
   font-size:15px;
   font-weight:850;
@@ -68,15 +70,18 @@
 .audit-metrics{
   display:grid;
   grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap:8px;
+  gap:10px;
 }
 
 .audit-metric{
   min-width:0;
-  padding:12px;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:14px;
-  background:rgba(255,255,255,.06);
+  padding:14px;
+  border:2px solid rgba(255,214,0,.34);
+  border-radius:8px;
+  background:#064221;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.50),
+    0 10px 22px rgba(0,0,0,.28);
 }
 
 .audit-metric strong{
@@ -88,50 +93,30 @@
 .audit-metric span{
   display:block;
   margin-top:5px;
-  color:rgba(255,255,255,.68);
+  color:rgba(255,255,255,.92);
   font-size:11px;
   font-weight:900;
   text-transform:uppercase;
 }
 
 .audit-metric-admin{
-  border-color:rgba(247,201,72,.26);
-  background:rgba(247,201,72,.10);
+  border-color:rgba(255,214,0,.72);
+  background:#075c2d;
 }
 
-.audit-admins,
 .audit-empty,
 .audit-day{
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:18px;
-  background:rgba(7,26,31,.64);
-  box-shadow:0 14px 32px rgba(0,0,0,.20);
-}
-
-.audit-admins{
-  padding:12px;
+  border:2px solid rgba(255,214,0,.28);
+  border-radius:8px;
+  background:#064221;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.50),
+    0 14px 32px rgba(0,0,0,.30);
 }
 
 .audit-section-title{
   color:rgba(255,255,255,.95);
   font-size:14px;
-  font-weight:950;
-}
-
-.audit-admin-list{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-top:10px;
-}
-
-.audit-admin-list span{
-  padding:8px 10px;
-  border-radius:999px;
-  border:1px solid rgba(247,201,72,.34);
-  color:#062027;
-  background:linear-gradient(90deg,#00c27a,#f7c948);
-  font-size:12px;
   font-weight:950;
 }
 
@@ -147,7 +132,7 @@
 }
 
 .audit-empty span{
-  color:rgba(255,255,255,.70);
+  color:rgba(255,255,255,.90);
   font-weight:800;
 }
 
@@ -160,19 +145,19 @@
   justify-content:space-between;
   gap:10px;
   padding:14px;
-  border-bottom:1px solid rgba(255,255,255,.10);
-  background:rgba(255,255,255,.05);
+  border-bottom:2px solid rgba(255,214,0,.18);
+  background:#042f18;
 }
 
 .audit-day-sub{
   margin-top:4px;
-  color:rgba(255,255,255,.64);
+  color:rgba(255,255,255,.82);
   font-size:12px;
   font-weight:850;
 }
 
 .audit-game{
-  border-bottom:1px solid rgba(255,255,255,.10);
+  border-bottom:2px solid rgba(255,214,0,.14);
 }
 
 .audit-game:last-child{
@@ -195,9 +180,10 @@
 
 .audit-game-meta span{
   padding:5px 8px;
-  border-radius:999px;
-  color:rgba(255,255,255,.78);
-  background:rgba(255,255,255,.08);
+  border-radius:6px;
+  color:#ffffff;
+  background:#075c2d;
+  border:1px solid rgba(255,214,0,.22);
   font-size:11px;
   font-weight:900;
 }
@@ -218,8 +204,9 @@
   justify-content:space-between;
   gap:8px;
   padding:10px;
-  border-radius:14px;
-  background:rgba(0,0,0,.18);
+  border-radius:8px;
+  background:#042f18;
+  border:1px solid rgba(255,214,0,.20);
 }
 
 .audit-game-counts strong{
@@ -227,7 +214,7 @@
 }
 
 .audit-game-counts span{
-  color:rgba(255,255,255,.64);
+  color:rgba(255,255,255,.86);
   font-size:12px;
   font-weight:900;
 }
@@ -235,8 +222,8 @@
 .audit-picks{
   display:grid;
   grid-template-columns:1fr;
-  gap:1px;
-  padding:0 10px 12px;
+  gap:6px;
+  padding:0 12px 14px;
 }
 
 .audit-pick{
@@ -245,27 +232,23 @@
   gap:10px;
   align-items:center;
   min-height:52px;
-  padding:10px;
-  background:rgba(255,255,255,.055);
-}
-
-.audit-pick:first-child{
-  border-top-left-radius:14px;
-  border-top-right-radius:14px;
-}
-
-.audit-pick:last-child{
-  border-bottom-left-radius:14px;
-  border-bottom-right-radius:14px;
+  padding:11px 12px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;
+  background:#042f18;
 }
 
 .audit-pick.is-admin{
-  border-left:4px solid #f7c948;
-  background:linear-gradient(90deg, rgba(247,201,72,.16), rgba(255,255,255,.06));
+  border:2px solid #ffd600;
+  background:linear-gradient(90deg, #075c2d 0%, #064221 62%, #042f18 100%);
+  box-shadow:
+    inset 5px 0 0 #ffd600,
+    0 0 0 2px rgba(0,0,0,.40),
+    0 8px 18px rgba(0,0,0,.26);
 }
 
 .audit-pick.is-missing{
-  opacity:.72;
+  opacity:.82;
 }
 
 .audit-person,
@@ -288,10 +271,10 @@
 .audit-person span{
   display:inline-block;
   margin-top:4px;
-  padding:3px 7px;
-  border-radius:999px;
+  padding:4px 8px;
+  border-radius:6px;
   color:#062027;
-  background:#f7c948;
+  background:#ffd600;
   font-size:10px;
   font-weight:950;
 }
@@ -304,10 +287,15 @@
   font-size:15px;
 }
 
+.audit-pick.is-admin .audit-person strong,
+.audit-pick.is-admin .audit-score strong{
+  color:#ffd600 !important;
+}
+
 .audit-score small{
   display:block;
   margin-top:3px;
-  color:rgba(255,255,255,.62);
+  color:rgba(255,255,255,.86);
   font-size:11px;
   font-weight:850;
 }

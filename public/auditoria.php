@@ -264,20 +264,8 @@ require_once __DIR__ . "/partials/app_header.php";
 		<section class="audit-metrics" aria-label="Resumo da auditoria">
 			<div class="audit-metric"><strong><?php echo (int)count($lockedGames); ?></strong><span>jogos visiveis</span></div>
 			<div class="audit-metric"><strong><?php echo (int)count($usuarios); ?></strong><span>apostadores</span></div>
-			<div class="audit-metric audit-metric-admin"><strong><?php echo (int)count($admins); ?></strong><span>admins destacados</span></div>
+			<div class="audit-metric audit-metric-admin"><strong><?php echo (int)count($admins); ?></strong><span>admins na lista</span></div>
 			<div class="audit-metric"><strong><?php echo strh((string)$coverage); ?>%</strong><span>palpites preenchidos</span></div>
-		</section>
-
-		<section class="audit-admins" aria-label="Administradores do bolao">
-			<div class="audit-section-title">Admins do bolao</div>
-			<div class="audit-admin-list">
-				<?php foreach ($admins as $admin): ?>
-					<span><?php echo strh((string)$admin["nome"]); ?></span>
-				<?php endforeach; ?>
-				<?php if (count($admins) === 0): ?>
-					<span>Nenhum admin ativo encontrado.</span>
-				<?php endif; ?>
-			</div>
 		</section>
 
 		<?php if (count($lockedGames) === 0): ?>
