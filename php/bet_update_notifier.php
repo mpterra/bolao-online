@@ -181,6 +181,12 @@ function bet_send_email(array $cfg, string $toEmail, string $toName, string $sub
 }
 
 function bet_notify_ensure_table(PDO $pdo): void {
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+    $checked = true;
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS bet_update_notifications (
         usuario_id INT NOT NULL PRIMARY KEY,
         last_sent_at DATETIME NULL,

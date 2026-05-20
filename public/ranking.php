@@ -10,6 +10,7 @@ app_send_security_headers();
  * conexao.php fora do public_html
  */
 require_once "/home2/mauri075/php/conexao.php";
+require_once dirname(__DIR__) . "/php/performance_cache.php";
 
 /**
  * ✅ PADRÃO DO PROJETO:
@@ -83,10 +84,16 @@ $isAdmin     = (upper_utf8($tipoUsuario) === "ADMIN");
  */
 $edicaoId = get_int_param("edicao_id"); // null = escolher default
 
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
+
 try {
     // 1) Edições
-    $stmtEd = $pdo->query("SELECT id, nome FROM edicoes ORDER BY id DESC");
-    $edicoes = $stmtEd->fetchAll(PDO::FETCH_ASSOC);
+    $edicoes = app_cache_remember('ranking:edicoes', 60, static function () use ($pdo): array {
+        $stmtEd = $pdo->query("SELECT id, nome FROM edicoes ORDER BY id DESC");
+        return $stmtEd->fetchAll(PDO::FETCH_ASSOC);
+    });
 
     // Default: maior id
     if ($edicaoId === null) {
@@ -128,9 +135,11 @@ try {
         ORDER BY r.posicao ASC
     ";
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([":edicao_id" => (int)$edicaoId]);
-    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $rows = app_cache_remember('ranking:rows:' . (int)$edicaoId, 30, static function () use ($pdo, $sql, $edicaoId): array {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([":edicao_id" => (int)$edicaoId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    });
 
 } catch (Throwable $e) {
     http_response_code(500);

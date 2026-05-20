@@ -217,6 +217,9 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast(lockedMessage, false);
       return;
     }
+    if (!generateReceipt && tid === selectedId) {
+      return;
+    }
 
     lastRequestedId = tid;
     if (saving) return;

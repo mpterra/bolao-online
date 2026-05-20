@@ -33,6 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const FINALIZE_IDLE_MS = 90000;
+  const savedCardSignatures = new WeakMap();
+  let savedTop4Signature = "";
   let hasPendingFinalize = false;
   let finalizeTimer = null;
   let isFinalizing = false;
@@ -258,6 +260,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (msg) st.classList.add(ok ? "is-ok" : "is-bad");
   }
 
+  function stableSignature(value) {
+    return JSON.stringify(value || {});
+  }
+
   async function postJSON(url, payload) {
     const resp = await fetch(url, {
       method: "POST",
@@ -404,6 +410,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const validation = validateCard(card, { silent: silentInvalid });
     if (!validation.ok) return false;
 
+    const signature = stableSignature(validation.item);
+    if (savedCardSignatures.get(card) === signature) {
+      setCardState(card, "Salvo", true);
+      return true;
+    }
+
     setCardState(card, "Salvando...", true);
 
     const { ok, data } = await postJSON(url, { items: [validation.item] });
@@ -416,6 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     markPendingFinalize();
+    savedCardSignatures.set(card, signature);
     setCardState(card, "Salvo ✓", true);
     if (!silentSuccess) toast(data.message || "Palpite salvo.");
     return true;
@@ -448,6 +461,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (inHome) inHome.addEventListener("input", onChange);
       if (inAway) inAway.addEventListener("input", onChange);
+
+      const d = getCardData(card);
+      if (d.gcRaw !== "" && d.gfRaw !== "" && d.gcVal !== null && d.gfVal !== null && !Number.isNaN(d.gcVal) && !Number.isNaN(d.gfVal)) {
+        savedCardSignatures.set(card, stableSignature({
+          jogo_id: d.jogoId,
+          gols_casa: d.gcVal,
+          gols_fora: d.gfVal,
+          passa_time_id: d.gcVal === d.gfVal ? d.passTeamId : null
+        }));
+      }
     });
   }
 
@@ -628,6 +651,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const validation = validateTop4({ silent: silentInvalid });
     if (!validation.ok) return false;
 
+    const signature = stableSignature(validation.picks);
+    if (savedTop4Signature === signature) {
+      setTop4State("Top 4 salvo.", true);
+      return true;
+    }
+
     setTop4State("Salvando...", true);
 
     const { ok, data } = await postJSON(url, { picks: validation.picks });
@@ -640,12 +669,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     markPendingFinalize();
+    savedTop4Signature = signature;
     setTop4State(data.message || "Top 4 salvo.", true);
     if (!silentSuccess) toast(data.message || "Top 4 salvo.");
     return true;
   }
 
   const top4Selects = Array.from(document.querySelectorAll("[data-top4-pos]"));
+  const initialTop4Picks = readTop4();
+  const initialTop4Values = ["1", "2", "3", "4"].map((pos) => initialTop4Picks[pos] || 0);
+  if (initialTop4Values.every((value) => value > 0) && initialTop4Values.length === new Set(initialTop4Values).size) {
+    savedTop4Signature = stableSignature(initialTop4Picks);
+  }
+
   top4Selects.forEach((sel) => {
     sel.addEventListener("change", () => {
       if (top4Timer) clearTimeout(top4Timer);

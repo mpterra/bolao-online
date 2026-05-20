@@ -48,6 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const rowTimers = new WeakMap();
   const rankDebounceTimers = new Map();
   const top4DebounceTimers = new WeakMap();
+  const savedRankSignatures = new Map();
+  let savedTop4Signature = "";
 
   const selectionByMode = {
     group: null,
@@ -531,6 +533,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return data;
   }
 
+  function stableSignature(value) {
+    return JSON.stringify(value || {});
+  }
+
   function getCardPayload(cardEl) {
     const jogoId = Number(cardEl.getAttribute("data-jogo-id") || 0) || 0;
     const { gc, gf } = getScores(cardEl);
@@ -960,9 +966,16 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const signature = stableSignature(picks);
+    if (savedRankSignatures.get(groupId) === signature) {
+      setRankStateForGroup(groupId, "ok", "Grupo salvo!");
+      return;
+    }
+
     try {
       setRankStateForGroup(groupId, "saving");
       await saveGroupRank(groupId, picks);
+      savedRankSignatures.set(groupId, signature);
       setRankStateForGroup(groupId, "ok", "Grupo salvo!");
       if (!silentToast) showToast("Classificação do grupo salva.");
     } catch (e) {
@@ -1060,9 +1073,16 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
+        const signature = stableSignature(payload);
+        if (cardEl.dataset.savedPayloadSignature === signature) {
+          setLinkedSavingState(cardEl, "ok", "Salvo!");
+          return;
+        }
+
         try {
           setLinkedSavingState(cardEl, "saving");
           await saveItems([payload]);
+          cardEl.dataset.savedPayloadSignature = signature;
           if (isKnockoutCard(cardEl) && payload.gols_casa === payload.gols_fora && payload.passa_time_id) {
             setLinkedSavingState(cardEl, "ok", "Salvo com quem passa.");
           } else {
@@ -1137,9 +1157,16 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
+        const signature = stableSignature(payload);
+        if (cardEl.dataset.savedPayloadSignature === signature) {
+          setLinkedSavingState(cardEl, "ok", "Salvo com quem passa.");
+          return;
+        }
+
         try {
           setLinkedSavingState(cardEl, "saving");
           await saveItems([payload]);
+          cardEl.dataset.savedPayloadSignature = signature;
           setLinkedSavingState(cardEl, "ok", "Salvo com quem passa.");
         } catch (e) {
           setLinkedSavingState(cardEl, "err", e.message || "Erro ao salvar.");
@@ -1148,6 +1175,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     refreshPassUi(cardEl);
+    const initialPayload = getCardPayload(cardEl);
+    if (initialPayload && !initialPayload.invalid) {
+      cardEl.dataset.savedPayloadSignature = stableSignature(initialPayload);
+    }
   });
 
   Array.from(document.querySelectorAll(".group-rank-card[data-grupo-rank]")).forEach((cardEl) => {
@@ -1184,6 +1215,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (btnSave) {
       btnSave.addEventListener("click", () => saveRankByGroup(grupoId, { silentToast: false }));
+    }
+
+    const initialPicks = readRankPicks(cardEl);
+    if (allRankPicksFilled(initialPicks) && !savedRankSignatures.has(grupoId)) {
+      savedRankSignatures.set(grupoId, stableSignature(initialPicks));
     }
   });
 
@@ -1268,9 +1304,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      const signature = stableSignature(picks);
+      if (savedTop4Signature === signature) {
+        setTop4State("ok", "Top 4 salvo!");
+        return;
+      }
+
       try {
         setTop4State("saving");
         await saveTop4(picks);
+        savedTop4Signature = signature;
         setTop4State("ok", "Top 4 salvo!");
         if (!silentToast) showToast("Top 4 salvo.");
       } catch (e) {
@@ -1300,6 +1343,11 @@ document.addEventListener("DOMContentLoaded", () => {
         top4DebounceTimers.set(top4Card, setTimeout(() => saveNow({ silentToast: true }), 350));
       });
     });
+
+    const initialTop4Picks = readTop4Picks();
+    if (allTop4Filled(initialTop4Picks)) {
+      savedTop4Signature = stableSignature(initialTop4Picks);
+    }
   }
 
   installFinalizeButton();

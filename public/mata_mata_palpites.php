@@ -6,6 +6,7 @@ app_start_session();
 app_send_security_headers();
 require_once __DIR__ . "/../php/conexao.php";
 require_once __DIR__ . "/../php/bet_update_notifier.php";
+require_once __DIR__ . "/../php/performance_cache.php";
 
 date_default_timezone_set('America/Sao_Paulo');
 
@@ -80,6 +81,22 @@ function logical_bet_day(DateTimeImmutable $dt): string {
 	return $dt->format('Y-m-d');
 }
 
+function logical_day_bounds(string $dayYmd): array {
+	$tz = new DateTimeZone('America/Sao_Paulo');
+	$start = new DateTimeImmutable($dayYmd . ' 05:00:00', $tz);
+
+	return [
+		$start->format('Y-m-d H:i:s'),
+		$start->add(new DateInterval('P1D'))->format('Y-m-d H:i:s'),
+	];
+}
+
+function mm_active_edicao_id(PDO $pdo): int {
+	return (int)app_cache_remember('active_edicao_id', 60, static function () use ($pdo): int {
+		return (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+	});
+}
+
 function phases_knockout(): array {
 	return [
 		'16_DE_FINAL'    => '16 de final',
@@ -113,6 +130,7 @@ function get_pdo(): PDO {
 function compute_lock_for_logical_day_knockout(PDO $pdo, string $dayYmd): ?DateTimeImmutable {
 	$ph = array_keys(phases_knockout());
 	$in = implode(',', array_fill(0, count($ph), '?'));
+	[$dayStart, $dayEnd] = logical_day_bounds($dayYmd);
 
 	$sql = "
 		SELECT MIN(j.data_hora)
@@ -120,12 +138,10 @@ function compute_lock_for_logical_day_knockout(PDO $pdo, string $dayYmd): ?DateT
 		INNER JOIN edicoes e ON e.id = j.edicao_id AND e.ativo = 1
 		WHERE j.grupo_id IS NULL
 		  AND j.fase IN ($in)
-		  AND (
-				(DATE(j.data_hora) = ? AND TIME(j.data_hora) >= '05:00:00')
-			 OR (DATE(j.data_hora) = DATE_ADD(?, INTERVAL 1 DAY) AND TIME(j.data_hora) < '05:00:00')
-		  )
+		  AND j.data_hora >= ?
+		  AND j.data_hora < ?
 	";
-	$params = array_merge($ph, [$dayYmd, $dayYmd]);
+	$params = array_merge($ph, [$dayStart, $dayEnd]);
 
 	$st = $pdo->prepare($sql);
 	$st->execute($params);
@@ -247,7 +263,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	if (count($normalized) === 0) json_response(["ok" => false, "message" => "Preencha os placares antes de salvar."], 422);
 
 	try {
-		$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+		$edicaoId = mm_active_edicao_id($pdo);
 		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
 
 		$ph = array_keys(phases_knockout());
@@ -384,7 +400,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 	}
 
 	try {
-		$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+		$edicaoId = mm_active_edicao_id($pdo);
 		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
 
 		$stGate = $pdo->prepare("SELECT COUNT(*) FROM jogos WHERE edicao_id = ? AND grupo_id IS NULL AND fase = 'SEMI'");
@@ -453,8 +469,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 }
 
 /* HTML load */
+$csrfToken = app_csrf_token();
+if (session_status() === PHP_SESSION_ACTIVE) {
+	session_write_close();
+}
+
 try {
-	$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+	$edicaoId = mm_active_edicao_id($pdo);
 	if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
 
 	$lockNowLogicalDayAt = get_lock_for_logical_day($pdo, $lockCache, $nowLogicalDay);
@@ -882,7 +903,7 @@ echo json_encode([
 		"nome" => $usuarioNome,
 		"id"   => $usuarioId,
 	],
-	"csrf_token" => app_csrf_token(),
+	"csrf_token" => $csrfToken,
 	"lock" => [
 		"now_logical_day" => $nowLogicalDay,
 		"lock_logical_day_at" => ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? $lockNowLogicalDayAt->format('Y-m-d H:i:s') : null,

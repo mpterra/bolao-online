@@ -50,6 +50,14 @@ if (is_file($CONEXAO_PATH_1)) {
 	require_once $CONEXAO_PATH_2;
 }
 
+$CACHE_PATH_1 = __DIR__ . "/../php/performance_cache.php";
+$CACHE_PATH_2 = __DIR__ . "/php/performance_cache.php";
+if (is_file($CACHE_PATH_1)) {
+	require_once $CACHE_PATH_1;
+} elseif (is_file($CACHE_PATH_2)) {
+	require_once $CACHE_PATH_2;
+}
+
 $BET_NOTIFY_PATH_1 = __DIR__ . "/../php/bet_update_notifier.php";
 $BET_NOTIFY_PATH_2 = __DIR__ . "/php/bet_update_notifier.php";
 if (is_file($BET_NOTIFY_PATH_1)) {
@@ -229,6 +237,26 @@ function logical_bet_day(DateTimeImmutable $dt): string {
 	return $dt->format('Y-m-d');
 }
 
+function logical_day_bounds(string $dayYmd): array {
+	$tz = new DateTimeZone('America/Sao_Paulo');
+	$start = new DateTimeImmutable($dayYmd . ' 05:00:00', $tz);
+
+	return [
+		$start->format('Y-m-d H:i:s'),
+		$start->add(new DateInterval('P1D'))->format('Y-m-d H:i:s'),
+	];
+}
+
+function app_active_edicao_id(PDO $pdo): int {
+	if (function_exists('app_cache_remember')) {
+		return (int)app_cache_remember('active_edicao_id', 60, static function () use ($pdo): int {
+			return (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+		});
+	}
+
+	return (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+}
+
 function phase_labels(): array {
 	return [
 		'GRUPOS'         => 'Fase de grupos',
@@ -287,19 +315,19 @@ function is_knockout_phase_row(array $row): bool {
  * Por isso usamos :day1 e :day2 (evita SQLSTATE[HY093]).
  */
 function compute_lock_for_logical_day(PDO $pdo, string $dayYmd): ?DateTimeImmutable {
+	[$dayStart, $dayEnd] = logical_day_bounds($dayYmd);
+
 	$sql = "
 		SELECT MIN(j.data_hora)
 		FROM jogos j
 		INNER JOIN edicoes e ON e.id = j.edicao_id AND e.ativo = 1
-		WHERE (
-				(DATE(j.data_hora) = :day1 AND TIME(j.data_hora) >= '05:00:00')
-			 OR (DATE(j.data_hora) = DATE_ADD(:day2, INTERVAL 1 DAY) AND TIME(j.data_hora) < '05:00:00')
-		  )
+		WHERE j.data_hora >= :day_start
+		  AND j.data_hora < :day_end
 	";
 	$st = $pdo->prepare($sql);
 	$st->execute([
-		":day1" => $dayYmd,
-		":day2" => $dayYmd,
+		":day_start" => $dayStart,
+		":day_end" => $dayEnd,
 	]);
 	$minDt = $st->fetchColumn();
 
@@ -643,7 +671,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 	}
 
 	try {
-		$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+		$edicaoId = app_active_edicao_id($pdo);
 		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
 
 		$stGate = $pdo->prepare("SELECT COUNT(*) FROM jogos WHERE edicao_id = ? AND grupo_id IS NULL AND fase = 'SEMI'");
@@ -753,7 +781,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 	}
 
 	try {
-		$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+		$edicaoId = app_active_edicao_id($pdo);
 		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
 
 		$stGrupo = $pdo->prepare("SELECT id FROM grupos WHERE id = :gid AND edicao_id = :eid LIMIT 1");
@@ -824,8 +852,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 /* ---------------------------
    HTML: carregar grupos + jogos + dias + classificações + top 4
 --------------------------- */
+$csrfToken = app_csrf_token();
+if (session_status() === PHP_SESSION_ACTIVE) {
+	session_write_close();
+}
+
 try {
-	$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
+	$edicaoId = app_active_edicao_id($pdo);
 	if ($edicaoId <= 0) {
 		throw new RuntimeException("Nenhuma edição ativa.");
 	}
@@ -925,9 +958,18 @@ try {
         WHERE g.edicao_id = :edicao_id
         ORDER BY g.codigo
     ";
-	$stGrupos = $pdo->prepare($sqlGrupos);
-	$stGrupos->execute([":edicao_id" => $edicaoId]);
-	$grupos = $stGrupos->fetchAll(PDO::FETCH_ASSOC);
+	$grupos = function_exists('app_cache_remember')
+		? app_cache_remember('app:grupos:' . $edicaoId, 300, static function () use ($pdo, $sqlGrupos, $edicaoId): array {
+			$stGrupos = $pdo->prepare($sqlGrupos);
+			$stGrupos->execute([":edicao_id" => $edicaoId]);
+			return $stGrupos->fetchAll(PDO::FETCH_ASSOC);
+		})
+		: [];
+	if (!is_array($grupos) || !function_exists('app_cache_remember')) {
+		$stGrupos = $pdo->prepare($sqlGrupos);
+		$stGrupos->execute([":edicao_id" => $edicaoId]);
+		$grupos = $stGrupos->fetchAll(PDO::FETCH_ASSOC);
+	}
 
 	$codigos = array_map(static fn($g) => (string)$g["codigo"], $grupos);
 	$temJogos = [];
@@ -980,9 +1022,18 @@ try {
 			WHERE gt.grupo_id IN ($in)
 			ORDER BY gt.grupo_id, t.nome
 		";
-		$stTimes = $pdo->prepare($sqlTimes);
-		$stTimes->execute($grupoIds);
-		$rowsTimes = $stTimes->fetchAll(PDO::FETCH_ASSOC);
+		$rowsTimes = function_exists('app_cache_remember')
+			? app_cache_remember('app:times_grupos:' . $edicaoId, 300, static function () use ($pdo, $sqlTimes, $grupoIds): array {
+				$stTimes = $pdo->prepare($sqlTimes);
+				$stTimes->execute($grupoIds);
+				return $stTimes->fetchAll(PDO::FETCH_ASSOC);
+			})
+			: [];
+		if (!is_array($rowsTimes) || !function_exists('app_cache_remember')) {
+			$stTimes = $pdo->prepare($sqlTimes);
+			$stTimes->execute($grupoIds);
+			$rowsTimes = $stTimes->fetchAll(PDO::FETCH_ASSOC);
+		}
 
 		foreach ($rowsTimes as $r) {
 			$gid = (int)$r["grupo_id"];
@@ -1747,7 +1798,7 @@ require_once __DIR__ . "/partials/app_header.php";
 		"nome" => $usuarioNome,
 		"id"   => $usuarioId,
 	],
-	"csrf_token" => app_csrf_token(),
+	"csrf_token" => $csrfToken,
 	"active_mode" => $activeMode,
 	"active_type" => $activeType,
 	"active_key" => $activeKey,
