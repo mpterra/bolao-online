@@ -158,9 +158,9 @@ html{
 
 .rules-title h1{
 	display:grid;
-	gap:5px;
-	font-size:clamp(2.15rem, 9.8vw, 3.3rem);
-	line-height:.98;
+	gap:10px;
+	font-size:clamp(1.18rem, 4.7vw, 2rem);
+	line-height:1.35;
 	letter-spacing:.03em;
 	font-weight:900;
 	text-transform:uppercase;
@@ -470,7 +470,7 @@ html{
 	}
 
 	.rules-title h1{
-		font-size:clamp(2.5rem, 8vw, 3.8rem);
+		font-size:clamp(1.25rem, 4.2vw, 2.1rem);
 	}
 
 	.rules-copy p,
@@ -521,7 +521,7 @@ html{
 	}
 
 	.rules-title h1{
-		font-size:clamp(3rem, 6.2vw, 4.5rem);
+		font-size:clamp(1.45rem, 3.1vw, 2.35rem);
 	}
 
 	.rules-badges{
@@ -615,7 +615,7 @@ html{
 	}
 
 	.rules-title h1{
-		font-size:clamp(3.6rem, 5.8vw, 5rem);
+		font-size:clamp(1.65rem, 2.5vw, 2.55rem);
 	}
 
 	.rules-burst{
