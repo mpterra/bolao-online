@@ -50,6 +50,11 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			"href"  => "/resultados.php",
 		],
 		[
+			"key"   => "auditoria",
+			"label" => "Auditoria",
+			"href"  => "/auditoria.php",
+		],
+		[
 			"key"   => "boas_vindas",
 			"label" => "Pagamento",
 			"href"  => "/boas_vindas.php",
