@@ -71,11 +71,32 @@ function resolve_users_listing_state(array $query): array {
 }
 
 function build_users_order_by(string $sortCol, string $sortOrder): string {
+    $columns = [
+        "id" => "`id`",
+        "nome" => "`nome`",
+        "email" => "`email`",
+        "telefone" => "`telefone`",
+        "cidade" => "`cidade`",
+        "estado" => "`estado`",
+        "tipo_usuario" => "`tipo_usuario`",
+        "ativo" => "`ativo`",
+        "criado_em" => "`criado_em`",
+        "atualizado_em" => "`atualizado_em`",
+    ];
+
+    if (!isset($columns[$sortCol])) {
+        $sortCol = "id";
+    }
+
+    if ($sortOrder !== "asc" && $sortOrder !== "desc") {
+        $sortOrder = "asc";
+    }
+
     if ($sortCol === "tipo_usuario" && $sortOrder === "desc") {
         return "CASE WHEN tipo_usuario='ADMIN' THEN 0 ELSE 1 END ASC, nome ASC";
     }
 
-    return "`" . $sortCol . "` " . strtoupper($sortOrder);
+    return $columns[$sortCol] . " " . strtoupper($sortOrder);
 }
 
 function fetch_users(PDO $pdo, bool $somenteAtivos, string $orderBy): array {

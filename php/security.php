@@ -148,6 +148,27 @@ function app_rate_limit_key(string $scope, string $subject): string
     return $scope . ':' . hash('sha256', mb_strtolower(trim($subject), 'UTF-8'));
 }
 
+function app_sql_int_in_clause(array $values): array
+{
+    $ids = [];
+
+    foreach ($values as $value) {
+        if (is_int($value) || (is_string($value) && ctype_digit($value))) {
+            $id = (int)$value;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+    }
+
+    $ids = array_values($ids);
+    if (count($ids) === 0) {
+        return ['NULL', []];
+    }
+
+    return [implode(',', array_fill(0, count($ids), '?')), $ids];
+}
+
 function app_rate_limit_ensure_table(PDO $pdo): bool
 {
     static $checked = false;
