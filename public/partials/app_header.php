@@ -113,6 +113,25 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				overflow:hidden;
 			}
 
+			.bh-header.is-compact .bh-header__bar{
+				grid-template-columns:minmax(0, 1fr) auto;
+				gap:10px;
+			}
+
+			.bh-header.is-compact .bh-header__nav,
+			.bh-header.is-compact .bh-header__user,
+			.bh-header.is-compact .bh-header__logout{
+				display:none;
+			}
+
+			.bh-header.is-compact .bh-header__toggle{
+				display:inline-flex;
+			}
+
+			.bh-header.is-compact .bh-header__subtitle{
+				max-width:100%;
+			}
+
 			.bh-header__bar{
 				display:grid;
 				grid-template-columns:minmax(238px, 258px) minmax(0, 1fr) auto;
@@ -496,7 +515,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				}
 			}
 
-			@media (max-width: 1320px){
+			@media (max-width: 920px){
 				.bh-header__bar{
 					grid-template-columns:minmax(0, 1fr) auto;
 					gap:10px;
@@ -560,6 +579,8 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				headers.forEach(function (header) {
 					var toggle = header.querySelector(".bh-header__toggle");
 					var mobile = header.querySelector(".bh-header__mobile");
+					var nav = header.querySelector(".bh-header__nav");
+					var right = header.querySelector(".bh-header__right");
 
 					if (!toggle || !mobile) return;
 
@@ -575,6 +596,26 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 						} else {
 							mobile.classList.add("is-open");
 							toggle.setAttribute("aria-expanded", "true");
+						}
+					}
+
+					function setCompactByWidth() {
+						header.classList.remove("is-compact");
+						if (!nav || !right) return;
+
+						var bar = header.querySelector(".bh-header__bar");
+						if (!bar) return;
+
+						var available = bar.clientWidth;
+						var needed = 0;
+						Array.prototype.forEach.call(bar.children, function (child) {
+							needed += child.scrollWidth || child.offsetWidth || 0;
+						});
+
+						if (needed > available + 1) {
+							header.classList.add("is-compact");
+						} else {
+							closeMenu();
 						}
 					}
 
@@ -598,10 +639,15 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 					});
 
 					window.addEventListener("resize", function () {
-						if (window.innerWidth > 1320) {
-							closeMenu();
-						}
+						setCompactByWidth();
 					});
+
+					if (document.fonts && document.fonts.ready) {
+						document.fonts.ready.then(setCompactByWidth).catch(function () {});
+					}
+
+					setCompactByWidth();
+					window.setTimeout(setCompactByWidth, 150);
 				});
 			});
 		</script>
