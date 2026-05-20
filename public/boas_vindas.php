@@ -1,6 +1,19 @@
 <?php
 declare(strict_types=1);
 
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+$isLoggedIn = !empty($_SESSION['usuario_id']);
+$usuarioNome = isset($_SESSION['usuario_nome']) ? (string)$_SESSION['usuario_nome'] : 'Apostador';
+$tipoUsuario = isset($_SESSION['tipo_usuario']) ? (string)$_SESSION['tipo_usuario'] : '';
+$isAdmin = (mb_strtoupper($tipoUsuario, 'UTF-8') === 'ADMIN');
+
+if ($isLoggedIn) {
+    require_once __DIR__ . '/partials/app_header.php';
+}
+
 $pixPayload = '00020126660014BR.GOV.BCB.PIX0122thiagopterra@gmail.com0218Bolão da Copa 2026520400005303986540580.005802BR5918THIAGO PEREZ TERRA6013CAXIAS DO SUL62120508Copa202663046B2A';
 $pixAmount = 'R$ 80,00';
 $pixRecipient = 'THIAGO PEREZ TERRA';
@@ -22,11 +35,19 @@ $whatsappLink = 'https://chat.whatsapp.com/CmzZCNsNenY8RKFxeOVwLA';
 </head>
 <body>
     <div class="welcome-page">
+        <?php if ($isLoggedIn): ?>
+            <div class="app-wrap welcome-header-wrap">
+                <?php render_app_header($usuarioNome, $isAdmin, 'boas_vindas', 'Pagamento e grupo do bolão', '/app.php?action=logout'); ?>
+            </div>
+        <?php endif; ?>
+
         <main class="welcome-shell">
             <section class="hero-panel card-glass">
                 <div class="hero-panel__top">
-                    <a class="hero-link" href="/index.php">Entrar com minha conta</a>
-                    <span class="badge">Cadastro concluído</span>
+                    <a class="hero-link" href="<?php echo $isLoggedIn ? '/app.php' : '/index.php'; ?>">
+                        <?php echo $isLoggedIn ? 'Voltar para meus palpites' : 'Entrar com minha conta'; ?>
+                    </a>
+                    <span class="badge"><?php echo $isLoggedIn ? 'Área do participante' : 'Cadastro concluído'; ?></span>
                 </div>
 
                 <div class="hero-layout">
@@ -168,10 +189,12 @@ $whatsappLink = 'https://chat.whatsapp.com/CmzZCNsNenY8RKFxeOVwLA';
                 <div class="next-step__body">
                     <p class="next-step__kicker">Checklist final</p>
                     <h2>Fez o pagamento e já entrou no grupo?</h2>
-                    <p>Perfeito. Depois disso, você já pode voltar para o login e acompanhar tudo por lá.</p>
+                    <p>Perfeito. Depois disso, você já pode acompanhar seus palpites e novidades pela área do participante.</p>
                 </div>
 
-                <a class="action-btn action-btn--compact" href="/index.php">Ir para o login</a>
+                <a class="action-btn action-btn--compact" href="<?php echo $isLoggedIn ? '/app.php' : '/index.php'; ?>">
+                    <?php echo $isLoggedIn ? 'Ir para meus palpites' : 'Ir para o login'; ?>
+                </a>
             </section>
         </main>
     </div>

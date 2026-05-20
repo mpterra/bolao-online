@@ -3,6 +3,14 @@
   z-index: 1;
 }
 
+.welcome-header-wrap{
+  width: min(1100px, 100%) !important;
+  margin: 0 auto !important;
+  padding: 12px 10px 0 !important;
+  position: relative;
+  z-index: 2;
+}
+
 .welcome-page::before{
   content:"";
   position: fixed;

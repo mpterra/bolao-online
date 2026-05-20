@@ -15,7 +15,7 @@ if (!function_exists("strh")) {
  *  - $isAdmin (bool)
  *
  * Parâmetros:
- *  - $active: string ('apostas'|'ranking'|'admin'|'resultados_publico'|'mata_mata'|etc)
+ *  - $active: string ('apostas'|'ranking'|'admin'|'resultados_publico'|'mata_mata'|'boas_vindas'|etc)
  *  - $subtitle: string
  *  - $logoutHref: string
  */
@@ -48,6 +48,11 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			"key"   => "resultados_publico",
 			"label" => "Resultados",
 			"href"  => "/resultados.php",
+		],
+		[
+			"key"   => "boas_vindas",
+			"label" => "Pagamento",
+			"href"  => "/boas_vindas.php",
 		],
 		[
 			"key"   => "regulamento",
