@@ -246,7 +246,7 @@ require_once __DIR__ . "/partials/app_header.php";
 	<link rel="stylesheet" href="/css/auditoria.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/auditoria.css'); ?>">
 </head>
 <body data-page="auditoria">
-<div class="audit-wrap">
+<div class="app-wrap audit-wrap">
 	<?php render_app_header($usuarioNome, $isAdmin, "auditoria", "Auditoria das apostas travadas", "/app.php?action=logout"); ?>
 
 	<main class="audit-shell">

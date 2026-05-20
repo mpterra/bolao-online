@@ -14,11 +14,9 @@ body{
 }
 
 .audit-wrap{
-  position:relative;
-  z-index:2;
   width:min(1320px, 100%);
   margin:0 auto;
-  padding:10px;
+  padding:12px;
 }
 
 .audit-shell{
