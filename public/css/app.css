@@ -905,6 +905,10 @@ body::before{
   padding: 12px;
 }
 
+.group-rank-card.is-locked{
+  opacity: .82;
+}
+
 .group-rank-head{
   display:flex;
   flex-direction:column;

@@ -379,6 +379,29 @@ function lock_reason_for_game(
 	return null;
 }
 
+function first_game_start_for_edition(PDO $pdo, int $edicaoId): ?DateTimeImmutable {
+	if ($edicaoId <= 0) return null;
+
+	$st = $pdo->prepare("SELECT MIN(data_hora) FROM jogos WHERE edicao_id = ?");
+	$st->execute([$edicaoId]);
+	$minDt = $st->fetchColumn();
+
+	return dt_from_mysql(is_string($minDt) ? $minDt : null);
+}
+
+function group_rank_change_is_locked(?DateTimeImmutable $firstGameAt, DateTimeImmutable $now): bool {
+	return ($firstGameAt instanceof DateTimeImmutable) && $now >= $firstGameAt;
+}
+
+function group_rank_lock_message(?DateTimeImmutable $firstGameAt): string {
+	if (!$firstGameAt) {
+		return "Nao foi possivel identificar o primeiro jogo da edicao.";
+	}
+
+	return "O prazo para escolher ou alterar o 1o, 2o e 3o de cada grupo encerrou no inicio do primeiro jogo, em "
+		. $firstGameAt->format('d/m/Y \a\s H:i') . ".";
+}
+
 function resolve_receipt_url(string $phpWebBase): ?string {
 	$candidates = [
 		['fs' => __DIR__ . '/../php/recibo_por_dia.php',   'web' => $phpWebBase . '/recibo_por_dia.php?action=pdf'],
@@ -784,6 +807,11 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 		$edicaoId = app_active_edicao_id($pdo);
 		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
 
+		$groupRankDeadlineAt = first_game_start_for_edition($pdo, $edicaoId);
+		if (group_rank_change_is_locked($groupRankDeadlineAt, $now)) {
+			json_response(["ok" => false, "message" => group_rank_lock_message($groupRankDeadlineAt)], 403);
+		}
+
 		$stGrupo = $pdo->prepare("SELECT id FROM grupos WHERE id = :gid AND edicao_id = :eid LIMIT 1");
 		$stGrupo->execute([":gid" => $grupoId, ":eid" => $edicaoId]);
 		$gidOk = (int)$stGrupo->fetchColumn();
@@ -865,6 +893,9 @@ try {
 
 	$lockNowLogicalDayAt = get_lock_for_logical_day($pdo, $lockCache, $nowLogicalDay);
 	$lockNowLogicalDayActive = ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? ($now >= $lockNowLogicalDayAt) : false;
+	$groupRankDeadlineAt = first_game_start_for_edition($pdo, $edicaoId);
+	$groupRankLocked = group_rank_change_is_locked($groupRankDeadlineAt, $now);
+	$groupRankLockMessage = $groupRankLocked ? group_rank_lock_message($groupRankDeadlineAt) : "";
 
 	$sqlJogos = "
         SELECT
@@ -1487,10 +1518,12 @@ require_once __DIR__ . "/partials/app_header.php";
 								<?php endforeach; ?>
 							</div>
 
-							<div class="group-rank-card" data-grupo-rank="<?php echo (int)$grupoId; ?>">
+							<div class="group-rank-card<?php echo $groupRankLocked ? ' is-locked' : ''; ?>" data-grupo-rank="<?php echo (int)$grupoId; ?>" data-rank-locked="<?php echo $groupRankLocked ? '1' : '0'; ?>">
 								<div class="group-rank-head">
 									<div class="group-rank-title">Classificação do grupo</div>
-									<div class="group-rank-sub">Escolha livremente (independe dos placares).</div>
+									<div class="group-rank-sub">
+										<?php echo $groupRankLocked ? strh($groupRankLockMessage) : "Pode trocar ate o inicio do primeiro jogo."; ?>
+									</div>
 								</div>
 
 								<?php if (count($timesGrupo) === 0): ?>
@@ -1499,7 +1532,7 @@ require_once __DIR__ . "/partials/app_header.php";
 									<div class="group-rank-grid">
 										<div class="rank-field">
 											<label>1º</label>
-											<select class="rank-select" data-rank-pos="1">
+											<select class="rank-select" data-rank-pos="1" <?php echo $groupRankLocked ? "disabled" : ""; ?>>
 												<option value="0"><?php echo strh("—"); ?></option>
 												<?php foreach ($timesGrupo as $t): ?>
 													<?php
@@ -1515,7 +1548,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
 										<div class="rank-field">
 											<label>2º</label>
-											<select class="rank-select" data-rank-pos="2">
+											<select class="rank-select" data-rank-pos="2" <?php echo $groupRankLocked ? "disabled" : ""; ?>>
 												<option value="0"><?php echo strh("—"); ?></option>
 												<?php foreach ($timesGrupo as $t): ?>
 													<?php
@@ -1531,7 +1564,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
 										<div class="rank-field">
 											<label>3º</label>
-											<select class="rank-select" data-rank-pos="3">
+											<select class="rank-select" data-rank-pos="3" <?php echo $groupRankLocked ? "disabled" : ""; ?>>
 												<option value="0"><?php echo strh("—"); ?></option>
 												<?php foreach ($timesGrupo as $t): ?>
 													<?php
@@ -1547,8 +1580,8 @@ require_once __DIR__ . "/partials/app_header.php";
 									</div>
 
 									<div class="group-rank-actions">
-										<button class="btn-group-save" type="button">Salvar grupo</button>
-										<div class="rank-state" aria-live="polite"></div>
+										<button class="btn-group-save" type="button" <?php echo $groupRankLocked ? "disabled" : ""; ?>>Salvar grupo</button>
+										<div class="rank-state<?php echo $groupRankLocked ? ' err' : ''; ?>" aria-live="polite"><?php echo $groupRankLocked ? strh($groupRankLockMessage) : ""; ?></div>
 									</div>
 								<?php endif; ?>
 							</div>
@@ -1734,7 +1767,7 @@ require_once __DIR__ . "/partials/app_header.php";
 							$pick2 = isset($picks[2]) ? (int)$picks[2] : 0;
 							$pick3 = isset($picks[3]) ? (int)$picks[3] : 0;
 						?>
-							<div class="group-rank-card" data-view-mode="day" data-grupo-rank="<?php echo (int)$grupoIdCard; ?>">
+							<div class="group-rank-card<?php echo $groupRankLocked ? ' is-locked' : ''; ?>" data-view-mode="day" data-grupo-rank="<?php echo (int)$grupoIdCard; ?>" data-rank-locked="<?php echo $groupRankLocked ? '1' : '0'; ?>">
 								<div class="group-rank-head">
 									<div class="group-rank-title">Classificação do Grupo <?php echo strh($codigo); ?></div>
 									<div class="group-rank-sub">Escolha livremente 1º, 2º e 3º. Este card aparece no último dia lógico do grupo.</div>
@@ -1807,6 +1840,11 @@ require_once __DIR__ . "/partials/app_header.php";
 		"lock_logical_day_at" => ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? $lockNowLogicalDayAt->format('Y-m-d H:i:s') : null,
 		"lock_logical_day_active" => (bool)$lockNowLogicalDayActive,
 		"logical_day_rule" => "00:00-04:59 pertence ao dia anterior",
+	],
+	"group_rank" => [
+		"locked" => (bool)$groupRankLocked,
+		"deadline_at" => ($groupRankDeadlineAt instanceof DateTimeImmutable) ? $groupRankDeadlineAt->format('Y-m-d H:i:s') : null,
+		"locked_message" => $groupRankLockMessage,
 	],
 	"top4" => [
 		"enabled" => (bool)$top4Enabled,

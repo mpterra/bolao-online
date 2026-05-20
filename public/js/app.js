@@ -36,6 +36,10 @@ document.addEventListener("DOMContentLoaded", () => {
     : null;
 
   const CSRF_TOKEN = APP_CFG.csrf_token || "";
+  const GROUP_RANK_LOCKED = !!(APP_CFG.group_rank && APP_CFG.group_rank.locked);
+  const GROUP_RANK_LOCKED_MESSAGE = (APP_CFG.group_rank && APP_CFG.group_rank.locked_message)
+    ? String(APP_CFG.group_rank.locked_message)
+    : "O prazo para alterar a classificação dos grupos encerrou.";
   const jsonHeaders = () => ({
     "Content-Type": "application/json; charset=utf-8",
     "X-CSRF-Token": CSRF_TOKEN
@@ -562,6 +566,30 @@ document.addEventListener("DOMContentLoaded", () => {
     return payload;
   }
 
+  function applyGroupRankLockState() {
+    if (!GROUP_RANK_LOCKED) return;
+
+    document.querySelectorAll(".group-rank-card[data-grupo-rank]").forEach((cardEl) => {
+      cardEl.classList.add("is-locked");
+      cardEl.setAttribute("data-rank-locked", "1");
+
+      cardEl.querySelectorAll(".rank-select[data-rank-pos]").forEach((sel) => {
+        sel.disabled = true;
+      });
+
+      const btn = cardEl.querySelector(".btn-group-save");
+      if (btn) btn.disabled = true;
+
+      const state = cardEl.querySelector(".rank-state");
+      if (state) {
+        state.classList.add("err");
+        if (!state.textContent.trim()) state.textContent = GROUP_RANK_LOCKED_MESSAGE;
+      }
+    });
+  }
+
+  applyGroupRankLockState();
+
   (function initCustomRankSelects() {
     const selects = Array.from(document.querySelectorAll(".group-rank-card select.rank-select"));
     if (!selects.length) return;
@@ -575,6 +603,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .bolao-select-display{ width:100%; padding:12px 44px 12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.10); color:var(--text); font-size:14px; outline:none; transition:220ms ease; cursor:pointer; user-select:none; display:flex; align-items:center; -webkit-tap-highlight-color:transparent; min-height:unset; line-height:normal; }
         .bolao-select-display:focus{ border-color:rgba(16,208,138,.55); box-shadow:0 0 0 4px rgba(16,208,138,.14), 0 10px 22px rgba(0,0,0,.25); background:rgba(255,255,255,.12); }
         .bolao-select-display.is-invalid{ border-color:rgba(255,140,140,.45); box-shadow:0 0 0 4px rgba(255,140,140,.10); }
+        .bolao-select-display.is-disabled{ opacity:.58; cursor:not-allowed; filter:saturate(.7); }
         .bolao-select-caret{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:18px; height:18px; pointer-events:none; opacity:.9; }
         .bolao-select-portal{ position:fixed; z-index:999999; border-radius:14px; border:1px solid rgba(255,255,255,.16); background:rgba(0,0,0,.68); backdrop-filter:blur(12px); box-shadow:0 22px 60px rgba(0,0,0,.55); overflow:hidden; display:none; }
         .bolao-select-portal.is-open{ display:block; }
@@ -595,6 +624,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function syncInvalidState(sel, display) {
       if (!sel || !display) return;
       display.classList.toggle("is-invalid", sel.classList.contains("is-invalid"));
+    }
+
+    function syncDisabledState(sel, display) {
+      if (!sel || !display) return;
+      const disabled = !!sel.disabled;
+      display.classList.toggle("is-disabled", disabled);
+      display.setAttribute("aria-disabled", disabled ? "true" : "false");
+      display.tabIndex = disabled ? -1 : 0;
     }
 
     function makeCustomSelect(sel, searchPlaceholder) {
@@ -663,6 +700,7 @@ document.addEventListener("DOMContentLoaded", () => {
         display.textContent = txt ? txt : "\u00A0";
         wrap.appendChild(caret);
         syncInvalidState(sel, display);
+        syncDisabledState(sel, display);
       }
 
       sel.__BOLAO_SYNC_DISPLAY__ = setDisplayText;
@@ -727,6 +765,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       function openMenu() {
+        if (sel.disabled) return;
         if (open) return;
         open = true;
 
@@ -761,6 +800,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       function toggleMenu() {
+        if (sel.disabled) return;
         if (open) closeMenu(true);
         else openMenu();
       }
@@ -837,8 +877,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (open) closeMenu(true);
       });
 
-      const observer = new MutationObserver(() => syncInvalidState(sel, display));
-      observer.observe(sel, { attributes: true, attributeFilter: ["class"] });
+      const observer = new MutationObserver(() => {
+        syncInvalidState(sel, display);
+        syncDisabledState(sel, display);
+      });
+      observer.observe(sel, { attributes: true, attributeFilter: ["class", "disabled"] });
 
       setDisplayText();
     }
@@ -854,7 +897,8 @@ document.addEventListener("DOMContentLoaded", () => {
     getLinkedRankCards(groupId).forEach((cardEl) => {
       const st = cardEl.querySelector(".rank-state");
       const btn = cardEl.querySelector(".btn-group-save");
-      if (btn) btn.disabled = (state === "saving");
+      const locked = cardEl.getAttribute("data-rank-locked") === "1";
+      if (btn) btn.disabled = locked || (state === "saving");
       if (!st) return;
 
       st.classList.remove("ok", "err");
@@ -947,6 +991,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function saveRankByGroup(groupId, { silentToast = false } = {}) {
+    if (GROUP_RANK_LOCKED) {
+      setRankStateForGroup(groupId, "err", GROUP_RANK_LOCKED_MESSAGE);
+      if (!silentToast) showToast(GROUP_RANK_LOCKED_MESSAGE, true);
+      return;
+    }
+
     const rankCards = getLinkedRankCards(groupId);
     const sourceCard = rankCards[0];
     if (!sourceCard) return;
