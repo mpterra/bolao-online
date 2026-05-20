@@ -51,14 +51,31 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 $ip = app_client_ip();
 $loginIpKey = app_rate_limit_key("login_ip", $ip);
 $loginUserKey = app_rate_limit_key("login_user", $email);
+$loginMaxAttempts = 5;
+$loginWindowSeconds = 600;
+$loginCooldownSeconds = 900;
 
 if (app_rate_limit_is_locked($pdo, $loginIpKey) || app_rate_limit_is_locked($pdo, $loginUserKey)) {
     redirect_login_with_flash("Muitas tentativas. Aguarde um pouco e tente novamente.", "warn");
 }
 
-$registerLoginFailure = function () use ($pdo, $loginIpKey, $loginUserKey): void {
-    app_rate_limit_register_failure($pdo, $loginIpKey, 8, 600, 900);
-    app_rate_limit_register_failure($pdo, $loginUserKey, 8, 600, 900);
+$invalidLoginMessage = static function (int $remaining): string {
+    if ($remaining <= 0) {
+        return "E-mail ou senha invalidos. Limite de tentativas atingido. Aguarde um pouco e tente novamente.";
+    }
+
+    $plural = $remaining === 1 ? "tentativa" : "tentativas";
+    return "E-mail ou senha invalidos. Voce ainda tem {$remaining} {$plural} antes do bloqueio temporario.";
+};
+
+$registerLoginFailure = function () use ($pdo, $loginIpKey, $loginUserKey, $loginMaxAttempts, $loginWindowSeconds, $loginCooldownSeconds): array {
+    $ipStatus = app_rate_limit_register_failure($pdo, $loginIpKey, $loginMaxAttempts, $loginWindowSeconds, $loginCooldownSeconds);
+    $userStatus = app_rate_limit_register_failure($pdo, $loginUserKey, $loginMaxAttempts, $loginWindowSeconds, $loginCooldownSeconds);
+
+    return [
+        "remaining" => min((int)($ipStatus["remaining"] ?? 0), (int)($userStatus["remaining"] ?? 0)),
+        "locked" => !empty($ipStatus["locked"]) || !empty($userStatus["locked"]),
+    ];
 };
 
 try {
@@ -72,8 +89,8 @@ try {
     $u = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$u) {
-        $registerLoginFailure();
-        redirect_login_with_flash("E-mail ou senha invalidos.", "error");
+        $status = $registerLoginFailure();
+        redirect_login_with_flash($invalidLoginMessage((int)$status["remaining"]), !empty($status["locked"]) ? "warn" : "error");
     }
 
     if ((int)$u["ativo"] !== 1) {
@@ -82,8 +99,8 @@ try {
     }
 
     if (!password_verify($senha, (string)$u["senha_hash"])) {
-        $registerLoginFailure();
-        redirect_login_with_flash("E-mail ou senha invalidos.", "error");
+        $status = $registerLoginFailure();
+        redirect_login_with_flash($invalidLoginMessage((int)$status["remaining"]), !empty($status["locked"]) ? "warn" : "error");
     }
 
     session_regenerate_id(true);

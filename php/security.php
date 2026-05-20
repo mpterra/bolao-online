@@ -226,11 +226,10 @@ function app_rate_limit_is_locked(PDO $pdo, string $bucketKey): bool
     }
 }
 
-function app_rate_limit_register_failure(PDO $pdo, string $bucketKey, int $maxAttempts, int $windowSeconds, int $cooldownSeconds): void
+function app_rate_limit_register_failure(PDO $pdo, string $bucketKey, int $maxAttempts, int $windowSeconds, int $cooldownSeconds): array
 {
     if (!app_rate_limit_ensure_table($pdo)) {
-        app_session_rate_limit_register_failure($bucketKey, $maxAttempts, $windowSeconds, $cooldownSeconds);
-        return;
+        return app_session_rate_limit_register_failure($bucketKey, $maxAttempts, $windowSeconds, $cooldownSeconds);
     }
 
     try {
@@ -275,12 +274,18 @@ function app_rate_limit_register_failure(PDO $pdo, string $bucketKey, int $maxAt
         $upsert->execute([$bucketKey, $attempts, $firstAttemptAt, $lockedUntil]);
 
         $pdo->commit();
+
+        return [
+            'attempts' => $attempts,
+            'remaining' => max(0, $maxAttempts - $attempts),
+            'locked' => $lockedUntil !== null,
+        ];
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
         error_log('[security] rate limit failure register failed: ' . $e->getMessage());
-        app_session_rate_limit_register_failure($bucketKey, $maxAttempts, $windowSeconds, $cooldownSeconds);
+        return app_session_rate_limit_register_failure($bucketKey, $maxAttempts, $windowSeconds, $cooldownSeconds);
     }
 }
 
@@ -308,7 +313,7 @@ function app_session_rate_limit_is_locked(string $bucketKey): bool
     return is_array($bucket) && !empty($bucket['locked_until']) && (int)$bucket['locked_until'] > time();
 }
 
-function app_session_rate_limit_register_failure(string $bucketKey, int $maxAttempts, int $windowSeconds, int $cooldownSeconds): void
+function app_session_rate_limit_register_failure(string $bucketKey, int $maxAttempts, int $windowSeconds, int $cooldownSeconds): array
 {
     app_start_session();
 
@@ -338,6 +343,12 @@ function app_session_rate_limit_register_failure(string $bucketKey, int $maxAtte
     }
 
     $_SESSION['security_rate_limits'][$bucketKey] = $bucket;
+
+    return [
+        'attempts' => (int)$bucket['attempts'],
+        'remaining' => max(0, $maxAttempts - (int)$bucket['attempts']),
+        'locked' => !empty($bucket['locked_until']) && (int)$bucket['locked_until'] > $now,
+    ];
 }
 
 function app_require_login(string $loginUrl = '/index.php'): void
