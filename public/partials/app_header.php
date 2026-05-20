@@ -134,7 +134,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 
 			.bh-header__bar{
 				display:grid;
-				grid-template-columns:minmax(238px, 258px) minmax(0, 1fr) auto;
+				grid-template-columns:minmax(190px, 220px) minmax(0, 1fr) auto;
 				align-items:center;
 				gap:8px;
 				padding:8px 10px;
@@ -185,7 +185,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				white-space:nowrap;
 				overflow:hidden;
 				text-overflow:ellipsis;
-				max-width:190px;
+				max-width:150px;
 			}
 
 			.bh-header__nav{
@@ -195,7 +195,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				gap:4px;
 				min-width:0;
 				flex-wrap:nowrap;
-				overflow-x:auto;
+				overflow:hidden;
 				overscroll-behavior-x:contain;
 				-webkit-overflow-scrolling:touch;
 				scrollbar-width:none;
@@ -210,6 +210,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				display:inline-flex;
 				align-items:center;
 				justify-content:center;
+				flex:0 0 auto;
 				padding:7px 8px;
 				border-radius:8px;
 				text-decoration:none;
@@ -252,6 +253,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				gap:6px;
 				flex:0 0 auto;
 				min-width:0;
+				max-width:100%;
 			}
 
 			.bh-header__user{
@@ -292,7 +294,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 			}
 
 			.bh-header__user-name{
-				max-width:96px;
+				max-width:72px;
 				overflow:hidden;
 				text-overflow:ellipsis;
 				white-space:nowrap;
@@ -339,6 +341,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 
 			.bh-header__toggle{
 				display:none;
+				flex:0 0 auto;
 				width:40px;
 				height:40px;
 				padding:0;
@@ -515,7 +518,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 				}
 			}
 
-			@media (max-width: 920px){
+			@media (max-width: 1280px){
 				.bh-header__bar{
 					grid-template-columns:minmax(0, 1fr) auto;
 					gap:10px;
@@ -606,13 +609,13 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 						var bar = header.querySelector(".bh-header__bar");
 						if (!bar) return;
 
-						var available = bar.clientWidth;
-						var needed = 0;
-						Array.prototype.forEach.call(bar.children, function (child) {
-							needed += child.scrollWidth || child.offsetWidth || 0;
-						});
+						var navOverflow = nav.scrollWidth > nav.clientWidth + 1;
+						var barOverflow = bar.scrollWidth > bar.clientWidth + 1;
+						var rightRect = right.getBoundingClientRect();
+						var headerRect = header.getBoundingClientRect();
+						var rightClipped = rightRect.right > headerRect.right - 8;
 
-						if (needed > available + 1) {
+						if (navOverflow || barOverflow || rightClipped) {
 							header.classList.add("is-compact");
 						} else {
 							closeMenu();
@@ -639,14 +642,22 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 					});
 
 					window.addEventListener("resize", function () {
-						setCompactByWidth();
+						window.requestAnimationFrame(setCompactByWidth);
 					});
 
 					if (document.fonts && document.fonts.ready) {
 						document.fonts.ready.then(setCompactByWidth).catch(function () {});
 					}
 
-					setCompactByWidth();
+					if (window.ResizeObserver) {
+						var ro = new ResizeObserver(function () {
+							window.requestAnimationFrame(setCompactByWidth);
+						});
+						ro.observe(header);
+						ro.observe(nav);
+					}
+
+					window.requestAnimationFrame(setCompactByWidth);
 					window.setTimeout(setCompactByWidth, 150);
 				});
 			});
