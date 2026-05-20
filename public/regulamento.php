@@ -1,11 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-session_start();
+require_once dirname(__DIR__) . "/php/security.php";
+app_start_session();
+app_send_security_headers();
 
 $isLoggedIn = !empty($_SESSION['usuario_id']);
 $usuarioNome = isset($_SESSION['usuario_nome']) ? (string)$_SESSION['usuario_nome'] : 'Apostador';

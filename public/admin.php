@@ -1,11 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-session_start();
+require_once dirname(__DIR__) . "/php/security.php";
+app_start_session();
+app_send_security_headers();
 
 // ✅ HostGator: arquivo em /public_html => sobe 1 nível para /home2/mauri075 e entra em /php
 require_once dirname(__DIR__) . "/php/conexao.php";

@@ -1,11 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-session_start();
+require_once dirname(__DIR__) . "/php/security.php";
+app_start_session();
+app_send_security_headers();
 
 $flash = null;
 if (!empty($_SESSION["flash_reset"]) && is_array($_SESSION["flash_reset"])) {
@@ -54,6 +52,7 @@ if (!in_array($flashType, $allowed, true)) $flashType = "";
         </p>
 
         <form method="POST" action="/php/esqueci_senha.php" class="login-form" autocomplete="on">
+            <?php echo app_csrf_field(); ?>
 
             <div class="input-group">
                 <input type="email" name="email" required autocomplete="email">

@@ -26,6 +26,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!CFG.endpoints.notify_changes) CFG.endpoints.notify_changes = "/mata_mata_palpites.php?action=notify_changes";
   if (!CFG.endpoints.receipt_url) CFG.endpoints.receipt_url = "/php/recibo_mata_mata.php?action=pdf";
 
+  const csrfToken = CFG.csrf_token || "";
+  const jsonHeaders = () => ({
+    "Content-Type": "application/json; charset=utf-8",
+    "X-CSRF-Token": csrfToken
+  });
+
   const FINALIZE_IDLE_MS = 90000;
   let hasPendingFinalize = false;
   let finalizeTimer = null;
@@ -62,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!hasPendingFinalize || exitFinalizeDispatched) return;
     exitFinalizeDispatched = true;
 
-    const payload = JSON.stringify({ force: true, source: source || "exit" });
+    const payload = JSON.stringify({ force: true, source: source || "exit", csrf_token: csrfToken });
 
     try {
       if (navigator.sendBeacon) {
@@ -76,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       fetch(CFG.endpoints.notify_changes, {
         method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
+        headers: jsonHeaders(),
         body: payload,
         keepalive: true,
         credentials: "same-origin"
@@ -255,8 +261,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function postJSON(url, payload) {
     const resp = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify(payload || {})
+      headers: jsonHeaders(),
+      body: JSON.stringify(Object.assign({}, payload || {}, { csrf_token: csrfToken }))
     });
     const data = await resp.json().catch(() => ({}));
     return { ok: resp.ok, status: resp.status, data };

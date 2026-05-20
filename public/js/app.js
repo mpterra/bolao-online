@@ -35,6 +35,12 @@ document.addEventListener("DOMContentLoaded", () => {
     ? APP_CFG.endpoints.receipt_url
     : null;
 
+  const CSRF_TOKEN = APP_CFG.csrf_token || "";
+  const jsonHeaders = () => ({
+    "Content-Type": "application/json; charset=utf-8",
+    "X-CSRF-Token": CSRF_TOKEN
+  });
+
   const toast = document.getElementById("toast");
   const listTop = document.getElementById("list-top");
   const modeButtons = Array.from(document.querySelectorAll(".js-view-mode[data-view-mode-target]"));
@@ -86,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!hasPendingFinalize || exitFinalizeDispatched) return;
     exitFinalizeDispatched = true;
 
-    const payload = JSON.stringify({ force: true, source: source || "exit" });
+    const payload = JSON.stringify({ force: true, source: source || "exit", csrf_token: CSRF_TOKEN });
 
     try {
       if (navigator.sendBeacon) {
@@ -100,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       fetch(ENDPOINT_NOTIFY_CHANGES, {
         method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
+        headers: jsonHeaders(),
         body: payload,
         keepalive: true,
         credentials: "same-origin"
@@ -114,8 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(ENDPOINT_NOTIFY_CHANGES, {
         method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ force: true, source: manual ? "manual" : "auto" }),
+        headers: jsonHeaders(),
+        body: JSON.stringify({ force: true, source: manual ? "manual" : "auto", csrf_token: CSRF_TOKEN }),
         keepalive: true
       });
       const data = await res.json().catch(() => ({}));
@@ -470,8 +476,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function saveItems(items) {
     const res = await fetch(ENDPOINT_SAVE_GAMES, {
       method: "POST",
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ items })
+      headers: jsonHeaders(),
+      body: JSON.stringify({ items, csrf_token: CSRF_TOKEN })
     });
 
     let data = null;
@@ -488,8 +494,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function saveGroupRank(grupoId, picks) {
     const res = await fetch(ENDPOINT_SAVE_GROUP_RANK, {
       method: "POST",
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ grupo_id: grupoId, picks })
+      headers: jsonHeaders(),
+      body: JSON.stringify({ grupo_id: grupoId, picks, csrf_token: CSRF_TOKEN })
     });
 
     let data = null;
@@ -508,8 +514,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function saveTop4(picks) {
     const res = await fetch(ENDPOINT_SAVE_TOP4, {
       method: "POST",
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ picks })
+      headers: jsonHeaders(),
+      body: JSON.stringify({ picks, csrf_token: CSRF_TOKEN })
     });
 
     let data = null;

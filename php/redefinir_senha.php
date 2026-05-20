@@ -14,13 +14,9 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 */
 
-$debug = (getenv("APP_DEBUG") === "1");
-ini_set("display_errors", $debug ? "1" : "0");
-ini_set("display_startup_errors", $debug ? "1" : "0");
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once __DIR__ . "/security.php";
+app_start_session();
+app_send_security_headers();
 
 require_once __DIR__ . "/conexao.php";
 
@@ -29,6 +25,8 @@ if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
     header("Location: /index.php");
     exit;
 }
+
+app_require_csrf(false);
 
 // ── Helpers ──────────────────────────────────────────────
 function redirect_redefine(string $msg, string $type, string $dest): never {

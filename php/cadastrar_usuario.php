@@ -1,13 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once __DIR__ . "/security.php";
+app_start_session();
+app_send_security_headers();
 
 // ✅ HostGator: pasta /php fica fora do public_html, mas ESTE arquivo também está em /php.
 // Então conexao.php é "vizinho" (mesma pasta).
@@ -20,6 +16,8 @@ if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
     header("Location: /cadastro.php");
     exit;
 }
+
+app_require_csrf(false);
 
 $successRedirect = '/boas_vindas.php';
 

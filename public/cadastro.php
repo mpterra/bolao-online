@@ -1,13 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once dirname(__DIR__) . "/php/security.php";
+app_start_session();
+app_send_security_headers();
 
 $sucesso = (isset($_GET['sucesso']) && $_GET['sucesso'] === '1');
 
@@ -41,6 +37,7 @@ if ($sucesso) {
             <h1>Criar Conta</h1>
 
             <form method="POST" action="/php/cadastrar_usuario.php" class="login-form" autocomplete="on">
+                <?php echo app_csrf_field(); ?>
 
                 <div class="input-group">
                     <input type="text" name="nome" required autocomplete="given-name">

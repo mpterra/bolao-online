@@ -1,13 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once dirname(__DIR__) . '/php/security.php';
+app_start_session();
+app_send_security_headers();
 
 $connectionCandidates = [
     __DIR__ . '/../php/conexao.php',
@@ -199,6 +195,7 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
             <?php endif; ?>
 
             <form method="POST" action="/php/atualizar_cadastro.php" class="login-form profile-form" autocomplete="on" data-password-optional="1">
+                <?php echo app_csrf_field(); ?>
                 <section class="profile-section" aria-labelledby="profileSectionCadastro">
                     <div class="profile-section-head">
                         <div>

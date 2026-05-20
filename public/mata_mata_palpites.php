@@ -1,11 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-session_start();
+require_once dirname(__DIR__) . "/php/security.php";
+app_start_session();
+app_send_security_headers();
 require_once __DIR__ . "/../php/conexao.php";
 require_once __DIR__ . "/../php/bet_update_notifier.php";
 
@@ -88,7 +86,7 @@ function phases_knockout(): array {
 		'OITAVAS'        => 'Oitavas',
 		'QUARTAS'        => 'Quartas',
 		'SEMI'           => 'Semifinal',
-		'TERCEIRO_LUGAR' => '3º lugar',
+		'TERCEIRO_LUGAR' => '3Âº lugar',
 		'FINAL'          => 'Final',
 	];
 }
@@ -109,7 +107,7 @@ function get_pdo(): PDO {
 		if ($p instanceof PDO) return $p;
 	}
 
-	throw new RuntimeException("Não foi possível obter PDO. Verifique ../php/conexao.php.");
+	throw new RuntimeException("NÃ£o foi possÃ­vel obter PDO. Verifique ../php/conexao.php.");
 }
 
 function compute_lock_for_logical_day_knockout(PDO $pdo, string $dayYmd): ?DateTimeImmutable {
@@ -155,8 +153,8 @@ function lock_reason_for_game(
 	PDO $pdo,
 	array &$lockCache
 ): ?string {
-	if (!$gameDt) return "Data/hora inválida do jogo.";
-	if ($gameDt <= $now) return "Jogo já iniciado/encerrado.";
+	if (!$gameDt) return "Data/hora invÃ¡lida do jogo.";
+	if ($gameDt <= $now) return "Jogo jÃ¡ iniciado/encerrado.";
 
 	$logicalDay = logical_bet_day($gameDt);
 	$lockAt = get_lock_for_logical_day($pdo, $lockCache, $logicalDay);
@@ -189,8 +187,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 }
 
 if (isset($_GET["action"]) && $_GET["action"] === "notify_changes") {
-	if ($_SERVER["REQUEST_METHOD"] !== "POST") json_response(["ok" => false, "message" => "Método inválido."], 405);
-	if (!function_exists('bet_notify_flush')) json_response(["ok" => false, "message" => "Notificador indisponível."], 500);
+	if ($_SERVER["REQUEST_METHOD"] !== "POST") json_response(["ok" => false, "message" => "MÃ©todo invÃ¡lido."], 405);
+	if (!function_exists('bet_notify_flush')) json_response(["ok" => false, "message" => "Notificador indisponÃ­vel."], 500);
+
+	app_require_csrf(true);
 
 	$raw = file_get_contents("php://input");
 	$payload = json_decode($raw ?: "{}", true);
@@ -209,11 +209,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "notify_changes") {
 
 /* API salvar palpites (placares + quem passa no empate) */
 if (isset($_GET["action"]) && $_GET["action"] === "save") {
-	if ($_SERVER["REQUEST_METHOD"] !== "POST") json_response(["ok" => false, "message" => "Método inválido."], 405);
+	if ($_SERVER["REQUEST_METHOD"] !== "POST") json_response(["ok" => false, "message" => "MÃ©todo invÃ¡lido."], 405);
+
+	app_require_csrf(true);
 
 	$raw = file_get_contents("php://input");
 	$payload = json_decode($raw ?: "{}", true);
-	if (!is_array($payload)) json_response(["ok" => false, "message" => "JSON inválido."], 400);
+	if (!is_array($payload)) json_response(["ok" => false, "message" => "JSON invÃ¡lido."], 400);
 
 	$items = $payload["items"] ?? null;
 	if (!is_array($items) || count($items) === 0) json_response(["ok" => false, "message" => "Nada para salvar."], 400);
@@ -246,7 +248,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 
 	try {
 		$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
-		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
+		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma ediÃ§Ã£o ativa.");
 
 		$ph = array_keys(phases_knockout());
 		$in = implode(',', array_fill(0, count($ph), '?'));
@@ -285,7 +287,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 			$game = $stCheck->fetch(PDO::FETCH_ASSOC);
 
 			if (!is_array($game) || empty($game["id"])) {
-				$blocked[] = ["jogo_id" => (int)$row["jogo_id"], "reason" => "Jogo inválido (não é mata-mata/edição ativa)."];
+				$blocked[] = ["jogo_id" => (int)$row["jogo_id"], "reason" => "Jogo invÃ¡lido (nÃ£o Ã© mata-mata/ediÃ§Ã£o ativa)."];
 				continue;
 			}
 
@@ -358,14 +360,16 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 
 /* API salvar Top4 (somente times da semifinal) */
 if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
-	if ($_SERVER["REQUEST_METHOD"] !== "POST") json_response(["ok" => false, "message" => "Método inválido."], 405);
+	if ($_SERVER["REQUEST_METHOD"] !== "POST") json_response(["ok" => false, "message" => "MÃ©todo invÃ¡lido."], 405);
+
+	app_require_csrf(true);
 
 	$raw = file_get_contents("php://input");
 	$payload = json_decode($raw ?: "{}", true);
-	if (!is_array($payload)) json_response(["ok" => false, "message" => "JSON inválido."], 400);
+	if (!is_array($payload)) json_response(["ok" => false, "message" => "JSON invÃ¡lido."], 400);
 
 	$picks = $payload["picks"] ?? null;
-	if (!is_array($picks)) json_response(["ok" => false, "message" => "Payload inválido."], 422);
+	if (!is_array($picks)) json_response(["ok" => false, "message" => "Payload invÃ¡lido."], 422);
 
 	$t1 = isset($picks["1"]) ? (int)$picks["1"] : 0;
 	$t2 = isset($picks["2"]) ? (int)$picks["2"] : 0;
@@ -373,20 +377,20 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 	$t4 = isset($picks["4"]) ? (int)$picks["4"] : 0;
 
 	if ($t1 <= 0 || $t2 <= 0 || $t3 <= 0 || $t4 <= 0) {
-		json_response(["ok" => false, "message" => "Você precisa escolher 1º, 2º, 3º e 4º antes de salvar."], 422);
+		json_response(["ok" => false, "message" => "VocÃª precisa escolher 1Âº, 2Âº, 3Âº e 4Âº antes de salvar."], 422);
 	}
 	if ($t1 === $t2 || $t1 === $t3 || $t1 === $t4 || $t2 === $t3 || $t2 === $t4 || $t3 === $t4) {
-		json_response(["ok" => false, "message" => "Não pode repetir o mesmo time no Top 4."], 422);
+		json_response(["ok" => false, "message" => "NÃ£o pode repetir o mesmo time no Top 4."], 422);
 	}
 
 	try {
 		$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
-		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
+		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma ediÃ§Ã£o ativa.");
 
 		$stGate = $pdo->prepare("SELECT COUNT(*) FROM jogos WHERE edicao_id = ? AND grupo_id IS NULL AND fase = 'SEMI'");
 		$stGate->execute([$edicaoId]);
 		$hasSemi = ((int)$stGate->fetchColumn() > 0);
-		if (!$hasSemi) json_response(["ok" => false, "message" => "Top 4 só libera após cadastrar os jogos da semifinal."], 423);
+		if (!$hasSemi) json_response(["ok" => false, "message" => "Top 4 sÃ³ libera apÃ³s cadastrar os jogos da semifinal."], 423);
 
 		$stAllowed = $pdo->prepare("
 			SELECT DISTINCT x.tid
@@ -451,7 +455,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 /* HTML load */
 try {
 	$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
-	if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
+	if ($edicaoId <= 0) throw new RuntimeException("Nenhuma ediÃ§Ã£o ativa.");
 
 	$lockNowLogicalDayAt = get_lock_for_logical_day($pdo, $lockCache, $nowLogicalDay);
 	$lockNowLogicalDayActive = ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? ($now >= $lockNowLogicalDayAt) : false;
@@ -572,7 +576,7 @@ require_once __DIR__ . "/partials/app_header.php";
 <html lang="pt-br">
 <head>
 	<meta charset="UTF-8" />
-	<title>Bolão da Copa - Palpites (Mata-mata)</title>
+	<title>BolÃ£o da Copa - Palpites (Mata-mata)</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 	<link rel="stylesheet" href="/css/app.css?v=<?php echo filemtime(__DIR__ . '/css/app.css'); ?>">
 	<link rel="stylesheet" href="/css/mata_mata_palpites.css?v=<?php echo filemtime(__DIR__ . '/css/mata_mata_palpites.css'); ?>">
@@ -587,7 +591,7 @@ require_once __DIR__ . "/partials/app_header.php";
 			$usuarioNome,
 			$isAdmin,
 			"mata_mata_palpites",
-			"Mata-mata • Palpites",
+			"Mata-mata â€¢ Palpites",
 			"/mata_mata_palpites.php?action=logout"
 		);
 	?>
@@ -623,13 +627,13 @@ require_once __DIR__ . "/partials/app_header.php";
 					<?php if ($lockNowLogicalDayAt instanceof DateTimeImmutable): ?>
 						<br>
 						<small>
-							Trava do dia (lógico) às <strong><?php echo strh(fmt_hm($lockNowLogicalDayAt)); ?></strong>
+							Trava do dia (lÃ³gico) Ã s <strong><?php echo strh(fmt_hm($lockNowLogicalDayAt)); ?></strong>
 							(1h antes do primeiro jogo do dia).
 						</small>
 					<?php endif; ?>
 					<?php if ($top4Enabled): ?>
 						<br><br>
-						<small><strong>Top 4 liberado</strong> (semifinal cadastrada) e com salvamento automático.</small>
+						<small><strong>Top 4 liberado</strong> (semifinal cadastrada) e com salvamento automÃ¡tico.</small>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -638,7 +642,7 @@ require_once __DIR__ . "/partials/app_header.php";
 		<main class="app-content">
 			<div class="content-head" id="mmContentHead">
 				<h1 class="content-h1">Seus palpites</h1>
-				<p class="content-sub">Preencha o placar de cada jogo do mata-mata. O Top 4 libera após existir jogo(s) na semifinal.</p>
+				<p class="content-sub">Preencha o placar de cada jogo do mata-mata. O Top 4 libera apÃ³s existir jogo(s) na semifinal.</p>
 			</div>
 
 			<?php
@@ -647,7 +651,7 @@ require_once __DIR__ . "/partials/app_header.php";
 			?>
 
 			<?php if ($totalJogos <= 0): ?>
-				<div class="placeholder">Nenhum jogo de mata-mata foi cadastrado pelo admin nesta edição.</div>
+				<div class="placeholder">Nenhum jogo de mata-mata foi cadastrado pelo admin nesta ediÃ§Ã£o.</div>
 			<?php else: ?>
 
 				<?php foreach (phases_knockout() as $faseCode => $faseLabel): ?>
@@ -746,7 +750,7 @@ require_once __DIR__ . "/partials/app_header.php";
 													   value="<?php echo strh($pcVal); ?>"
 													   placeholder="0" aria-label="Gols casa"
 													   <?php echo $isLocked ? "disabled" : ""; ?>>
-												<div class="x">×</div>
+												<div class="x">Ã—</div>
 												<input class="score score-away" type="number" inputmode="numeric" min="0" max="99"
 													   value="<?php echo strh($pfVal); ?>"
 													   placeholder="0" aria-label="Gols fora"
@@ -796,19 +800,19 @@ require_once __DIR__ . "/partials/app_header.php";
 								<div class="group-rank-card" data-top4-card="1">
 									<div class="group-rank-head">
 										<div class="group-rank-title">Top 4 do torneio</div>
-										<div class="group-rank-sub">Libera após existir jogo(s) na semifinal. Independe dos placares.</div>
+										<div class="group-rank-sub">Libera apÃ³s existir jogo(s) na semifinal. Independe dos placares.</div>
 									</div>
 
 									<?php if (!$top4Enabled): ?>
 										<div class="group-rank-empty">Top 4 ainda bloqueado. Cadastre os jogos da semifinal primeiro.</div>
 									<?php elseif (count($timesSemi) === 0): ?>
-										<div class="group-rank-empty">Sem times válidos na semifinal.</div>
+										<div class="group-rank-empty">Sem times vÃ¡lidos na semifinal.</div>
 									<?php else: ?>
 										<div class="group-rank-grid">
 											<div class="rank-field">
-												<label>1º</label>
+												<label>1Âº</label>
 												<select class="rank-select" data-top4-pos="1">
-													<option value="0"><?php echo strh("—"); ?></option>
+													<option value="0"><?php echo strh("â€”"); ?></option>
 													<?php foreach ($timesSemi as $t): ?>
 														<option value="<?php echo (int)$t["id"]; ?>" <?php echo ((int)$t["id"] === (int)$top4["1"]) ? "selected" : ""; ?>>
 															<?php echo strh($t["nome"]); ?>
@@ -818,9 +822,9 @@ require_once __DIR__ . "/partials/app_header.php";
 											</div>
 
 											<div class="rank-field">
-												<label>2º</label>
+												<label>2Âº</label>
 												<select class="rank-select" data-top4-pos="2">
-													<option value="0"><?php echo strh("—"); ?></option>
+													<option value="0"><?php echo strh("â€”"); ?></option>
 													<?php foreach ($timesSemi as $t): ?>
 														<option value="<?php echo (int)$t["id"]; ?>" <?php echo ((int)$t["id"] === (int)$top4["2"]) ? "selected" : ""; ?>>
 															<?php echo strh($t["nome"]); ?>
@@ -830,9 +834,9 @@ require_once __DIR__ . "/partials/app_header.php";
 											</div>
 
 											<div class="rank-field">
-												<label>3º</label>
+												<label>3Âº</label>
 												<select class="rank-select" data-top4-pos="3">
-													<option value="0"><?php echo strh("—"); ?></option>
+													<option value="0"><?php echo strh("â€”"); ?></option>
 													<?php foreach ($timesSemi as $t): ?>
 														<option value="<?php echo (int)$t["id"]; ?>" <?php echo ((int)$t["id"] === (int)$top4["3"]) ? "selected" : ""; ?>>
 															<?php echo strh($t["nome"]); ?>
@@ -842,9 +846,9 @@ require_once __DIR__ . "/partials/app_header.php";
 											</div>
 
 											<div class="rank-field">
-												<label>4º</label>
+												<label>4Âº</label>
 												<select class="rank-select" data-top4-pos="4">
-													<option value="0"><?php echo strh("—"); ?></option>
+													<option value="0"><?php echo strh("â€”"); ?></option>
 													<?php foreach ($timesSemi as $t): ?>
 														<option value="<?php echo (int)$t["id"]; ?>" <?php echo ((int)$t["id"] === (int)$top4["4"]) ? "selected" : ""; ?>>
 															<?php echo strh($t["nome"]); ?>
@@ -878,6 +882,7 @@ echo json_encode([
 		"nome" => $usuarioNome,
 		"id"   => $usuarioId,
 	],
+	"csrf_token" => app_csrf_token(),
 	"lock" => [
 		"now_logical_day" => $nowLogicalDay,
 		"lock_logical_day_at" => ($lockNowLogicalDayAt instanceof DateTimeImmutable) ? $lockNowLogicalDayAt->format('Y-m-d H:i:s') : null,

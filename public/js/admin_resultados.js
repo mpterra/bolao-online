@@ -16,6 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
     ? String(CFG.endpoints.save)
     : "/admin_resultados.php?action=save";
 
+  const CSRF_TOKEN = CFG.csrf_token || "";
+  const jsonHeaders = () => ({
+    "Content-Type": "application/json; charset=utf-8",
+    "X-CSRF-Token": CSRF_TOKEN
+  });
+
   const toast = document.getElementById("toast");
   const listTop = document.getElementById("list-top");
   const modeButtons = Array.from(document.querySelectorAll(".js-view-mode[data-view-mode-target]"));
@@ -349,8 +355,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function savePayload(payload) {
     const resp = await fetch(ENDPOINT_SAVE, {
       method: "POST",
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify(payload)
+      headers: jsonHeaders(),
+      body: JSON.stringify(Object.assign({}, payload, { csrf_token: CSRF_TOKEN }))
     });
 
     let json = null;

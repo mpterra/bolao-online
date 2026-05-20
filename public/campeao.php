@@ -1,11 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-session_start();
+require_once dirname(__DIR__) . "/php/security.php";
+app_start_session();
+app_send_security_headers();
 require_once __DIR__ . "/../php/conexao.php";
 require_once __DIR__ . "/../php/bet_update_notifier.php";
 require_once __DIR__ . "/../php/bet_update_notifier.php";
@@ -107,6 +105,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "notify_changes") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 		json_response(["ok" => false, "message" => "Método inválido."], 405);
 	}
+	app_require_csrf(true);
+
 	if (!function_exists('bet_notify_flush')) {
 		json_response(["ok" => false, "message" => "Notificador indisponível."], 500);
 	}
@@ -173,6 +173,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 		json_response(["ok" => false, "message" => "Método inválido."], 405);
 	}
+
+	app_require_csrf(true);
 
 	if ($campeaoDeadlineLocked) {
 		json_response(["ok" => false, "message" => $campeaoDeadlineMessage], 403);
@@ -377,6 +379,7 @@ require_once __DIR__ . "/partials/app_header.php";
 <script type="application/json" id="campeao-config">
 <?php echo json_encode([
 	"user" => ["id" => $usuarioId, "nome" => $usuarioNome],
+	"csrf_token" => app_csrf_token(),
 	"edicao" => ["id" => $edicaoId],
 	"selected_time_id" => $selectedTimeId,
 	"editing" => [

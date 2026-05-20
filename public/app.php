@@ -1,15 +1,13 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-session_start();
+require_once dirname(__DIR__) . "/php/security.php";
+app_start_session();
+app_send_security_headers();
 
 /*
 |--------------------------------------------------------------------------
-| ✅ AUTO-BASE (SEM FICAR TROCANDO LINKS ENTRE LOCAL/HOST)
+| âœ… AUTO-BASE (SEM FICAR TROCANDO LINKS ENTRE LOCAL/HOST)
 |--------------------------------------------------------------------------
 | Suporta dois layouts:
 | 1) app.php dentro de /public  (ex: /bolao-da-copa/public/app.php)
@@ -23,19 +21,19 @@ if ($WEB_BASE === '/') $WEB_BASE = '';
 $IS_ROOT_LAYOUT = is_dir(__DIR__ . '/public') && is_file(__DIR__ . '/public/css/app.css');
 
 // assets (css/js/img) podem estar:
-// - no mesmo diretório do app.php (layout /public)
+// - no mesmo diretÃ³rio do app.php (layout /public)
 // - dentro de /public (layout raiz)
 $ASSET_FS_BASE  = $IS_ROOT_LAYOUT ? (__DIR__ . '/public') : __DIR__;
 $ASSET_WEB_BASE = $IS_ROOT_LAYOUT
 	? (($WEB_BASE === '' ? '' : $WEB_BASE) . '/public')
 	: ($WEB_BASE === '' ? '' : $WEB_BASE);
 
-// páginas públicas (index/app/campeao) ficam:
-// - no mesmo diretório do app.php
+// pÃ¡ginas pÃºblicas (index/app/campeao) ficam:
+// - no mesmo diretÃ³rio do app.php
 $PAGE_WEB_BASE = ($WEB_BASE === '' ? '' : $WEB_BASE);
 
 // pasta /php fica:
-// - irmã de /public (layout /public -> /bolao-da-copa/php)
+// - irmÃ£ de /public (layout /public -> /bolao-da-copa/php)
 // - dentro da raiz (layout raiz -> /php)
 if (preg_match('#/public$#', $WEB_BASE)) {
 	$PHP_WEB_BASE = preg_replace('#/public$#', '', $WEB_BASE) . '/php';
@@ -62,29 +60,29 @@ if (is_file($BET_NOTIFY_PATH_1)) {
 
 /*
 |--------------------------------------------------------------------------
-| APP.PHP - BOLÃO DA COPA (APOSTAS)
+| APP.PHP - BOLÃƒO DA COPA (APOSTAS)
 |--------------------------------------------------------------------------
-| - Tela única para palpites na fase de grupos
-| - Menu de grupos FILTRA (não rola a página)
-| - Persistência em `palpites` (UPSERT por usuario_id + jogo_id)
-| - Endpoint JSON no próprio arquivo (action=save)
-| - Seleção livre de 1º/2º/3º de cada grupo (palpite_grupo_classificacao)
-| - Botão "Quem será o campeão" no fim do menu
+| - Tela Ãºnica para palpites na fase de grupos
+| - Menu de grupos FILTRA (nÃ£o rola a pÃ¡gina)
+| - PersistÃªncia em `palpites` (UPSERT por usuario_id + jogo_id)
+| - Endpoint JSON no prÃ³prio arquivo (action=save)
+| - SeleÃ§Ã£o livre de 1Âº/2Âº/3Âº de cada grupo (palpite_grupo_classificacao)
+| - BotÃ£o "Quem serÃ¡ o campeÃ£o" no fim do menu
 |--------------------------------------------------------------------------
 |
-| ✅ REGRA DE BLOQUEIO (ATUALIZADA — DIA LÓGICO)
+| âœ… REGRA DE BLOQUEIO (ATUALIZADA â€” DIA LÃ“GICO)
 | - Jogos passados (data_hora <= agora): sempre bloqueados.
-| - “Dia lógico”:
+| - â€œDia lÃ³gicoâ€:
 |     * Jogos entre 00:00 e 04:59 pertencem ao DIA ANTERIOR.
-|     * Jogos a partir de 05:00 pertencem ao mesmo dia do calendário.
-| - Trava por “dia lógico”:
-|     * 1h antes do PRIMEIRO jogo do dia lógico, bloqueia TODOS os jogos
-|       daquele dia lógico (incluindo os da madrugada 00:00–04:59 do dia seguinte).
-| - Jogos futuros (outros dias lógicos): liberados até seu dia lógico travar.
+|     * Jogos a partir de 05:00 pertencem ao mesmo dia do calendÃ¡rio.
+| - Trava por â€œdia lÃ³gicoâ€:
+|     * 1h antes do PRIMEIRO jogo do dia lÃ³gico, bloqueia TODOS os jogos
+|       daquele dia lÃ³gico (incluindo os da madrugada 00:00â€“04:59 do dia seguinte).
+| - Jogos futuros (outros dias lÃ³gicos): liberados atÃ© seu dia lÃ³gico travar.
 |--------------------------------------------------------------------------
 */
 
-// ✅ Timezone oficial da aplicação (evita UTC “comendo” seu horário)
+// âœ… Timezone oficial da aplicaÃ§Ã£o (evita UTC â€œcomendoâ€ seu horÃ¡rio)
 date_default_timezone_set('America/Sao_Paulo');
 
 function json_response(array $data, int $code = 200): void {
@@ -126,11 +124,11 @@ function fmt_day_menu_label(string $ymd): string {
 		'Wed' => 'Qua',
 		'Thu' => 'Qui',
 		'Fri' => 'Sex',
-		'Sat' => 'Sáb',
+		'Sat' => 'SÃ¡b',
 	];
 
 	$dw = $dias[$dt->format('D')] ?? $dt->format('D');
-	return $dw . ' • ' . $dt->format('d/m');
+	return $dw . ' â€¢ ' . $dt->format('d/m');
 }
 
 function fmt_day_title(string $ymd): string {
@@ -138,7 +136,7 @@ function fmt_day_title(string $ymd): string {
 	if (!$dt) return $ymd;
 
 	$meses = [
-		1 => 'janeiro', 2 => 'fevereiro', 3 => 'março', 4 => 'abril',
+		1 => 'janeiro', 2 => 'fevereiro', 3 => 'marÃ§o', 4 => 'abril',
 		5 => 'maio', 6 => 'junho', 7 => 'julho', 8 => 'agosto',
 		9 => 'setembro', 10 => 'outubro', 11 => 'novembro', 12 => 'dezembro'
 	];
@@ -146,11 +144,11 @@ function fmt_day_title(string $ymd): string {
 	$dias = [
 		'Sun' => 'Domingo',
 		'Mon' => 'Segunda',
-		'Tue' => 'Terça',
+		'Tue' => 'TerÃ§a',
 		'Wed' => 'Quarta',
 		'Thu' => 'Quinta',
 		'Fri' => 'Sexta',
-		'Sat' => 'Sábado',
+		'Sat' => 'SÃ¡bado',
 	];
 
 	$dw = $dias[$dt->format('D')] ?? $dt->format('D');
@@ -161,11 +159,11 @@ function fmt_day_title(string $ymd): string {
 
 /**
  * Normaliza nome do time -> nome do arquivo da bandeira:
- * - minúsculas
+ * - minÃºsculas
  * - remove acentos
- * - remove espaços e caracteres especiais
- * - se tiver " OU " pega apenas a primeira opção
- * Ex.: "África do Sul" -> "africadosul"
+ * - remove espaÃ§os e caracteres especiais
+ * - se tiver " OU " pega apenas a primeira opÃ§Ã£o
+ * Ex.: "Ãfrica do Sul" -> "africadosul"
  */
 function flag_slug(string $nome): string {
 	$s = trim($nome);
@@ -183,7 +181,7 @@ function flag_slug(string $nome): string {
 }
 
 /**
- * Retorna URL pública da bandeira se existir no disco, senão null.
+ * Retorna URL pÃºblica da bandeira se existir no disco, senÃ£o null.
  * Pasta web: {ASSET_WEB_BASE}/img/flags/{slug}.png
  * Pasta fs : {ASSET_FS_BASE}/img/flags/{slug}.png
  */
@@ -201,7 +199,7 @@ function flag_url(string $teamName, string $assetFsBase, string $assetWebBase): 
 
 /**
  * Converte string DATETIME do MySQL -> DateTimeImmutable no timezone oficial.
- * Retorna null se não conseguir interpretar.
+ * Retorna null se nÃ£o conseguir interpretar.
  */
 function dt_from_mysql(?string $dt): ?DateTimeImmutable {
 	if (!$dt) return null;
@@ -218,10 +216,10 @@ function dt_from_mysql(?string $dt): ?DateTimeImmutable {
 }
 
 /**
- * “Dia lógico” de apostas:
+ * â€œDia lÃ³gicoâ€ de apostas:
  * - 00:00 a 04:59 pertencem ao dia anterior
  * - 05:00 em diante pertencem ao mesmo dia
- * Retorna string Y-m-d no timezone da aplicação.
+ * Retorna string Y-m-d no timezone da aplicaÃ§Ã£o.
  */
 function logical_bet_day(DateTimeImmutable $dt): string {
 	$hour = (int)$dt->format('H');
@@ -240,7 +238,7 @@ function phase_labels(): array {
 		'OITAVAS'        => 'Oitavas',
 		'QUARTAS'        => 'Quartas',
 		'SEMI'           => 'Semifinal',
-		'TERCEIRO_LUGAR' => '3º lugar',
+		'TERCEIRO_LUGAR' => '3Âº lugar',
 		'FINAL'          => 'Final',
 	];
 }
@@ -276,16 +274,16 @@ function is_knockout_phase_row(array $row): bool {
 }
 
 /**
- * Calcula o instante de bloqueio de um “dia lógico” específico:
- * - 1h antes do PRIMEIRO jogo do dia lógico
- * - “primeiro jogo do dia lógico” é o MIN(data_hora) considerando:
- *     * jogos no próprio dia com hora >= 05:00
- *     * jogos na madrugada do dia seguinte (00:00–04:59), que “pertencem” ao dia
+ * Calcula o instante de bloqueio de um â€œdia lÃ³gicoâ€ especÃ­fico:
+ * - 1h antes do PRIMEIRO jogo do dia lÃ³gico
+ * - â€œprimeiro jogo do dia lÃ³gicoâ€ Ã© o MIN(data_hora) considerando:
+ *     * jogos no prÃ³prio dia com hora >= 05:00
+ *     * jogos na madrugada do dia seguinte (00:00â€“04:59), que â€œpertencemâ€ ao dia
  *
- * Retorna null se não existir jogo naquele dia lógico.
+ * Retorna null se nÃ£o existir jogo naquele dia lÃ³gico.
  *
- * ✅ FIX CRÍTICO:
- * Alguns ambientes com PDO MySQL não aceitam o MESMO placeholder nomeado repetido na query.
+ * âœ… FIX CRÃTICO:
+ * Alguns ambientes com PDO MySQL nÃ£o aceitam o MESMO placeholder nomeado repetido na query.
  * Por isso usamos :day1 e :day2 (evita SQLSTATE[HY093]).
  */
 function compute_lock_for_logical_day(PDO $pdo, string $dayYmd): ?DateTimeImmutable {
@@ -312,7 +310,7 @@ function compute_lock_for_logical_day(PDO $pdo, string $dayYmd): ?DateTimeImmuta
 }
 
 /**
- * Resolve (com cache) o lockAt para um dia lógico.
+ * Resolve (com cache) o lockAt para um dia lÃ³gico.
  */
 function get_lock_for_logical_day(PDO $pdo, array &$cache, string $logicalDayYmd): ?DateTimeImmutable {
 	if (array_key_exists($logicalDayYmd, $cache)) {
@@ -325,7 +323,7 @@ function get_lock_for_logical_day(PDO $pdo, array &$cache, string $logicalDayYmd
 }
 
 /**
- * Decide se um jogo está bloqueado e por quê, seguindo as regras (dia lógico).
+ * Decide se um jogo estÃ¡ bloqueado e por quÃª, seguindo as regras (dia lÃ³gico).
  */
 function lock_reason_for_game(
 	?DateTimeImmutable $gameDt,
@@ -334,11 +332,11 @@ function lock_reason_for_game(
 	array &$lockCache
 ): ?string {
 	if (!$gameDt) {
-		return "Data/hora inválida do jogo.";
+		return "Data/hora invÃ¡lida do jogo.";
 	}
 
 	if ($gameDt <= $now) {
-		return "Jogo já iniciado/encerrado.";
+		return "Jogo jÃ¡ iniciado/encerrado.";
 	}
 
 	$logicalDay = logical_bet_day($gameDt);
@@ -371,7 +369,7 @@ function resolve_receipt_url(string $phpWebBase): ?string {
 
 /*
 |--------------------------------------------------------------------------
-| URLs padrão (sem hardcode /bolao-da-copa/...)
+| URLs padrÃ£o (sem hardcode /bolao-da-copa/...)
 |--------------------------------------------------------------------------
 */
 $LOGIN_URL   = ($PAGE_WEB_BASE === "" ? "" : $PAGE_WEB_BASE) . "/index.php";
@@ -396,7 +394,7 @@ $tz = new DateTimeZone('America/Sao_Paulo');
 $now = new DateTimeImmutable('now', $tz);
 $nowLogicalDay = logical_bet_day($now);
 
-// cache global por request (dia lógico -> lockAt|null)
+// cache global por request (dia lÃ³gico -> lockAt|null)
 $lockCache = [];
 
 /* ---------------------------
@@ -410,11 +408,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
 
 if (isset($_GET["action"]) && $_GET["action"] === "notify_changes") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-		json_response(["ok" => false, "message" => "Método inválido."], 405);
+		json_response(["ok" => false, "message" => "MÃ©todo invÃ¡lido."], 405);
 	}
 
+	app_require_csrf(true);
+
 	if (!function_exists('bet_notify_flush')) {
-		json_response(["ok" => false, "message" => "Notificador indisponível."], 500);
+		json_response(["ok" => false, "message" => "Notificador indisponÃ­vel."], 500);
 	}
 
 	$raw = file_get_contents("php://input");
@@ -437,14 +437,16 @@ if (isset($_GET["action"]) && $_GET["action"] === "notify_changes") {
 --------------------------- */
 if (isset($_GET["action"]) && $_GET["action"] === "save") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-		json_response(["ok" => false, "message" => "Método inválido."], 405);
+		json_response(["ok" => false, "message" => "MÃ©todo invÃ¡lido."], 405);
 	}
+
+	app_require_csrf(true);
 
 	$raw = file_get_contents("php://input");
 	$payload = json_decode($raw ?: "{}", true);
 
 	if (!is_array($payload)) {
-		json_response(["ok" => false, "message" => "JSON inválido."], 400);
+		json_response(["ok" => false, "message" => "JSON invÃ¡lido."], 400);
 	}
 
 	$items = $payload["items"] ?? null;
@@ -525,7 +527,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 			if (!is_array($game) || empty($game["id"])) {
 				$blocked[] = [
 					"jogo_id" => $row["jogo_id"],
-					"reason"  => "Jogo inválido (não é fase de grupos/edição ativa)."
+					"reason"  => "Jogo invÃ¡lido (nÃ£o Ã© fase de grupos/ediÃ§Ã£o ativa)."
 				];
 				continue;
 			}
@@ -599,7 +601,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		}
 
 		if ($saved <= 0) {
-			json_response(["ok" => false, "message" => "Nenhum palpite foi salvo (verifique se são jogos da fase de grupos)."], 422);
+			json_response(["ok" => false, "message" => "Nenhum palpite foi salvo (verifique se sÃ£o jogos da fase de grupos)."], 422);
 		}
 
 		json_response(["ok" => true, "saved" => $saved, "message" => "Palpites salvos com sucesso."]);
@@ -611,18 +613,20 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 
 if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-		json_response(["ok" => false, "message" => "Método inválido."], 405);
+		json_response(["ok" => false, "message" => "MÃ©todo invÃ¡lido."], 405);
 	}
+
+	app_require_csrf(true);
 
 	$raw = file_get_contents("php://input");
 	$payload = json_decode($raw ?: "{}", true);
 	if (!is_array($payload)) {
-		json_response(["ok" => false, "message" => "JSON inválido."], 400);
+		json_response(["ok" => false, "message" => "JSON invÃ¡lido."], 400);
 	}
 
 	$picks = $payload["picks"] ?? null;
 	if (!is_array($picks)) {
-		json_response(["ok" => false, "message" => "Payload inválido."], 422);
+		json_response(["ok" => false, "message" => "Payload invÃ¡lido."], 422);
 	}
 
 	$t1 = isset($picks["1"]) ? (int)$picks["1"] : 0;
@@ -631,22 +635,22 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 	$t4 = isset($picks["4"]) ? (int)$picks["4"] : 0;
 
 	if ($t1 <= 0 || $t2 <= 0 || $t3 <= 0 || $t4 <= 0) {
-		json_response(["ok" => false, "message" => "Você precisa escolher 1º, 2º, 3º e 4º antes de salvar."], 422);
+		json_response(["ok" => false, "message" => "VocÃª precisa escolher 1Âº, 2Âº, 3Âº e 4Âº antes de salvar."], 422);
 	}
 
 	if ($t1 === $t2 || $t1 === $t3 || $t1 === $t4 || $t2 === $t3 || $t2 === $t4 || $t3 === $t4) {
-		json_response(["ok" => false, "message" => "Não pode repetir o mesmo time no Top 4."], 422);
+		json_response(["ok" => false, "message" => "NÃ£o pode repetir o mesmo time no Top 4."], 422);
 	}
 
 	try {
 		$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
-		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
+		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma ediÃ§Ã£o ativa.");
 
 		$stGate = $pdo->prepare("SELECT COUNT(*) FROM jogos WHERE edicao_id = ? AND grupo_id IS NULL AND fase = 'SEMI'");
 		$stGate->execute([$edicaoId]);
 		$hasSemi = ((int)$stGate->fetchColumn() > 0);
 		if (!$hasSemi) {
-			json_response(["ok" => false, "message" => "Top 4 só libera após cadastrar os jogos da semifinal."], 423);
+			json_response(["ok" => false, "message" => "Top 4 sÃ³ libera apÃ³s cadastrar os jogos da semifinal."], 423);
 		}
 
 		$stAllowed = $pdo->prepare("
@@ -709,26 +713,28 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 }
 
 /* ---------------------------
-   API: salvar classificação do grupo (1º/2º/3º) (JSON)
+   API: salvar classificaÃ§Ã£o do grupo (1Âº/2Âº/3Âº) (JSON)
    - tabela real: palpite_grupo_classificacao (1 linha por usuario_id+grupo_id)
    - colunas: primeiro_time_id, segundo_time_id, terceiro_time_id
 --------------------------- */
 if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 	if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-		json_response(["ok" => false, "message" => "Método inválido."], 405);
+		json_response(["ok" => false, "message" => "MÃ©todo invÃ¡lido."], 405);
 	}
+
+	app_require_csrf(true);
 
 	$raw = file_get_contents("php://input");
 	$payload = json_decode($raw ?: "{}", true);
 	if (!is_array($payload)) {
-		json_response(["ok" => false, "message" => "JSON inválido."], 400);
+		json_response(["ok" => false, "message" => "JSON invÃ¡lido."], 400);
 	}
 
 	$grupoId = isset($payload["grupo_id"]) ? (int)$payload["grupo_id"] : 0;
 	$picks   = $payload["picks"] ?? null;
 
 	if ($grupoId <= 0 || !is_array($picks)) {
-		json_response(["ok" => false, "message" => "Payload inválido."], 422);
+		json_response(["ok" => false, "message" => "Payload invÃ¡lido."], 422);
 	}
 
 	$pos1 = isset($picks["1"]) ? (int)$picks["1"] : 0;
@@ -738,23 +744,23 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 	if ($pos1 <= 0 || $pos2 <= 0 || $pos3 <= 0) {
 		json_response([
 			"ok" => false,
-			"message" => "Você precisa escolher 1º, 2º e 3º antes de salvar."
+			"message" => "VocÃª precisa escolher 1Âº, 2Âº e 3Âº antes de salvar."
 		], 422);
 	}
 
 	if ($pos1 === $pos2 || $pos1 === $pos3 || $pos2 === $pos3) {
-		json_response(["ok" => false, "message" => "Não pode repetir o mesmo time em 1º/2º/3º."], 422);
+		json_response(["ok" => false, "message" => "NÃ£o pode repetir o mesmo time em 1Âº/2Âº/3Âº."], 422);
 	}
 
 	try {
 		$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
-		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma edição ativa.");
+		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma ediÃ§Ã£o ativa.");
 
 		$stGrupo = $pdo->prepare("SELECT id FROM grupos WHERE id = :gid AND edicao_id = :eid LIMIT 1");
 		$stGrupo->execute([":gid" => $grupoId, ":eid" => $edicaoId]);
 		$gidOk = (int)$stGrupo->fetchColumn();
 		if ($gidOk <= 0) {
-			json_response(["ok" => false, "message" => "Grupo inválido."], 422);
+			json_response(["ok" => false, "message" => "Grupo invÃ¡lido."], 422);
 		}
 
 		$ids = [$pos1, $pos2, $pos3];
@@ -773,7 +779,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 		$cnt = (int)$stVal->fetchColumn();
 
 		if ($cnt !== count($ids)) {
-			json_response(["ok" => false, "message" => "Um ou mais times não pertencem a este grupo."], 422);
+			json_response(["ok" => false, "message" => "Um ou mais times nÃ£o pertencem a este grupo."], 422);
 		}
 
 		$pdo->beginTransaction();
@@ -808,21 +814,21 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_group_rank") {
 
 		json_response([
 			"ok" => true,
-			"message" => "Classificação do grupo salva.",
+			"message" => "ClassificaÃ§Ã£o do grupo salva.",
 		]);
 	} catch (Throwable $e) {
 		if ($pdo->inTransaction()) $pdo->rollBack();
-		json_response(["ok" => false, "message" => "Falha ao salvar classificação do grupo."], 500);
+		json_response(["ok" => false, "message" => "Falha ao salvar classificaÃ§Ã£o do grupo."], 500);
 	}
 }
 
 /* ---------------------------
-   HTML: carregar grupos + jogos + dias + classificações + top 4
+   HTML: carregar grupos + jogos + dias + classificaÃ§Ãµes + top 4
 --------------------------- */
 try {
 	$edicaoId = (int)$pdo->query("SELECT id FROM edicoes WHERE ativo = 1 ORDER BY ano DESC LIMIT 1")->fetchColumn();
 	if ($edicaoId <= 0) {
-		throw new RuntimeException("Nenhuma edição ativa.");
+		throw new RuntimeException("Nenhuma ediÃ§Ã£o ativa.");
 	}
 
 	$lockNowLogicalDayAt = get_lock_for_logical_day($pdo, $lockCache, $nowLogicalDay);
@@ -1137,7 +1143,7 @@ require_once __DIR__ . "/partials/app_header.php";
 <html lang="pt-br">
 <head>
 	<meta charset="UTF-8" />
-	<title>Bolão da Copa - Palpites</title>
+	<title>BolÃ£o da Copa - Palpites</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 	<link rel="stylesheet" href="<?php echo strh($ASSET_WEB_BASE . "/css/app.css?v=" . (string)@filemtime($ASSET_FS_BASE . "/css/app.css")); ?>">
 	<link rel="stylesheet" href="<?php echo strh($ASSET_WEB_BASE . "/css/palpites_por_dia.css?v=" . (string)@filemtime($ASSET_FS_BASE . "/css/palpites_por_dia.css")); ?>">
@@ -1152,14 +1158,14 @@ require_once __DIR__ . "/partials/app_header.php";
 			$usuarioNome,
 			$isAdmin,
 			"apostas",
-			"Palpites • Grupos e Dias",
+			"Palpites â€¢ Grupos e Dias",
 			$LOGOUT_URL
 		);
 	?>
 
 	<div class="app-shell">
 		<aside class="app-menu">
-			<div class="menu-view-switch" aria-label="Alternar visualização">
+			<div class="menu-view-switch" aria-label="Alternar visualizaÃ§Ã£o">
 				<button type="button"
 				        class="menu-view-btn js-view-mode<?php echo $activeMode === 'group' ? ' is-active' : ''; ?>"
 				        data-view-mode-target="group">
@@ -1178,9 +1184,9 @@ require_once __DIR__ . "/partials/app_header.php";
 				<div class="menu-list" id="menuGrupos">
 					<a class="menu-link menu-link-champion"
 					   href="<?php echo strh($CHAMP_URL); ?>"
-					   title="Escolher o campeão">
-						<span class="menu-link-text">Quem será o campeão</span>
-						<span class="badge badge-champion">★</span>
+					   title="Escolher o campeÃ£o">
+						<span class="menu-link-text">Quem serÃ¡ o campeÃ£o</span>
+						<span class="badge badge-champion">â˜…</span>
 					</a>
 
 					<?php foreach ($grupos as $g): ?>
@@ -1211,9 +1217,9 @@ require_once __DIR__ . "/partials/app_header.php";
 				<div class="menu-list" id="menuDias">
 					<a class="menu-link menu-link-champion"
 					   href="<?php echo strh($CHAMP_URL); ?>"
-					   title="Escolher o campeão">
-						<span class="menu-link-text">Quem será o campeão</span>
-						<span class="badge badge-champion">★</span>
+					   title="Escolher o campeÃ£o">
+						<span class="menu-link-text">Quem serÃ¡ o campeÃ£o</span>
+						<span class="badge badge-champion">â˜…</span>
 					</a>
 
 					<?php foreach ($days as $dayYmd): ?>
@@ -1240,17 +1246,17 @@ require_once __DIR__ . "/partials/app_header.php";
 				<?php endif; ?>
 
 				<div class="hint">
-					Agora você pode alternar entre visão por grupo e por dia na mesma tela.
+					Agora vocÃª pode alternar entre visÃ£o por grupo e por dia na mesma tela.
 					<?php if ($lockNowLogicalDayAt instanceof DateTimeImmutable): ?>
 						<br>
 						<small>
-							Trava do dia (lógico) às <strong><?php echo strh(fmt_hm($lockNowLogicalDayAt)); ?></strong>
+							Trava do dia (lÃ³gico) Ã s <strong><?php echo strh(fmt_hm($lockNowLogicalDayAt)); ?></strong>
 							(1h antes do primeiro jogo do dia).
 						</small>
 					<?php endif; ?>
 					<?php if ($top4Enabled): ?>
 						<br><br>
-						<small><strong>Top 4 liberado</strong> porque a semifinal já existe.</small>
+						<small><strong>Top 4 liberado</strong> porque a semifinal jÃ¡ existe.</small>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -1260,11 +1266,11 @@ require_once __DIR__ . "/partials/app_header.php";
 			<div id="list-top" aria-hidden="true"></div>
 			<div class="content-head">
 				<h1 class="content-h1">Seus palpites</h1>
-				<p class="content-sub">Alterne entre grupos e dias. A visão por dia também inclui mata-mata e Top 4.</p>
+				<p class="content-sub">Alterne entre grupos e dias. A visÃ£o por dia tambÃ©m inclui mata-mata e Top 4.</p>
 			</div>
 
 			<?php if (count($grupos) === 0 && count($days) === 0): ?>
-				<div class="placeholder">Nenhum jogo encontrado na edição ativa.</div>
+				<div class="placeholder">Nenhum jogo encontrado na ediÃ§Ã£o ativa.</div>
 			<?php else: ?>
 
 				<?php foreach ($grupos as $g): ?>
@@ -1394,7 +1400,7 @@ require_once __DIR__ . "/partials/app_header.php";
 													   value="<?php echo strh($pcVal); ?>"
 													   placeholder="0" aria-label="Gols casa"
 													   <?php echo $isLocked ? "disabled" : ""; ?>>
-												<div class="x">×</div>
+												<div class="x">Ã—</div>
 												<input class="score score-away" type="number" inputmode="numeric" min="0" max="99"
 													   value="<?php echo strh($pfVal); ?>"
 													   placeholder="0" aria-label="Gols fora"
@@ -1433,7 +1439,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
 							<div class="group-rank-card" data-grupo-rank="<?php echo (int)$grupoId; ?>">
 								<div class="group-rank-head">
-									<div class="group-rank-title">Classificação do grupo</div>
+									<div class="group-rank-title">ClassificaÃ§Ã£o do grupo</div>
 									<div class="group-rank-sub">Escolha livremente (independe dos placares).</div>
 								</div>
 
@@ -1442,9 +1448,9 @@ require_once __DIR__ . "/partials/app_header.php";
 								<?php else: ?>
 									<div class="group-rank-grid">
 										<div class="rank-field">
-											<label>1º</label>
+											<label>1Âº</label>
 											<select class="rank-select" data-rank-pos="1">
-												<option value="0"><?php echo strh("—"); ?></option>
+												<option value="0"><?php echo strh("â€”"); ?></option>
 												<?php foreach ($timesGrupo as $t): ?>
 													<?php
 													$tid = (int)$t["time_id"];
@@ -1458,9 +1464,9 @@ require_once __DIR__ . "/partials/app_header.php";
 										</div>
 
 										<div class="rank-field">
-											<label>2º</label>
+											<label>2Âº</label>
 											<select class="rank-select" data-rank-pos="2">
-												<option value="0"><?php echo strh("—"); ?></option>
+												<option value="0"><?php echo strh("â€”"); ?></option>
 												<?php foreach ($timesGrupo as $t): ?>
 													<?php
 													$tid = (int)$t["time_id"];
@@ -1474,9 +1480,9 @@ require_once __DIR__ . "/partials/app_header.php";
 										</div>
 
 										<div class="rank-field">
-											<label>3º</label>
+											<label>3Âº</label>
 											<select class="rank-select" data-rank-pos="3">
-												<option value="0"><?php echo strh("—"); ?></option>
+												<option value="0"><?php echo strh("â€”"); ?></option>
 												<?php foreach ($timesGrupo as $t): ?>
 													<?php
 													$tid = (int)$t["time_id"];
@@ -1509,11 +1515,11 @@ require_once __DIR__ . "/partials/app_header.php";
 
 									<?php if ($hasNext): ?>
 										<button class="btn-next-group" type="button" data-next-grupo="<?php echo strh((string)$prox); ?>">
-											Próximo <span class="muted">(Grupo <?php echo strh((string)$prox); ?>)</span>
+											PrÃ³ximo <span class="muted">(Grupo <?php echo strh((string)$prox); ?>)</span>
 										</button>
 									<?php else: ?>
 										<button class="btn-next-group btn-go-champion" type="button" data-champion-url="<?php echo strh($CHAMP_URL); ?>">
-											Quem será o campeão <span class="muted">(continuar)</span>
+											Quem serÃ¡ o campeÃ£o <span class="muted">(continuar)</span>
 										</button>
 									<?php endif; ?>
 								</div>
@@ -1630,7 +1636,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
 										<div class="scorebox">
 											<input class="score score-home" type="number" inputmode="numeric" min="0" max="99" value="<?php echo strh($pcVal); ?>" placeholder="0" aria-label="Gols casa" <?php echo $isLocked ? 'disabled' : ''; ?>>
-											<div class="x">×</div>
+											<div class="x">Ã—</div>
 											<input class="score score-away" type="number" inputmode="numeric" min="0" max="99" value="<?php echo strh($pfVal); ?>" placeholder="0" aria-label="Gols fora" <?php echo $isLocked ? 'disabled' : ''; ?>>
 										</div>
 
@@ -1680,17 +1686,17 @@ require_once __DIR__ . "/partials/app_header.php";
 						?>
 							<div class="group-rank-card" data-view-mode="day" data-grupo-rank="<?php echo (int)$grupoIdCard; ?>">
 								<div class="group-rank-head">
-									<div class="group-rank-title">Classificação do Grupo <?php echo strh($codigo); ?></div>
-									<div class="group-rank-sub">Escolha livremente 1º, 2º e 3º. Este card aparece no último dia lógico do grupo.</div>
+									<div class="group-rank-title">ClassificaÃ§Ã£o do Grupo <?php echo strh($codigo); ?></div>
+									<div class="group-rank-sub">Escolha livremente 1Âº, 2Âº e 3Âº. Este card aparece no Ãºltimo dia lÃ³gico do grupo.</div>
 								</div>
 
 								<?php if (count($timesGrupo) === 0): ?>
 									<div class="group-rank-empty">Sem times vinculados a este grupo (grupo_time).</div>
 								<?php else: ?>
 									<div class="group-rank-grid">
-										<div class="rank-field"><label>1º</label><select class="rank-select" data-rank-pos="1"><option value="0">—</option><?php foreach ($timesGrupo as $t): ?><?php $tid = (int)$t['time_id']; ?><option value="<?php echo (int)$tid; ?>" <?php echo ($tid === $pick1) ? 'selected' : ''; ?>><?php echo strh((string)$t['time_nome']); ?></option><?php endforeach; ?></select></div>
-										<div class="rank-field"><label>2º</label><select class="rank-select" data-rank-pos="2"><option value="0">—</option><?php foreach ($timesGrupo as $t): ?><?php $tid = (int)$t['time_id']; ?><option value="<?php echo (int)$tid; ?>" <?php echo ($tid === $pick2) ? 'selected' : ''; ?>><?php echo strh((string)$t['time_nome']); ?></option><?php endforeach; ?></select></div>
-										<div class="rank-field"><label>3º</label><select class="rank-select" data-rank-pos="3"><option value="0">—</option><?php foreach ($timesGrupo as $t): ?><?php $tid = (int)$t['time_id']; ?><option value="<?php echo (int)$tid; ?>" <?php echo ($tid === $pick3) ? 'selected' : ''; ?>><?php echo strh((string)$t['time_nome']); ?></option><?php endforeach; ?></select></div>
+										<div class="rank-field"><label>1Âº</label><select class="rank-select" data-rank-pos="1"><option value="0">â€”</option><?php foreach ($timesGrupo as $t): ?><?php $tid = (int)$t['time_id']; ?><option value="<?php echo (int)$tid; ?>" <?php echo ($tid === $pick1) ? 'selected' : ''; ?>><?php echo strh((string)$t['time_nome']); ?></option><?php endforeach; ?></select></div>
+										<div class="rank-field"><label>2Âº</label><select class="rank-select" data-rank-pos="2"><option value="0">â€”</option><?php foreach ($timesGrupo as $t): ?><?php $tid = (int)$t['time_id']; ?><option value="<?php echo (int)$tid; ?>" <?php echo ($tid === $pick2) ? 'selected' : ''; ?>><?php echo strh((string)$t['time_nome']); ?></option><?php endforeach; ?></select></div>
+										<div class="rank-field"><label>3Âº</label><select class="rank-select" data-rank-pos="3"><option value="0">â€”</option><?php foreach ($timesGrupo as $t): ?><?php $tid = (int)$t['time_id']; ?><option value="<?php echo (int)$tid; ?>" <?php echo ($tid === $pick3) ? 'selected' : ''; ?>><?php echo strh((string)$t['time_nome']); ?></option><?php endforeach; ?></select></div>
 									</div>
 
 									<div class="group-rank-actions">
@@ -1705,19 +1711,19 @@ require_once __DIR__ . "/partials/app_header.php";
 							<div class="group-rank-card" data-top4-card="1">
 								<div class="group-rank-head">
 									<div class="group-rank-title">Top 4 do torneio</div>
-									<div class="group-rank-sub">Liberado após existir jogo(s) na semifinal. Independe dos placares.</div>
+									<div class="group-rank-sub">Liberado apÃ³s existir jogo(s) na semifinal. Independe dos placares.</div>
 								</div>
 
 								<?php if (!$top4Enabled): ?>
 									<div class="group-rank-empty">Top 4 ainda bloqueado.</div>
 								<?php elseif (count($timesSemi) === 0): ?>
-									<div class="group-rank-empty">Sem times válidos na semifinal.</div>
+									<div class="group-rank-empty">Sem times vÃ¡lidos na semifinal.</div>
 								<?php else: ?>
 									<div class="group-rank-grid">
-										<div class="rank-field"><label>1º</label><select class="rank-select" data-top4-pos="1"><option value="0">—</option><?php foreach ($timesSemi as $t): ?><option value="<?php echo (int)$t['id']; ?>" <?php echo ((int)$t['id'] === (int)$top4['1']) ? 'selected' : ''; ?>><?php echo strh($t['nome']); ?></option><?php endforeach; ?></select></div>
-										<div class="rank-field"><label>2º</label><select class="rank-select" data-top4-pos="2"><option value="0">—</option><?php foreach ($timesSemi as $t): ?><option value="<?php echo (int)$t['id']; ?>" <?php echo ((int)$t['id'] === (int)$top4['2']) ? 'selected' : ''; ?>><?php echo strh($t['nome']); ?></option><?php endforeach; ?></select></div>
-										<div class="rank-field"><label>3º</label><select class="rank-select" data-top4-pos="3"><option value="0">—</option><?php foreach ($timesSemi as $t): ?><option value="<?php echo (int)$t['id']; ?>" <?php echo ((int)$t['id'] === (int)$top4['3']) ? 'selected' : ''; ?>><?php echo strh($t['nome']); ?></option><?php endforeach; ?></select></div>
-										<div class="rank-field"><label>4º</label><select class="rank-select" data-top4-pos="4"><option value="0">—</option><?php foreach ($timesSemi as $t): ?><option value="<?php echo (int)$t['id']; ?>" <?php echo ((int)$t['id'] === (int)$top4['4']) ? 'selected' : ''; ?>><?php echo strh($t['nome']); ?></option><?php endforeach; ?></select></div>
+										<div class="rank-field"><label>1Âº</label><select class="rank-select" data-top4-pos="1"><option value="0">â€”</option><?php foreach ($timesSemi as $t): ?><option value="<?php echo (int)$t['id']; ?>" <?php echo ((int)$t['id'] === (int)$top4['1']) ? 'selected' : ''; ?>><?php echo strh($t['nome']); ?></option><?php endforeach; ?></select></div>
+										<div class="rank-field"><label>2Âº</label><select class="rank-select" data-top4-pos="2"><option value="0">â€”</option><?php foreach ($timesSemi as $t): ?><option value="<?php echo (int)$t['id']; ?>" <?php echo ((int)$t['id'] === (int)$top4['2']) ? 'selected' : ''; ?>><?php echo strh($t['nome']); ?></option><?php endforeach; ?></select></div>
+										<div class="rank-field"><label>3Âº</label><select class="rank-select" data-top4-pos="3"><option value="0">â€”</option><?php foreach ($timesSemi as $t): ?><option value="<?php echo (int)$t['id']; ?>" <?php echo ((int)$t['id'] === (int)$top4['3']) ? 'selected' : ''; ?>><?php echo strh($t['nome']); ?></option><?php endforeach; ?></select></div>
+										<div class="rank-field"><label>4Âº</label><select class="rank-select" data-top4-pos="4"><option value="0">â€”</option><?php foreach ($timesSemi as $t): ?><option value="<?php echo (int)$t['id']; ?>" <?php echo ((int)$t['id'] === (int)$top4['4']) ? 'selected' : ''; ?>><?php echo strh($t['nome']); ?></option><?php endforeach; ?></select></div>
 									</div>
 
 									<div class="group-rank-actions">
@@ -1742,6 +1748,7 @@ require_once __DIR__ . "/partials/app_header.php";
 		"nome" => $usuarioNome,
 		"id"   => $usuarioId,
 	],
+	"csrf_token" => app_csrf_token(),
 	"active_mode" => $activeMode,
 	"active_type" => $activeType,
 	"active_key" => $activeKey,

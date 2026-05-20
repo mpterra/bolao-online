@@ -1,13 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once __DIR__ . '/security.php';
+app_start_session();
+app_send_security_headers();
 
 require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/cadastro_mailer.php';
@@ -114,6 +110,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Location: /meus_dados.php');
     exit;
 }
+
+app_require_csrf(false);
 
 $usuarioId = (int)($_SESSION['usuario_id'] ?? 0);
 if ($usuarioId <= 0) {

@@ -1,11 +1,9 @@
 <?php
 declare(strict_types=1);
 
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-session_start();
+require_once dirname(__DIR__) . "/php/security.php";
+app_start_session();
+app_send_security_headers();
 require_once __DIR__ . "/../php/conexao.php";
 
 date_default_timezone_set('America/Sao_Paulo');
@@ -361,6 +359,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "logout") {
    ========================================================= */
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["action"]) && $_GET["action"] === "save") {
     try {
+        app_require_csrf(true);
+
         $raw  = file_get_contents("php://input");
         $data = json_decode($raw ?: "{}", true);
         if (!is_array($data)) json_out(["ok" => false, "error" => "JSON inválido."], 400);
@@ -871,6 +871,7 @@ require_once __DIR__ . "/partials/app_header.php";
 <?php
 echo json_encode([
     "edicao_id"    => $edicaoId,
+    "csrf_token"   => app_csrf_token(),
     "active_mode"  => $activeMode,
     "active_type"  => $activeType,
     "active_key"   => $activeKey,

@@ -17,19 +17,17 @@ use PHPMailer\PHPMailer\Exception;
 |--------------------------------------------------------------------------
 */
 
-$debug = (getenv("APP_DEBUG") === "1");
-ini_set("display_errors", $debug ? "1" : "0");
-ini_set("display_startup_errors", $debug ? "1" : "0");
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once __DIR__ . "/security.php";
+app_start_session();
+app_send_security_headers();
 
 // ── Apenas POST ──────────────────────────────────────────
 if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
     header("Location: /esqueci_senha.php");
     exit;
 }
+
+app_require_csrf(false);
 
 require_once __DIR__ . "/conexao.php";
 
@@ -216,6 +214,14 @@ if ($email === "" || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 $email = mb_strtolower($email, "UTF-8");
 reset_log($requestId, "Email recebido: " . $email);
 
+$resetIpKey = app_rate_limit_key("password_reset_ip", app_client_ip());
+$resetEmailKey = app_rate_limit_key("password_reset_email", $email);
+
+if (app_rate_limit_is_locked($pdo, $resetIpKey) || app_rate_limit_is_locked($pdo, $resetEmailKey)) {
+    reset_log($requestId, "Solicitacao bloqueada por rate limit.");
+    redirect_reset("Muitas solicitacoes. Aguarde um pouco e tente novamente.", "warn");
+}
+
 // ── Busca usuário ────────────────────────────────────────
 try {
     $stmt = $pdo->prepare("SELECT id, nome FROM usuarios WHERE LOWER(email) = ? AND ativo = 1 LIMIT 1");
@@ -230,11 +236,15 @@ $success_msg = "Se o e-mail informado estiver cadastrado, você receberá em ins
 $not_found_msg = "Email nao cadastrado.";
 
 if (!$user) {
+    app_rate_limit_register_failure($pdo, $resetIpKey, 5, 900, 1800);
+    app_rate_limit_register_failure($pdo, $resetEmailKey, 5, 900, 1800);
     reset_log($requestId, "Usuario nao encontrado ou inativo.");
     redirect_reset($not_found_msg, "warn");
 }
 
 reset_log($requestId, "Usuario encontrado. ID=" . (string)$user["id"]);
+app_rate_limit_register_failure($pdo, $resetIpKey, 5, 900, 1800);
+app_rate_limit_register_failure($pdo, $resetEmailKey, 5, 900, 1800);
 
 // ── Gera token ───────────────────────────────────────────
 $token     = bin2hex(random_bytes(32));

@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once dirname(__DIR__) . '/php/security.php';
+app_start_session();
+app_send_security_headers();
 
 $isLoggedIn = !empty($_SESSION['usuario_id']);
 $usuarioNome = isset($_SESSION['usuario_nome']) ? (string)$_SESSION['usuario_nome'] : 'Apostador';

@@ -16,6 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const endpointSave = cfg?.endpoints?.save || "/campeao.php?action=save";
   const endpointNotify = cfg?.endpoints?.notify_changes || "/campeao.php?action=notify_changes";
+  const csrfToken = cfg?.csrf_token || "";
+  const jsonHeaders = () => ({
+    "Content-Type": "application/json; charset=utf-8",
+    "X-CSRF-Token": csrfToken
+  });
   const canEdit = cfg?.editing?.enabled !== false;
   const deadlineLabel = String(cfg?.editing?.deadline_label || "").trim();
   const lockedMessage = String(
@@ -88,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!hasPendingFinalize || exitFinalizeDispatched) return;
     exitFinalizeDispatched = true;
 
-    const payload = JSON.stringify({ force: true, source: source || "exit" });
+    const payload = JSON.stringify({ force: true, source: source || "exit", csrf_token: csrfToken });
 
     try {
       if (navigator.sendBeacon) {
@@ -102,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       fetch(endpointNotify, {
         method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
+        headers: jsonHeaders(),
         body: payload,
         keepalive: true,
         credentials: "same-origin"
@@ -117,8 +122,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const resp = await fetch(endpointNotify, {
         method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ force: true, source: manual ? "manual" : "auto" }),
+        headers: jsonHeaders(),
+        body: JSON.stringify({ force: true, source: manual ? "manual" : "auto", csrf_token: csrfToken }),
         keepalive: true
       });
       const data = await resp.json().catch(() => ({}));
@@ -227,8 +232,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const resp = await fetch(endpointSave, {
         method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ time_id: tid })
+        headers: jsonHeaders(),
+        body: JSON.stringify({ time_id: tid, csrf_token: csrfToken })
       });
 
       const data = await resp.json().catch(() => ({}));
