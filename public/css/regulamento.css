@@ -171,6 +171,7 @@ html{
 
 .rules-title h1 span{
 	display:block;
+	font-family:var(--font-pixel) !important;
 	padding-top:.04em;
 }
 
