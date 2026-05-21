@@ -350,9 +350,9 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
 
         <div class="delete-account-step" data-delete-step="confirm">
             <p class="delete-account-kicker">Excluir minha conta</p>
-            <h2 id="deleteAccountTitle">Tem certeza que deseja sair do sistema?</h2>
+            <h2 id="deleteAccountTitle">Tem certeza que deseja excluir sua conta?</h2>
             <p id="deleteAccountText">
-                Ao confirmar, seu cadastro, seus palpites e seus dados vinculados serão removidos totalmente.
+                Ao confirmar, tudo será apagado do sistema: seu cadastro, seus palpites e todos os dados vinculados. Esta ação não poderá ser desfeita.
             </p>
             <div class="delete-account-actions">
                 <button type="button" class="delete-account-secondary" data-close-delete-account>Cancelar</button>
