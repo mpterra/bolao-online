@@ -7,6 +7,7 @@ app_send_security_headers();
 
 $isLoggedIn = !empty($_SESSION['usuario_id']);
 $usuarioNome = isset($_SESSION['usuario_nome']) ? (string)$_SESSION['usuario_nome'] : 'Apostador';
+$posCadastroNome = isset($_SESSION['pos_cadastro_nome']) ? (string)$_SESSION['pos_cadastro_nome'] : '';
 $tipoUsuario = isset($_SESSION['tipo_usuario']) ? (string)$_SESSION['tipo_usuario'] : '';
 $isAdmin = (mb_strtoupper($tipoUsuario, 'UTF-8') === 'ADMIN');
 
@@ -31,7 +32,7 @@ $whatsappLink = 'https://chat.whatsapp.com/CmzZCNsNenY8RKFxeOVwLA';
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex,nofollow">
 
-    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/base.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/base.css'); ?>">
     <link rel="stylesheet" href="/css/boas_vindas.css">
     <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>
@@ -202,7 +203,7 @@ $whatsappLink = 'https://chat.whatsapp.com/CmzZCNsNenY8RKFxeOVwLA';
     </div>
 
     <div class="copy-toast" id="copyToast" aria-live="polite" aria-atomic="true"></div>
-    <?php render_whatsapp_float($isLoggedIn ? $usuarioNome : null); ?>
+    <?php render_whatsapp_float($isLoggedIn ? $usuarioNome : ($posCadastroNome !== '' ? $posCadastroNome : null)); ?>
 
     <script src="/js/boas_vindas.js"></script>
 </body>

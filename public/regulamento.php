@@ -22,7 +22,7 @@ if ($isLoggedIn) {
 	<meta charset="UTF-8">
 	<title>Bolão da Copa - Regulamento</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-	<link rel="stylesheet" href="css/base.css">
+	<link rel="stylesheet" href="/css/base.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/base.css'); ?>">
 	<link rel="stylesheet" href="css/regulamento.css">
 	<link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
 </head>

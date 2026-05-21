@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . "/php/security.php";
 require_once dirname(__DIR__) . "/php/registration_lock.php";
+require_once __DIR__ . "/partials/whatsapp_float.php";
 app_start_session();
 app_send_security_headers();
 ?>
@@ -13,7 +14,7 @@ app_send_security_headers();
     <title>Cadastro encerrado - Bolão da Copa</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/base.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/base.css'); ?>">
     <link rel="stylesheet" href="/css/login.css">
     <link rel="stylesheet" href="/css/cadastro.css">
     <link rel="stylesheet" href="/css/visual-identity.css?v=<?php echo (string)@filemtime(__DIR__ . '/css/visual-identity.css'); ?>">
@@ -39,5 +40,6 @@ app_send_security_headers();
             </div>
         </main>
     </div>
+    <?php render_whatsapp_float(); ?>
 </body>
 </html>

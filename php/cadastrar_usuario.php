@@ -201,6 +201,7 @@ try {
     $mailConfig = load_mail_config_for_register();
     if (!load_phpmailer_for_register()) {
         cadastro_mail_log('Falha ao carregar PHPMailer para envios pos-cadastro.');
+        $_SESSION['pos_cadastro_nome'] = $nomeCompletoInformado !== '' ? $nomeCompletoInformado : $nomeCompleto;
         header("Location: {$successRedirect}");
         exit;
     }
@@ -231,6 +232,7 @@ try {
 
     cadastro_mail_log('Final dos envios pos-cadastro. admin=' . ($notified ? 'ok' : 'falha') . ', welcome=' . ($welcomed ? 'ok' : 'falha'));
 
+    $_SESSION['pos_cadastro_nome'] = $nomeCompletoInformado !== '' ? $nomeCompletoInformado : $nomeCompleto;
     header("Location: {$successRedirect}");
     exit;
 
