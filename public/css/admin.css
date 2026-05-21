@@ -534,6 +534,155 @@ body::before{
 }
 
 /* =========================================================
+   COMUNICADOS
+   ========================================================= */
+
+.comunicado-card{
+  display: grid;
+  gap: 14px;
+}
+
+.comunicado-summary{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.comunicado-metric{
+  min-width: 0;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.055);
+}
+
+.comunicado-metric span{
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(255,255,255,.68);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.comunicado-metric strong{
+  display: block;
+  color: rgba(255,255,255,.96);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.comunicado-alert{
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+}
+
+.comunicado-alert p{
+  margin: 0;
+  color: rgba(255,255,255,.88);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.comunicado-alert-error{
+  border-color: rgba(255,120,120,.32);
+  background: rgba(180,40,40,.16);
+}
+
+.comunicado-alert-warn{
+  border-color: rgba(247,201,72,.34);
+  background: rgba(247,201,72,.12);
+}
+
+.comunicado-alert-success{
+  border-color: rgba(16,208,138,.34);
+  background: rgba(16,208,138,.12);
+}
+
+.comunicado-form{
+  display: grid;
+  gap: 12px;
+}
+
+.comunicado-field{
+  display: grid;
+  gap: 7px;
+}
+
+.comunicado-field span{
+  color: rgba(255,255,255,.78);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.comunicado-field input,
+.comunicado-field textarea{
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.94);
+  outline: none;
+  font-size: 14px;
+  line-height: 1.45;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  transition: 180ms ease;
+}
+
+.comunicado-field input{
+  min-height: 46px;
+  padding: 0 13px;
+}
+
+.comunicado-field textarea{
+  min-height: 240px;
+  padding: 13px;
+  resize: vertical;
+}
+
+.comunicado-field input:focus,
+.comunicado-field textarea:focus{
+  border-color: rgba(70,220,255,.42);
+  background: rgba(255,255,255,.10);
+  box-shadow:
+    0 0 0 4px rgba(70,220,255,.10),
+    inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.comunicado-check{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.045);
+  color: rgba(255,255,255,.84);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.comunicado-check input{
+  width: 18px;
+  height: 18px;
+  margin-top: 0;
+  accent-color: rgb(70,220,255);
+  flex: 0 0 auto;
+}
+
+.comunicado-submit{
+  max-width: 260px;
+  border: 0;
+}
+
+/* =========================================================
    RESPONSIVO
    ========================================================= */
 
@@ -572,6 +721,10 @@ body::before{
   .admin-card{ padding: 12px; }
 
   .admin-grid{ grid-template-columns: 1fr; }
+
+  .comunicado-summary{ grid-template-columns: 1fr; }
+
+  .comunicado-submit{ max-width: none; }
 }
 
 @media (prefers-reduced-motion: reduce){
