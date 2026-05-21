@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . "/security.php";
+require_once __DIR__ . "/registration_lock.php";
 app_start_session();
 app_send_security_headers();
 
@@ -16,6 +17,8 @@ if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
     header("Location: /cadastro.php");
     exit;
 }
+
+redirect_if_registration_closed();
 
 app_require_csrf(false);
 

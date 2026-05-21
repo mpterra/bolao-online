@@ -291,6 +291,64 @@
 .btn-modal-ok:hover{ filter: saturate(1.06); transform: translateY(-1px); }
 .btn-modal-ok:active{ transform: translateY(0) scale(.99); }
 
+/* =========================================================
+   CADASTRO ENCERRADO
+   ========================================================= */
+
+.closed-card{
+  text-align: center;
+  padding: 22px 18px;
+}
+
+.closed-card h1{
+  margin-bottom: 12px;
+}
+
+.closed-message{
+  margin: 0;
+  color: rgba(255,255,255,.84);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.closed-actions{
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.closed-instagram{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: #062027;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  box-shadow: 0 14px 30px rgba(0,0,0,.35);
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.closed-instagram:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 18px 38px rgba(0,0,0,.45);
+  filter: saturate(1.08);
+}
+
+.closed-back{
+  display: inline-flex;
+  justify-content: center;
+  color: var(--gold2);
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 
 /* =========================================================
    RESPONSIVO (igual ao antes)
