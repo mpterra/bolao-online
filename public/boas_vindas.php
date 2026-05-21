@@ -10,6 +10,8 @@ $usuarioNome = isset($_SESSION['usuario_nome']) ? (string)$_SESSION['usuario_nom
 $tipoUsuario = isset($_SESSION['tipo_usuario']) ? (string)$_SESSION['tipo_usuario'] : '';
 $isAdmin = (mb_strtoupper($tipoUsuario, 'UTF-8') === 'ADMIN');
 
+require_once __DIR__ . '/partials/whatsapp_float.php';
+
 if ($isLoggedIn) {
     require_once __DIR__ . '/partials/app_header.php';
 }
@@ -200,6 +202,7 @@ $whatsappLink = 'https://chat.whatsapp.com/CmzZCNsNenY8RKFxeOVwLA';
     </div>
 
     <div class="copy-toast" id="copyToast" aria-live="polite" aria-atomic="true"></div>
+    <?php render_whatsapp_float($isLoggedIn ? $usuarioNome : null); ?>
 
     <script src="/js/boas_vindas.js"></script>
 </body>

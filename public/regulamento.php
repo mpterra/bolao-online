@@ -9,7 +9,8 @@ $isLoggedIn = !empty($_SESSION['usuario_id']);
 $usuarioNome = isset($_SESSION['usuario_nome']) ? (string)$_SESSION['usuario_nome'] : 'Apostador';
 $tipoUsuario = isset($_SESSION['tipo_usuario']) ? (string)$_SESSION['tipo_usuario'] : '';
 $isAdmin = (mb_strtoupper($tipoUsuario, 'UTF-8') === 'ADMIN');
-$adminWhatsappHref = 'https://wa.me/5554991819820?text=' . rawurlencode('Oi, sou o ' . $usuarioNome . ' e to com umas duvidas no bolao.');
+
+require_once __DIR__ . '/partials/whatsapp_float.php';
 
 if ($isLoggedIn) {
 	require_once __DIR__ . '/partials/app_header.php';
@@ -342,18 +343,7 @@ if ($isLoggedIn) {
 			</div>
 		</main>
 	</div>
-	<?php if ($isLoggedIn): ?>
-		<a
-			class="rules-whatsapp-float"
-			href="<?php echo htmlspecialchars($adminWhatsappHref, ENT_QUOTES, 'UTF-8'); ?>"
-			target="_blank"
-			rel="noopener noreferrer"
-			aria-label="Tirar duvidas com Thiago pelo WhatsApp"
-		>
-			<img class="rules-whatsapp-float__icon" src="/img/whatsapp.png" alt="" aria-hidden="true">
-			<span class="rules-whatsapp-float__text">Tire suas d&uacute;vidas</span>
-		</a>
-	<?php endif; ?>
+	<?php render_whatsapp_float($isLoggedIn ? $usuarioNome : null); ?>
 	<script src="js/regulamento.js"></script>
 </body>
 </html>

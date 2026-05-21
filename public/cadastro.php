@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . "/php/security.php";
 require_once dirname(__DIR__) . "/php/registration_lock.php";
+require_once __DIR__ . "/partials/whatsapp_float.php";
 app_start_session();
 app_send_security_headers();
 redirect_if_registration_closed();
@@ -191,6 +192,8 @@ if ($sucesso) {
             </div>
         </div>
     </div>
+
+    <?php render_whatsapp_float(); ?>
 
     <script src="/js/cadastro.js"></script>
 </body>
