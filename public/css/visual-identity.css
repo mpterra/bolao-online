@@ -71,11 +71,12 @@ body::before{
   animation:none !important;
   transform:none !important;
   background:
-    linear-gradient(180deg, rgba(31,157,81,.08), rgba(17,122,62,.16)),
-    url("/img/fundo.png"),
-    linear-gradient(180deg, #70dc64 0%, #42c765 48%, #239a51 100%) !important;
+    linear-gradient(180deg, rgba(2,12,24,.12), rgba(5,39,19,.20)),
+    url("/img/fundo2.jpeg"),
+    linear-gradient(180deg, #061322 0%, #0a3a24 58%, #0b5a28 100%) !important;
   background-size:auto, cover, auto !important;
-  background-position:center, center, center !important;
+  background-position:center, center center, center !important;
+  background-repeat:no-repeat !important;
   opacity:1 !important;
 }
 
@@ -752,20 +753,20 @@ hr,
 
 @media (max-width:560px){
   body::before{
-    width:100vh !important;
-    height:100vw !important;
-    top:50% !important;
-    left:50% !important;
-    right:auto !important;
-    bottom:auto !important;
-    transform:translate(-50%, -50%) rotate(90deg) !important;
-    transform-origin:center !important;
+    width:auto !important;
+    height:auto !important;
+    top:0 !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:0 !important;
+    transform:none !important;
     background:
-      linear-gradient(180deg, rgba(31,157,81,.08), rgba(17,122,62,.16)),
-      url("/img/fundo.png"),
-      linear-gradient(180deg, #70dc64 0%, #42c765 48%, #239a51 100%) !important;
+      linear-gradient(180deg, rgba(2,12,24,.16), rgba(5,39,19,.22)),
+      url("/img/fundo2.jpeg"),
+      linear-gradient(180deg, #061322 0%, #0a3a24 58%, #0b5a28 100%) !important;
     background-size:auto, cover, auto !important;
-    background-position:center, center, center !important;
+    background-position:center, center bottom, center !important;
+    background-repeat:no-repeat !important;
   }
 
   h1,h2,h3,h4,h5,h6,
