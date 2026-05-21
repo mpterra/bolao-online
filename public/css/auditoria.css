@@ -14,6 +14,32 @@
   gap:14px;
 }
 
+.audit-preview-warning{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding:12px 14px;
+  border:2px solid #ffd600;
+  border-radius:8px;
+  background:#7a1f1f;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.55),
+    0 10px 22px rgba(0,0,0,.28);
+}
+
+.audit-preview-warning strong{
+  color:#ffd600 !important;
+  font-size:14px;
+  font-weight:950;
+  text-transform:uppercase;
+}
+
+.audit-preview-warning span{
+  color:#ffffff;
+  font-size:12px;
+  font-weight:900;
+}
+
 .audit-hero{
   display:grid;
   grid-template-columns:1fr;
