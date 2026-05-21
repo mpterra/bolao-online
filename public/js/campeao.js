@@ -12,28 +12,30 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!cfgEl || !grid || !btnSave || !toast) return;
 
   let cfg = {};
-  try { cfg = JSON.parse(cfgEl.textContent || "{}"); } catch { cfg = {}; }
+  try { cfg = JSON.parse(cfgEl.textContent || "{}"); } catch (_) { cfg = {}; }
 
-  const endpointSave = cfg?.endpoints?.save || "/campeao.php?action=save";
-  const endpointNotify = cfg?.endpoints?.notify_changes || "/campeao.php?action=notify_changes";
-  const csrfToken = cfg?.csrf_token || "";
+  const endpoints = (cfg && cfg.endpoints) ? cfg.endpoints : {};
+  const editing = (cfg && cfg.editing) ? cfg.editing : {};
+  const endpointSave = endpoints.save || "/campeao.php?action=save";
+  const endpointNotify = endpoints.notify_changes || "/campeao.php?action=notify_changes";
+  const csrfToken = (cfg && cfg.csrf_token) ? cfg.csrf_token : "";
   const jsonHeaders = () => ({
     "Content-Type": "application/json; charset=utf-8",
     "X-CSRF-Token": csrfToken
   });
-  const canEdit = cfg?.editing?.enabled !== false;
-  const deadlineLabel = String(cfg?.editing?.deadline_label || "").trim();
+  const canEdit = editing.enabled !== false;
+  const deadlineLabel = String(editing.deadline_label || "").trim();
   const lockedMessage = String(
-    cfg?.editing?.locked_message ||
+    editing.locked_message ||
     (deadlineLabel
       ? `O prazo para escolher ou alterar o campeão encerrou em ${deadlineLabel}.`
       : "O prazo para escolher ou alterar o campeão foi encerrado.")
   );
 
   // ✅ endpoint do recibo (se não vier no config, usa o padrão)
-  const endpointRecibo = cfg?.endpoints?.recibo || "/php/recibo.php";
+  const endpointRecibo = endpoints.recibo || "/php/recibo.php";
 
-  let selectedId = Number(cfg?.selected_time_id || 0);
+  let selectedId = Number((cfg && cfg.selected_time_id) || 0);
   let pendingId = selectedId;
   let hasPendingFinalize = false;
   let finalizeTimer = null;

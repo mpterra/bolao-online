@@ -88,12 +88,12 @@ document.addEventListener("DOMContentLoaded", () => {
      ========================= */
 
   function escHtml(s) {
-    return String(s ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   function showToast(msg, ms = 2400) {
@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function normalizeStr(s) {
-    return String(s ?? "").trim();
+    return String(s == null ? "" : s).trim();
   }
 
   function normalizeUpper(s) {

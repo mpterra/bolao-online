@@ -136,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function normalizeScoreValue(raw) {
-    const s = String(raw ?? "").replace(/[^\d]/g, "");
+    const s = String(raw == null ? "" : raw).replace(/[^\d]/g, "");
     if (s === "") return "";
     const n = parseInt(s, 10);
     if (!Number.isFinite(n) || n < 0) return "";

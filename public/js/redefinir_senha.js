@@ -78,7 +78,8 @@ document.addEventListener("DOMContentLoaded", () => {
       toast.addEventListener("transitionend", () => toast.remove(), { once: true });
     }
 
-    toast.querySelector(".toast__close")?.addEventListener("click", close);
+    const closeButton = toast.querySelector(".toast__close");
+    if (closeButton) closeButton.addEventListener("click", close);
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); }, { once: true });
   })();
 

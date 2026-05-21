@@ -108,9 +108,16 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 					radial-gradient(900px 260px at 10% 10%, rgba(70,220,255,.10), transparent 60%),
 					radial-gradient(760px 240px at 85% 20%, rgba(16,208,138,.10), transparent 58%),
 					rgba(7,26,31,.82);
+				-webkit-backdrop-filter:blur(14px);
 				backdrop-filter:blur(14px);
 				box-shadow:0 16px 38px rgba(0,0,0,.28);
 				overflow:hidden;
+			}
+
+			@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+				.bh-header{
+					background:rgba(7,26,31,.96);
+				}
 			}
 
 			.bh-header.is-compact .bh-header__bar{
