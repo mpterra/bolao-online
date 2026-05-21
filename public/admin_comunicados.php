@@ -231,9 +231,6 @@ require_once __DIR__ . "/partials/app_header.php";
                 <a class="btn-receipt" href="/admin_usuarios_cadastro.php">
                     Lista de usuários
                 </a>
-                <a class="btn-receipt" href="/admin_comunicados.php" aria-current="page">
-                    Enviar comunicado
-                </a>
                 <a class="btn-receipt" href="/php/export_apostas_todas_zip.php">
                     Baixar todas apostas
                 </a>
@@ -242,6 +239,9 @@ require_once __DIR__ . "/partials/app_header.php";
                 </a>
                 <a class="btn-mata-mata" href="/mata_mata.php">
                     Atualizar mata-mata
+                </a>
+                <a class="btn-receipt" href="/admin_comunicados.php" aria-current="page">
+                    Enviar comunicado
                 </a>
             </div>
         </aside>
