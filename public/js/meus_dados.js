@@ -6,7 +6,7 @@
 
   const confirmStep = modal.querySelector('[data-delete-step="confirm"]');
   const passwordStep = modal.querySelector('[data-delete-step="password"]');
-  const passwordInput = modal.querySelector("#senha_atual_descadastro");
+  const passwordInput = modal.querySelector("#senha_atual_excluir_conta");
   const inlineError = modal.querySelector("[data-delete-account-error]");
   const confirmButton = modal.querySelector("[data-confirm-delete-account]");
   const backButton = modal.querySelector("[data-back-delete-account]");

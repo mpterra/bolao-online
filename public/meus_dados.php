@@ -330,13 +330,13 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
 
             <section class="profile-danger-zone" aria-labelledby="profileDangerTitle">
                 <div>
-                    <h2 class="profile-danger-title" id="profileDangerTitle">Descadastrar minha conta</h2>
+                    <h2 class="profile-danger-title" id="profileDangerTitle">Excluir minha conta</h2>
                     <p class="profile-danger-text">
                         Exclui seu cadastro e todos os seus dados de palpites do sistema. Esta ação não pode ser desfeita.
                     </p>
                 </div>
                 <button type="button" class="profile-delete-open" data-open-delete-account>
-                    Quero me descadastrar
+                    Excluir minha conta
                 </button>
             </section>
         </div>
@@ -349,7 +349,7 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
         <button type="button" class="delete-account-close" data-close-delete-account aria-label="Fechar">&times;</button>
 
         <div class="delete-account-step" data-delete-step="confirm">
-            <p class="delete-account-kicker">Descadastro</p>
+            <p class="delete-account-kicker">Excluir minha conta</p>
             <h2 id="deleteAccountTitle">Tem certeza que deseja sair do sistema?</h2>
             <p id="deleteAccountText">
                 Ao confirmar, seu cadastro, seus palpites e seus dados vinculados serão removidos totalmente.
@@ -368,7 +368,7 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
                 A exclusão só será concluída se a senha da sua conta estiver correta.
             </p>
             <div class="input-group delete-account-password">
-                <input type="password" id="senha_atual_descadastro" name="senha_atual" required autocomplete="current-password">
+                <input type="password" id="senha_atual_excluir_conta" name="senha_atual" required autocomplete="current-password">
                 <label>Senha atual</label>
             </div>
             <p class="delete-account-inline-error" data-delete-account-error hidden>Informe sua senha para continuar.</p>

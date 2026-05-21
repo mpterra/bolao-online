@@ -85,7 +85,7 @@ if ($usuarioId <= 0) {
 
 $senhaAtual = (string)($_POST['senha_atual'] ?? '');
 if ($senhaAtual === '') {
-    redirect_profile_delete_with_flash('Informe sua senha para confirmar o descadastro.', 'warn');
+    redirect_profile_delete_with_flash('Informe sua senha para confirmar a exclusao da conta.', 'warn');
 }
 
 if (!isset($pdo) || !($pdo instanceof PDO)) {
