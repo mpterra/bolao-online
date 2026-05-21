@@ -114,10 +114,6 @@ if (session_status() === PHP_SESSION_ACTIVE) {
 $pdo = get_pdo_auditoria();
 $tz = new DateTimeZone('America/Sao_Paulo');
 $now = new DateTimeImmutable('now', $tz);
-$previewMode = $isAdmin && (!isset($_GET["preview"]) || (string)$_GET["preview"] !== "0");
-if ($previewMode) {
-	$now = new DateTimeImmutable('2030-01-01 12:00:00', $tz);
-}
 
 try {
 	$edicao = $pdo->query("SELECT id, nome FROM edicoes WHERE ativo = 1 ORDER BY ano DESC, id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
@@ -276,13 +272,6 @@ require_once __DIR__ . "/partials/app_header.php";
 	<?php render_app_header($usuarioNome, $isAdmin, "auditoria", "Auditoria das apostas travadas", "/app.php?action=logout"); ?>
 
 	<main class="audit-shell">
-		<?php if ($previewMode): ?>
-			<section class="audit-preview-warning">
-				<strong>Modo preview ativo</strong>
-				<span>Simulando auditoria como se a data atual fosse <?php echo strh($now->format('d/m/Y H:i')); ?>. Nada foi alterado no banco. Para desligar: /auditoria.php?preview=0</span>
-			</section>
-		<?php endif; ?>
-
 		<section class="audit-hero">
 			<div>
 				<p class="audit-kicker"><?php echo strh($edicaoNome); ?></p>
