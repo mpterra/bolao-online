@@ -697,7 +697,7 @@ html{
 	}
 
 	.rules-whatsapp-float{
-		left:50%;
+		left:calc(50% + 230px);
 		right:auto;
 		bottom:calc(24px + env(safe-area-inset-bottom, 0px));
 		flex-direction:row;
