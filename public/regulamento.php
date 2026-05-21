@@ -350,7 +350,7 @@ if ($isLoggedIn) {
 			rel="noopener noreferrer"
 			aria-label="Tirar duvidas com Thiago pelo WhatsApp"
 		>
-			<span class="rules-whatsapp-float__mark">WA</span>
+			<img class="rules-whatsapp-float__icon" src="/img/whatsapp.png" alt="" aria-hidden="true">
 			<span class="rules-whatsapp-float__text">Tire suas d&uacute;vidas</span>
 		</a>
 	<?php endif; ?>

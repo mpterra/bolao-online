@@ -113,19 +113,13 @@ html{
 	box-shadow:0 18px 38px rgba(0,0,0,.36);
 }
 
-.rules-whatsapp-float__mark{
-	display:inline-flex;
-	align-items:center;
-	justify-content:center;
+.rules-whatsapp-float__icon{
+	display:block;
 	width:28px;
 	height:28px;
-	border-radius:999px;
-	font-size:.68rem;
-	font-weight:900;
-	letter-spacing:.02em;
-	color:#ffffff;
-	background:rgba(6,32,39,.92);
+	object-fit:contain;
 	flex:0 0 auto;
+	filter:drop-shadow(0 2px 4px rgba(0,0,0,.20));
 }
 
 .rules-whatsapp-float__text{
@@ -648,6 +642,10 @@ html{
 		padding-bottom:34px;
 	}
 
+	.rules-authenticated .rules-shell{
+		padding-bottom:104px;
+	}
+
 	.rules-section-nav{
 		width:min(100%, 62rem);
 		padding:10px;
@@ -699,24 +697,24 @@ html{
 	}
 
 	.rules-whatsapp-float{
-		top:50%;
-		right:max(16px, env(safe-area-inset-right, 0px));
-		bottom:auto;
-		flex-direction:column;
-		width:92px;
-		min-height:112px;
-		padding:12px 10px;
-		border-radius:18px;
+		left:50%;
+		right:auto;
+		bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+		flex-direction:row;
+		width:auto;
+		min-height:54px;
+		padding:11px 18px 11px 12px;
+		border-radius:999px;
 		text-align:center;
-		transform:translateY(-50%);
+		transform:translateX(-50%);
 	}
 
 	.rules-whatsapp-float:hover{
-		transform:translateY(calc(-50% - 1px));
+		transform:translateX(-50%) translateY(-1px);
 	}
 
 	.rules-whatsapp-float__text{
-		font-size:.78rem;
-		white-space:normal;
+		font-size:.9rem;
+		white-space:nowrap;
 	}
 }
