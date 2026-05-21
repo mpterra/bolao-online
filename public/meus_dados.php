@@ -327,10 +327,60 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
                     </div>
                 </div>
             </form>
+
+            <section class="profile-danger-zone" aria-labelledby="profileDangerTitle">
+                <div>
+                    <h2 class="profile-danger-title" id="profileDangerTitle">Descadastrar minha conta</h2>
+                    <p class="profile-danger-text">
+                        Exclui seu cadastro e todos os seus dados de palpites do sistema. Esta ação não pode ser desfeita.
+                    </p>
+                </div>
+                <button type="button" class="profile-delete-open" data-open-delete-account>
+                    Quero me descadastrar
+                </button>
+            </section>
         </div>
     </section>
 </div>
 
+<div class="delete-account-modal" data-delete-account-modal hidden>
+    <div class="delete-account-backdrop" data-close-delete-account></div>
+    <section class="delete-account-card" role="dialog" aria-modal="true" aria-labelledby="deleteAccountTitle" aria-describedby="deleteAccountText">
+        <button type="button" class="delete-account-close" data-close-delete-account aria-label="Fechar">&times;</button>
+
+        <div class="delete-account-step" data-delete-step="confirm">
+            <p class="delete-account-kicker">Descadastro</p>
+            <h2 id="deleteAccountTitle">Tem certeza que deseja sair do sistema?</h2>
+            <p id="deleteAccountText">
+                Ao confirmar, seu cadastro, seus palpites e seus dados vinculados serão removidos totalmente.
+            </p>
+            <div class="delete-account-actions">
+                <button type="button" class="delete-account-secondary" data-close-delete-account>Cancelar</button>
+                <button type="button" class="delete-account-danger" data-confirm-delete-account>Sim, quero excluir</button>
+            </div>
+        </div>
+
+        <form method="POST" action="/php/excluir_cadastro.php" class="delete-account-step" data-delete-step="password" hidden>
+            <?php echo app_csrf_field(); ?>
+            <p class="delete-account-kicker">Confirmação final</p>
+            <h2>Digite sua senha</h2>
+            <p>
+                A exclusão só será concluída se a senha da sua conta estiver correta.
+            </p>
+            <div class="input-group delete-account-password">
+                <input type="password" id="senha_atual_descadastro" name="senha_atual" required autocomplete="current-password">
+                <label>Senha atual</label>
+            </div>
+            <p class="delete-account-inline-error" data-delete-account-error hidden>Informe sua senha para continuar.</p>
+            <div class="delete-account-actions">
+                <button type="button" class="delete-account-secondary" data-back-delete-account>Voltar</button>
+                <button type="submit" class="delete-account-danger">Excluir definitivamente</button>
+            </div>
+        </form>
+    </section>
+</div>
+
 <script src="/js/cadastro.js?v=<?php echo (string)@filemtime(__DIR__ . '/js/cadastro.js'); ?>"></script>
+<script src="/js/meus_dados.js?v=<?php echo (string)@filemtime(__DIR__ . '/js/meus_dados.js'); ?>"></script>
 </body>
 </html>
