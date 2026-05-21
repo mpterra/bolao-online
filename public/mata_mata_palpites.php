@@ -769,12 +769,12 @@ require_once __DIR__ . "/partials/app_header.php";
 											<div class="scorebox">
 												<input class="score score-home" type="number" inputmode="numeric" min="0" max="99"
 													   value="<?php echo strh($pcVal); ?>"
-													   placeholder="0" aria-label="Gols casa"
+													   aria-label="Gols casa"
 													   <?php echo $isLocked ? "disabled" : ""; ?>>
 												<div class="x">×</div>
 												<input class="score score-away" type="number" inputmode="numeric" min="0" max="99"
 													   value="<?php echo strh($pfVal); ?>"
-													   placeholder="0" aria-label="Gols fora"
+													   aria-label="Gols fora"
 													   <?php echo $isLocked ? "disabled" : ""; ?>>
 											</div>
 

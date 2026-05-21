@@ -370,20 +370,22 @@ document.addEventListener("DOMContentLoaded", () => {
     return String(cardEl.getAttribute("data-is-knockout") || "") === "1";
   }
 
-  function getScores(cardEl) {
+  function getScores(cardEl, { requireFilled = false } = {}) {
     const inHome = cardEl.querySelector(".score-home");
     const inAway = cardEl.querySelector(".score-away");
 
     if (inHome) sanitizeScoreInput(inHome);
     if (inAway) sanitizeScoreInput(inAway);
 
+    const homeBlank = !inHome || inHome.value === "";
+    const awayBlank = !inAway || inAway.value === "";
     const gc = clampScore(inHome ? inHome.value : null);
     const gf = clampScore(inAway ? inAway.value : null);
 
-    markInvalid(inHome, !!(inHome && inHome.value !== "" && gc === null));
-    markInvalid(inAway, !!(inAway && inAway.value !== "" && gf === null));
+    markInvalid(inHome, !!(inHome && ((requireFilled && homeBlank) || (inHome.value !== "" && gc === null))));
+    markInvalid(inAway, !!(inAway && ((requireFilled && awayBlank) || (inAway.value !== "" && gf === null))));
 
-    return { gc, gf, inHome, inAway };
+    return { gc, gf, inHome, inAway, homeBlank, awayBlank };
   }
 
   function isTieNeedPass(cardEl) {
@@ -541,11 +543,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return JSON.stringify(value || {});
   }
 
-  function getCardPayload(cardEl) {
+  function getCardPayload(cardEl, { requireFilled = false } = {}) {
     const jogoId = Number(cardEl.getAttribute("data-jogo-id") || 0) || 0;
-    const { gc, gf } = getScores(cardEl);
+    const { gc, gf, homeBlank, awayBlank } = getScores(cardEl, { requireFilled });
 
     if (jogoId <= 0) return null;
+    if (requireFilled && (homeBlank || awayBlank)) {
+      return { invalid: true, reason: "Preencha os dois placares." };
+    }
+    if (requireFilled && (gc === null || gf === null)) {
+      return { invalid: true, reason: "Placares devem ficar entre 0 e 99." };
+    }
     if (gc === null || gf === null) return null;
 
     const payload = {
@@ -1115,10 +1123,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (current) clearTimeout(current);
 
       const timer = setTimeout(async () => {
-        const payload = getCardPayload(cardEl);
+        const payload = getCardPayload(cardEl, { requireFilled: true });
         if (!payload) return;
 
         if (payload.invalid) {
+          syncLinkedMatchState(cardEl);
           setLinkedSavingState(cardEl, "err", payload.reason || "Erro ao salvar.");
           return;
         }
@@ -1151,6 +1160,11 @@ document.addEventListener("DOMContentLoaded", () => {
       inHome.addEventListener("blur", () => {
         sanitizeScoreInput(inHome);
         refreshPassUi(cardEl);
+        const payload = getCardPayload(cardEl, { requireFilled: true });
+        if (payload && payload.invalid) {
+          setLinkedSavingState(cardEl, "err", payload.reason);
+          showToast(payload.reason, true);
+        }
         syncLinkedMatchState(cardEl);
       });
       inHome.addEventListener("keydown", (ev) => {
@@ -1166,6 +1180,11 @@ document.addEventListener("DOMContentLoaded", () => {
       inAway.addEventListener("blur", () => {
         sanitizeScoreInput(inAway);
         refreshPassUi(cardEl);
+        const payload = getCardPayload(cardEl, { requireFilled: true });
+        if (payload && payload.invalid) {
+          setLinkedSavingState(cardEl, "err", payload.reason);
+          showToast(payload.reason, true);
+        }
         syncLinkedMatchState(cardEl);
       });
       inAway.addEventListener("keydown", (ev) => {
