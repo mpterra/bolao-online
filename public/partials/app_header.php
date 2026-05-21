@@ -591,6 +591,7 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 					var mobile = header.querySelector(".bh-header__mobile");
 					var nav = header.querySelector(".bh-header__nav");
 					var right = header.querySelector(".bh-header__right");
+					var compactMediaQuery = "(max-width: 1280px)";
 
 					if (!toggle || !mobile) return;
 
@@ -609,7 +610,20 @@ function render_app_header(string $usuarioNome, bool $isAdmin, string $active, s
 						}
 					}
 
+					function isForcedCompact() {
+						if (window.matchMedia) {
+							return window.matchMedia(compactMediaQuery).matches;
+						}
+
+						return window.innerWidth <= 1280;
+					}
+
 					function setCompactByWidth() {
+						if (isForcedCompact()) {
+							header.classList.add("is-compact");
+							return;
+						}
+
 						header.classList.remove("is-compact");
 						if (!nav || !right) return;
 
