@@ -107,7 +107,7 @@ if (session_status() === PHP_SESSION_ACTIVE) {
 $pdo = get_pdo_auditoria();
 $tz = new DateTimeZone('America/Sao_Paulo');
 $now = new DateTimeImmutable('now', $tz);
-$previewMode = $isAdmin && isset($_GET["preview"]) && (string)$_GET["preview"] === "1";
+$previewMode = $isAdmin && (!isset($_GET["preview"]) || (string)$_GET["preview"] !== "0");
 if ($previewMode) {
 	$now = new DateTimeImmutable('2030-01-01 12:00:00', $tz);
 }
@@ -257,7 +257,7 @@ require_once __DIR__ . "/partials/app_header.php";
 		<?php if ($previewMode): ?>
 			<section class="audit-preview-warning">
 				<strong>Modo preview ativo</strong>
-				<span>Simulando auditoria como se a data atual fosse <?php echo strh($now->format('d/m/Y H:i')); ?>. Nada foi alterado no banco.</span>
+				<span>Simulando auditoria como se a data atual fosse <?php echo strh($now->format('d/m/Y H:i')); ?>. Nada foi alterado no banco. Para desligar: /auditoria.php?preview=0</span>
 			</section>
 		<?php endif; ?>
 
