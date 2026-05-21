@@ -94,6 +94,13 @@ function phase_label_audit(string $fase, ?string $grupoCodigo): string {
 	return $map[$f] ?? $fase;
 }
 
+function group_section_title_audit(string $key, array $games): string {
+	$first = $games[0] ?? [];
+	$grupoCodigo = trim((string)($first["grupo_codigo"] ?? ""));
+	if ($grupoCodigo !== '') return "Grupo " . $grupoCodigo;
+	return phase_label_audit((string)($first["fase"] ?? $key), null);
+}
+
 require_login();
 
 $usuarioNome = isset($_SESSION["usuario_nome"]) ? (string)$_SESSION["usuario_nome"] : "Apostador";
@@ -217,12 +224,27 @@ try {
 	}
 
 	$gamesByDay = [];
+	$gamesByGroup = [];
 	foreach ($lockedGames as $game) {
 		$day = (string)$game["logical_day"];
 		if (!isset($gamesByDay[$day])) $gamesByDay[$day] = [];
 		$gamesByDay[$day][] = $game;
+
+		$grupoCodigo = trim((string)($game["grupo_codigo"] ?? ""));
+		$fase = trim((string)($game["fase"] ?? ""));
+		$groupKey = $grupoCodigo !== '' ? ('grupo-' . $grupoCodigo) : ('fase-' . upper_utf8($fase));
+		if (!isset($gamesByGroup[$groupKey])) $gamesByGroup[$groupKey] = [];
+		$gamesByGroup[$groupKey][] = $game;
 	}
 	ksort($gamesByDay);
+	uksort($gamesByGroup, static function (string $a, string $b): int {
+		$aGroup = (substr($a, 0, 6) === 'grupo-');
+		$bGroup = (substr($b, 0, 6) === 'grupo-');
+		if ($aGroup && $bGroup) return strcmp($a, $b);
+		if ($aGroup) return -1;
+		if ($bGroup) return 1;
+		return strcmp($a, $b);
+	});
 
 	$totalPalpitesEsperados = count($usuarios) * count($lockedGames);
 	$totalPalpitesFeitos = 0;
@@ -272,6 +294,32 @@ require_once __DIR__ . "/partials/app_header.php";
 			</div>
 		</section>
 
+		<section class="audit-controls" aria-label="Filtros da auditoria">
+			<div class="audit-control">
+				<label for="auditGroupMode">Agrupar</label>
+				<select id="auditGroupMode">
+					<option value="date">Por data</option>
+					<option value="group">Por grupo/fase</option>
+				</select>
+			</div>
+			<div class="audit-control">
+				<label for="auditPickStatus">Status</label>
+				<select id="auditPickStatus">
+					<option value="all">Todos</option>
+					<option value="filled">Com palpite</option>
+					<option value="missing">Sem palpite</option>
+					<option value="admin">Somente admins</option>
+				</select>
+			</div>
+			<div class="audit-control audit-control-actions">
+				<label>Apostas</label>
+				<div class="audit-control-buttons">
+					<button type="button" id="auditExpandAll">Expandir todos</button>
+					<button type="button" id="auditCollapseAll">Contrair todos</button>
+				</div>
+			</div>
+		</section>
+
 		<section class="audit-metrics" aria-label="Resumo da auditoria">
 			<div class="audit-metric"><strong><?php echo (int)count($lockedGames); ?></strong><span>jogos visiveis</span></div>
 			<div class="audit-metric"><strong><?php echo (int)count($usuarios); ?></strong><span>apostadores</span></div>
@@ -285,6 +333,7 @@ require_once __DIR__ . "/partials/app_header.php";
 				<span>Assim que a primeira trava de apostas acontecer, os jogos aparecem aqui automaticamente.</span>
 			</section>
 		<?php else: ?>
+			<div class="audit-view is-active" data-audit-view="date">
 			<?php foreach ($gamesByDay as $day => $games): ?>
 				<section class="audit-day" data-audit-day="<?php echo strh($day); ?>">
 					<div class="audit-day-head">
@@ -304,7 +353,7 @@ require_once __DIR__ . "/partials/app_header.php";
 						$fora = (string)$game["fora_nome"];
 						$phase = phase_label_audit((string)$game["fase"], isset($game["grupo_codigo"]) ? (string)$game["grupo_codigo"] : null);
 						?>
-						<article class="audit-game" data-search="<?php echo strh(lower_utf8($casa . ' ' . $fora . ' ' . $phase . ' ' . (string)($game["codigo_fifa"] ?? ''))); ?>">
+						<article class="audit-game is-collapsed" data-search="<?php echo strh(lower_utf8($casa . ' ' . $fora . ' ' . $phase . ' ' . (string)($game["codigo_fifa"] ?? ''))); ?>">
 							<header class="audit-game-head">
 								<div>
 									<div class="audit-game-meta">
@@ -317,6 +366,7 @@ require_once __DIR__ . "/partials/app_header.php";
 								<div class="audit-game-counts">
 									<strong><?php echo (int)$filled; ?>/<?php echo (int)count($usuarios); ?></strong>
 									<span><?php echo (int)$missing; ?> sem palpite</span>
+									<button class="audit-toggle-game" type="button" aria-expanded="false">Mostrar apostas</button>
 								</div>
 							</header>
 
@@ -335,7 +385,7 @@ require_once __DIR__ . "/partials/app_header.php";
 										}
 									}
 									?>
-									<div class="audit-pick<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $pick ? '' : ' is-missing'; ?>" data-search="<?php echo strh(lower_utf8((string)$user["nome"] . ' ' . $pickText . ' ' . $passText)); ?>">
+									<div class="audit-pick<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $pick ? '' : ' is-missing'; ?>" data-pick-status="<?php echo $pick ? 'filled' : 'missing'; ?>" data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>" data-search="<?php echo strh(lower_utf8((string)$user["nome"] . ' ' . $pickText . ' ' . $passText)); ?>">
 										<div class="audit-person">
 											<strong><?php echo strh((string)$user["nome"]); ?></strong>
 											<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
@@ -351,6 +401,77 @@ require_once __DIR__ . "/partials/app_header.php";
 					<?php endforeach; ?>
 				</section>
 			<?php endforeach; ?>
+			</div>
+
+			<div class="audit-view" data-audit-view="group">
+			<?php foreach ($gamesByGroup as $groupKey => $games): ?>
+				<section class="audit-day" data-audit-group="<?php echo strh($groupKey); ?>">
+					<div class="audit-day-head">
+						<div>
+							<div class="audit-section-title"><?php echo strh(group_section_title_audit($groupKey, $games)); ?></div>
+							<div class="audit-day-sub"><?php echo (int)count($games); ?> jogos travados nesta chave de auditoria</div>
+						</div>
+					</div>
+
+					<?php foreach ($games as $game): ?>
+						<?php
+						$jid = (int)$game["id"];
+						$picks = $palpitesByGameUser[$jid] ?? [];
+						$filled = count($picks);
+						$missing = max(0, count($usuarios) - $filled);
+						$casa = (string)$game["casa_nome"];
+						$fora = (string)$game["fora_nome"];
+						$phase = phase_label_audit((string)$game["fase"], isset($game["grupo_codigo"]) ? (string)$game["grupo_codigo"] : null);
+						?>
+						<article class="audit-game is-collapsed" data-search="<?php echo strh(lower_utf8($casa . ' ' . $fora . ' ' . $phase . ' ' . (string)($game["codigo_fifa"] ?? ''))); ?>">
+							<header class="audit-game-head">
+								<div>
+									<div class="audit-game-meta">
+										<span><?php echo strh(fmt_when_audit((string)$game["data_hora"])); ?></span>
+										<span><?php echo strh($phase); ?></span>
+										<?php if (!empty($game["codigo_fifa"])): ?><span>FIFA <?php echo strh((string)$game["codigo_fifa"]); ?></span><?php endif; ?>
+									</div>
+									<h2><?php echo strh($casa); ?> <span>x</span> <?php echo strh($fora); ?></h2>
+								</div>
+								<div class="audit-game-counts">
+									<strong><?php echo (int)$filled; ?>/<?php echo (int)count($usuarios); ?></strong>
+									<span><?php echo (int)$missing; ?> sem palpite</span>
+									<button class="audit-toggle-game" type="button" aria-expanded="false">Mostrar apostas</button>
+								</div>
+							</header>
+
+							<div class="audit-picks">
+								<?php foreach ($usuarios as $user): ?>
+									<?php
+									$uid = (int)$user["id"];
+									$isUserAdmin = (upper_utf8((string)($user["tipo_usuario"] ?? "")) === "ADMIN");
+									$pick = $picks[$uid] ?? null;
+									$pickText = "Sem palpite";
+									$passText = "";
+									if (is_array($pick)) {
+										$pickText = (string)(int)$pick["gols_casa"] . " x " . (string)(int)$pick["gols_fora"];
+										if ((int)$pick["gols_casa"] === (int)$pick["gols_fora"] && !empty($pick["passa_nome"])) {
+											$passText = "Passa: " . (string)$pick["passa_nome"];
+										}
+									}
+									?>
+									<div class="audit-pick<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $pick ? '' : ' is-missing'; ?>" data-pick-status="<?php echo $pick ? 'filled' : 'missing'; ?>" data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>" data-search="<?php echo strh(lower_utf8((string)$user["nome"] . ' ' . $pickText . ' ' . $passText)); ?>">
+										<div class="audit-person">
+											<strong><?php echo strh((string)$user["nome"]); ?></strong>
+											<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
+										</div>
+										<div class="audit-score">
+											<strong><?php echo strh($pickText); ?></strong>
+											<?php if ($passText !== ''): ?><small><?php echo strh($passText); ?></small><?php endif; ?>
+										</div>
+									</div>
+								<?php endforeach; ?>
+							</div>
+						</article>
+					<?php endforeach; ?>
+				</section>
+			<?php endforeach; ?>
+			</div>
 		<?php endif; ?>
 	</main>
 </div>
@@ -358,19 +479,100 @@ require_once __DIR__ . "/partials/app_header.php";
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 	var input = document.getElementById("auditFilter");
-	if (!input) return;
-	input.addEventListener("input", function () {
-		var q = (input.value || "").trim().toLowerCase();
-		document.querySelectorAll(".audit-game").forEach(function (game) {
+	var groupMode = document.getElementById("auditGroupMode");
+	var pickStatus = document.getElementById("auditPickStatus");
+	var expandAll = document.getElementById("auditExpandAll");
+	var collapseAll = document.getElementById("auditCollapseAll");
+
+	function activeView() {
+		return document.querySelector('.audit-view.is-active');
+	}
+
+	function setGameExpanded(game, expanded) {
+		var btn = game.querySelector(".audit-toggle-game");
+		game.classList.toggle("is-collapsed", !expanded);
+		if (btn) {
+			btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+			btn.textContent = expanded ? "Contrair apostas" : "Mostrar apostas";
+		}
+	}
+
+	function applyFilters() {
+		var view = activeView();
+		if (!view) return;
+
+		var q = input ? (input.value || "").trim().toLowerCase() : "";
+		var status = pickStatus ? String(pickStatus.value || "all") : "all";
+		var hasActiveFilter = q !== "" || status !== "all";
+
+		view.querySelectorAll(".audit-game").forEach(function (game) {
 			var gameText = game.getAttribute("data-search") || "";
+			var gameMatches = q && gameText.indexOf(q) >= 0;
 			var anyPick = false;
 			game.querySelectorAll(".audit-pick").forEach(function (pick) {
-				var hit = !q || gameText.indexOf(q) >= 0 || (pick.getAttribute("data-search") || "").indexOf(q) >= 0;
+				var pickText = pick.getAttribute("data-search") || "";
+				var statusOk = status === "all"
+					|| (status === "admin" && pick.getAttribute("data-is-admin") === "1")
+					|| (status === pick.getAttribute("data-pick-status"));
+				var textOk = !q || gameMatches || pickText.indexOf(q) >= 0;
+				var hit = statusOk && textOk;
 				pick.hidden = !hit;
 				if (hit) anyPick = true;
 			});
 			game.hidden = !anyPick;
+			if (hasActiveFilter && anyPick) setGameExpanded(game, true);
 		});
+
+		view.querySelectorAll(".audit-day").forEach(function (section) {
+			var anyGame = Array.prototype.some.call(section.querySelectorAll(".audit-game"), function (game) {
+				return !game.hidden;
+			});
+			section.hidden = !anyGame;
+		});
+	}
+
+	document.querySelectorAll(".audit-toggle-game").forEach(function (btn) {
+		btn.addEventListener("click", function () {
+			var game = btn.closest(".audit-game");
+			if (!game) return;
+			setGameExpanded(game, game.classList.contains("is-collapsed"));
+		});
+	});
+
+	if (groupMode) {
+		groupMode.addEventListener("change", function () {
+			document.querySelectorAll(".audit-view").forEach(function (view) {
+				view.classList.toggle("is-active", view.getAttribute("data-audit-view") === groupMode.value);
+			});
+			applyFilters();
+		});
+	}
+
+	if (input) input.addEventListener("input", applyFilters);
+	if (pickStatus) pickStatus.addEventListener("change", applyFilters);
+
+	if (expandAll) {
+		expandAll.addEventListener("click", function () {
+			var view = activeView();
+			if (!view) return;
+			view.querySelectorAll(".audit-game:not([hidden])").forEach(function (game) {
+				setGameExpanded(game, true);
+			});
+		});
+	}
+
+	if (collapseAll) {
+		collapseAll.addEventListener("click", function () {
+			var view = activeView();
+			if (!view) return;
+			view.querySelectorAll(".audit-game").forEach(function (game) {
+				setGameExpanded(game, false);
+			});
+		});
+	}
+
+	document.querySelectorAll(".audit-game").forEach(function (game) {
+		setGameExpanded(game, false);
 	});
 });
 </script>

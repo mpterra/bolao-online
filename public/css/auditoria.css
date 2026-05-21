@@ -93,6 +93,50 @@
   box-shadow:0 0 0 4px rgba(16,208,138,.12);
 }
 
+.audit-controls{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+  padding:12px;
+  border:2px solid rgba(255,214,0,.28);
+  border-radius:8px;
+  background:#064221;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.50),
+    0 10px 22px rgba(0,0,0,.28);
+}
+
+.audit-control{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.audit-control label{
+  color:rgba(255,255,255,.92);
+  font-size:11px;
+  font-weight:950;
+  text-transform:uppercase;
+}
+
+.audit-control select,
+.audit-control button{
+  min-height:42px;
+  border:2px solid rgba(255,214,0,.34);
+  border-radius:8px;
+  color:#ffffff;
+  background:#042f18;
+  padding:9px 10px;
+  font-size:12px;
+  font-weight:950;
+}
+
+.audit-control-buttons{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
 .audit-metrics{
   display:grid;
   grid-template-columns:repeat(2, minmax(0, 1fr));
@@ -166,6 +210,16 @@
   overflow:hidden;
 }
 
+.audit-view{
+  display:none;
+  flex-direction:column;
+  gap:14px;
+}
+
+.audit-view.is-active{
+  display:flex;
+}
+
 .audit-day-head{
   display:flex;
   justify-content:space-between;
@@ -225,9 +279,8 @@
 }
 
 .audit-game-counts{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+  display:grid;
+  grid-template-columns:1fr;
   gap:8px;
   padding:10px;
   border-radius:8px;
@@ -245,11 +298,26 @@
   font-weight:900;
 }
 
+.audit-toggle-game{
+  min-height:38px;
+  border:2px solid rgba(255,214,0,.46);
+  border-radius:8px;
+  color:#062027;
+  background:linear-gradient(180deg, #ffd600, #ffc107);
+  font-size:11px;
+  font-weight:950;
+  cursor:pointer;
+}
+
 .audit-picks{
   display:grid;
   grid-template-columns:1fr;
   gap:6px;
   padding:0 12px 14px;
+}
+
+.audit-game.is-collapsed .audit-picks{
+  display:none;
 }
 
 .audit-pick{
@@ -344,9 +412,18 @@
     grid-template-columns:repeat(4, minmax(0, 1fr));
   }
 
+  .audit-controls{
+    grid-template-columns:minmax(160px, 220px) minmax(160px, 220px) minmax(280px, 1fr);
+    align-items:end;
+  }
+
   .audit-game-head{
     grid-template-columns:1fr 190px;
     align-items:center;
+  }
+
+  .audit-game-counts{
+    grid-template-columns:1fr;
   }
 
   .audit-picks{
