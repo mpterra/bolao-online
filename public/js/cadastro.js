@@ -614,9 +614,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (cidadeSelGroup)   cidadeSelGroup.style.display = "";
       if (cidadeTextoGroup) cidadeTextoGroup.style.display = "none";
 
-      if (ufSelect)  { ufSelect.required  = true;  }
-      if (ufTexto)   { ufTexto.required   = false; ufTexto.value  = ""; }
-      if (cidTexto)  { cidTexto.required  = false; cidTexto.value = ""; }
+      if (ufSelect)  { ufSelect.required  = true; ufSelect.disabled = false; }
+      if (cidSel)    { cidSel.disabled    = false; }
+      if (ufTexto)   { ufTexto.required   = false; ufTexto.disabled = true; ufTexto.value  = ""; }
+      if (cidTexto)  { cidTexto.required  = false; cidTexto.disabled = true; cidTexto.value = ""; }
       // cidade select: required é gerenciado pelo initCityLookup
 
       if (estadoLabel) estadoLabel.textContent = "Estado (UF)";
@@ -627,10 +628,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (cidadeSelGroup)   cidadeSelGroup.style.display = "none";
       if (cidadeTextoGroup) cidadeTextoGroup.style.display = "";
 
-      if (ufSelect)  { ufSelect.required  = false; ufSelect.value  = ""; }
-      if (cidSel)    { cidSel.required    = false; cidSel.value    = ""; }
-      if (ufTexto)   { ufTexto.required   = true;  }
-      if (cidTexto)  { cidTexto.required  = true;  }
+      if (ufSelect)  { ufSelect.required  = false; ufSelect.disabled = true; ufSelect.value  = ""; }
+      if (cidSel)    { cidSel.required    = false; cidSel.disabled = true; cidSel.value = ""; }
+      if (ufTexto)   { ufTexto.required   = true; ufTexto.disabled = false; }
+      if (cidTexto)  { cidTexto.required  = true; cidTexto.disabled = false; }
 
       if (estadoLabel) estadoLabel.textContent = "Estado / Região / Província";
     }

@@ -317,7 +317,7 @@ if ($sucesso) {
                     <label id="estadoLabel">Estado (UF)</label>
                 </div>
                 <div class="input-group" id="estadoTextoGroup" style="display:none">
-                    <input type="text" id="estado_texto" name="estado" autocomplete="address-level1" maxlength="100" placeholder=" ">
+                    <input type="text" id="estado_texto" name="estado" autocomplete="address-level1" maxlength="100" placeholder=" " disabled>
                     <label>Estado / Região / Província</label>
                 </div>
 
@@ -329,7 +329,7 @@ if ($sucesso) {
                     <small class="input-hint" id="cityHint">Selecione o estado primeiro.</small>
                 </div>
                 <div class="input-group" id="cidadeTextoGroup" style="display:none">
-                    <input type="text" id="cidade_texto" name="cidade" autocomplete="address-level2" maxlength="120" placeholder=" ">
+                    <input type="text" id="cidade_texto" name="cidade" autocomplete="address-level2" maxlength="120" placeholder=" " disabled>
                     <label>Cidade</label>
                 </div>
 
