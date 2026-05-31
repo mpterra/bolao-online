@@ -11,7 +11,7 @@ app_send_security_headers();
 |--------------------------------------------------------------------------
 | Suporta dois layouts:
 | 1) app.php dentro de /public  (ex: /bolao-da-copa/public/app.php)
-| 2) app.php na raiz           (ex: /app.php) com assets em /public/* teste
+| 2) app.php na raiz           (ex: /app.php) com assets em /public/*
 |--------------------------------------------------------------------------
 */
 $SCRIPT_DIR = str_replace('\\', '/', (string)dirname($_SERVER['SCRIPT_NAME'] ?? ''));
