@@ -109,12 +109,7 @@ function normalize_telefone(string $s, bool $isBrazil): string {
         if (!preg_match('/^\d{10,11}$/', $digits)) {
             fail("Telefone inválido. Informe DDI +55, DDD e número.");
         }
-        $ddd    = substr($digits, 0, 2);
-        $numero = substr($digits, 2);
-        if (strlen($numero) === 8) {
-            return sprintf('+55 (%s) %s-%s', $ddd, substr($numero, 0, 4), substr($numero, 4));
-        }
-        return sprintf('+55 (%s) %s-%s', $ddd, substr($numero, 0, 5), substr($numero, 5));
+        return '+55 ' . $digits;
     }
 
     // Internacional: deve começar com +, ter ao menos 7 dígitos após o +

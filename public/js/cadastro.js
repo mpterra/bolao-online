@@ -944,6 +944,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("telefone");
     if (!input) return;
 
+    const syncPhoneLabelState = () => {
+      const group = input.closest(".input-group");
+      if (!group) return;
+      if (String(input.value || "").trim() !== "") group.classList.add("has-value");
+      else group.classList.remove("has-value");
+    };
+
     const current = input.value;
     if (isBrazil) {
       // Se vazio ou só tem + ou prefixo de outro país, define +55
@@ -964,6 +971,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // Atualiza floating label após mudança de prefixo
     input.dispatchEvent(new Event("input", { bubbles: true }));
+    syncPhoneLabelState();
   }
 
   (function initPhoneMask() {
@@ -973,38 +981,51 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("telefone");
     if (!input) return;
 
-    // ---- Brasil: máscara +55 (DD) NNNNN-NNNN ----
+    function syncPhoneLabelState() {
+      const group = input.closest(".input-group");
+      if (!group) return;
+      if (String(input.value || "").trim() !== "") group.classList.add("has-value");
+      else group.classList.remove("has-value");
+    }
+
+    // ---- Brasil: formato +55 NNNNNNNNNN (sem parênteses/hífen) ----
     function formatPhoneBR(rawValue) {
-      // Extrai apenas dígitos, ignorando o +55 inicial se houver
-      let digits = stripDigits(rawValue);
-      // Remove DDI 55 se o usuário digitou com ele
-      if (digits.startsWith("55") && digits.length > 11) {
+      const raw = String(rawValue || "").trim();
+      let localRaw = raw;
+
+      if (raw.startsWith("+55")) {
+        localRaw = raw.slice(3);
+      }
+
+      let digits = stripDigits(localRaw);
+      if (!raw.startsWith("+55") && digits.startsWith("55") && digits.length > 11) {
         digits = digits.slice(2);
       }
       digits = digits.slice(0, 11);
 
       if (digits.length === 0) return "+55 ";
-      if (digits.length <= 2)  return `+55 (${digits}`;
-
-      const ddd    = digits.slice(0, 2);
-      const number = digits.slice(2);
-
-      if (number.length === 0)  return `+55 (${ddd})`;
-      if (number.length <= 4)   return `+55 (${ddd}) ${number}`;
-      if (number.length <= 8)   return `+55 (${ddd}) ${number.slice(0, 4)}-${number.slice(4)}`;
-      return `+55 (${ddd}) ${number.slice(0, 5)}-${number.slice(5, 9)}`;
+      return "+55 " + digits;
     }
 
     function validatePhoneBR() {
-      let digits = stripDigits(input.value);
-      if (digits.startsWith("55") && digits.length > 11) digits = digits.slice(2);
+      const raw = String(input.value || "").trim();
+      let localRaw = raw;
+
+      if (raw.startsWith("+55")) {
+        localRaw = raw.slice(3);
+      }
+
+      let digits = stripDigits(localRaw);
+      if (!raw.startsWith("+55") && digits.startsWith("55") && digits.length > 11) {
+        digits = digits.slice(2);
+      }
 
       if (digits.length === 0) {
         input.setCustomValidity("Preencha o telefone.");
         return false;
       }
       if (digits.length !== 10 && digits.length !== 11) {
-        input.setCustomValidity("Informe DDI +55, DDD e número (ex: +55 (11) 91234-5678).");
+        input.setCustomValidity("Informe DDI +55 e o número com DDD (ex: +55 11912345678).");
         return false;
       }
       input.setCustomValidity("");
@@ -1049,11 +1070,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (input.value !== v) input.value = v;
         validatePhoneIntl();
       }
+      syncPhoneLabelState();
     }
 
     function handleBlur() {
       if (isBrazilSelected()) validatePhoneBR();
       else validatePhoneIntl();
+      syncPhoneLabelState();
     }
 
     function handleSubmitValidation(ev) {
@@ -1072,6 +1095,7 @@ document.addEventListener("DOMContentLoaded", () => {
     input.addEventListener("focus", () => {
       if (input.value === "") {
         input.value = isBrazilSelected() ? "+55 " : "+";
+        syncPhoneLabelState();
       }
     });
 
@@ -1079,6 +1103,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (input.value === "") input.value = "+55 ";
     // Garante que o floating label sobe imediatamente quando há valor inicial
     input.dispatchEvent(new Event("input", { bubbles: true }));
+    syncPhoneLabelState();
     validatePhoneBR();
   })();
 

@@ -96,12 +96,7 @@ function normalize_phone_update(string $value, bool $isBrazil): string {
         if (!preg_match('/^\d{10,11}$/', $digits)) {
             redirect_profile_with_flash('Telefone inválido. Informe DDI +55, DDD e número.', 'warn');
         }
-        $ddd    = substr($digits, 0, 2);
-        $numero = substr($digits, 2);
-        if (strlen($numero) === 8) {
-            return sprintf('+55 (%s) %s-%s', $ddd, substr($numero, 0, 4), substr($numero, 4));
-        }
-        return sprintf('+55 (%s) %s-%s', $ddd, substr($numero, 0, 5), substr($numero, 5));
+        return '+55 ' . $digits;
     }
 
     if ($value === '' || $value === '+') {
