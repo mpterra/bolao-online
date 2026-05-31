@@ -119,7 +119,11 @@ try {
     }
 
     $birthDateSchemaReady = usuario_ensure_birth_date($pdo);
+    $hasPaisColumn = usuario_column_exists($pdo, 'pais');
     $selectFields = 'id, nome, email, telefone, cidade, estado, ' . usuario_birth_date_select_sql($pdo);
+    if ($hasPaisColumn) {
+        $selectFields .= ', pais';
+    }
 
     $stmt = $pdo->prepare('
         SELECT ' . $selectFields . '
@@ -147,8 +151,17 @@ $dataNascimento = format_birth_date_for_input((string)($usuario['data_nascimento
 $email = (string)($usuario['email'] ?? '');
 $telefone = (string)($usuario['telefone'] ?? '');
 $cidade = (string)($usuario['cidade'] ?? '');
-$estadoAtual = strtoupper((string)($usuario['estado'] ?? ''));
+$pais = isset($usuario['pais']) ? (string)$usuario['pais'] : 'Brasil';
+$isBrazil = ($pais === 'Brasil');
+$estadoAtual = $isBrazil
+    ? strtoupper((string)($usuario['estado'] ?? ''))
+    : (string)($usuario['estado'] ?? '');
 $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+// Visibilidade server-side para evitar flash antes do JS rodar
+$ufSelectStyle    = $isBrazil ? '' : ' style="display:none"';
+$ufTextoStyle     = $isBrazil ? ' style="display:none"' : '';
+$cidadeSelStyle   = $isBrazil ? '' : ' style="display:none"';
+$cidadeTextoStyle = $isBrazil ? ' style="display:none"' : '';
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -245,30 +258,242 @@ $ufs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','P
                         </div>
 
                         <div class="input-group">
-                            <input type="text" name="telefone" required autocomplete="tel" inputmode="tel" maxlength="15" value="<?php echo h($telefone); ?>">
-                            <label>Telefone</label>
+                            <select id="pais" name="pais" required>
+                                <option value="" disabled hidden></option>
+                                <option value="Brasil"<?php echo $pais === 'Brasil' ? ' selected' : ''; ?>>Brasil</option>
+                                <option value="" disabled>──────────────</option>
+                                <option value="Afeganistão"<?php echo $pais === 'Afeganistão' ? ' selected' : ''; ?>>Afeganistão</option>
+                                <option value="África do Sul"<?php echo $pais === 'África do Sul' ? ' selected' : ''; ?>>África do Sul</option>
+                                <option value="Albânia"<?php echo $pais === 'Albânia' ? ' selected' : ''; ?>>Albânia</option>
+                                <option value="Alemanha"<?php echo $pais === 'Alemanha' ? ' selected' : ''; ?>>Alemanha</option>
+                                <option value="Andorra"<?php echo $pais === 'Andorra' ? ' selected' : ''; ?>>Andorra</option>
+                                <option value="Angola"<?php echo $pais === 'Angola' ? ' selected' : ''; ?>>Angola</option>
+                                <option value="Antígua e Barbuda"<?php echo $pais === 'Antígua e Barbuda' ? ' selected' : ''; ?>>Antígua e Barbuda</option>
+                                <option value="Arábia Saudita"<?php echo $pais === 'Arábia Saudita' ? ' selected' : ''; ?>>Arábia Saudita</option>
+                                <option value="Argélia"<?php echo $pais === 'Argélia' ? ' selected' : ''; ?>>Argélia</option>
+                                <option value="Argentina"<?php echo $pais === 'Argentina' ? ' selected' : ''; ?>>Argentina</option>
+                                <option value="Armênia"<?php echo $pais === 'Armênia' ? ' selected' : ''; ?>>Armênia</option>
+                                <option value="Austrália"<?php echo $pais === 'Austrália' ? ' selected' : ''; ?>>Austrália</option>
+                                <option value="Áustria"<?php echo $pais === 'Áustria' ? ' selected' : ''; ?>>Áustria</option>
+                                <option value="Azerbaijão"<?php echo $pais === 'Azerbaijão' ? ' selected' : ''; ?>>Azerbaijão</option>
+                                <option value="Bahamas"<?php echo $pais === 'Bahamas' ? ' selected' : ''; ?>>Bahamas</option>
+                                <option value="Bangladesh"<?php echo $pais === 'Bangladesh' ? ' selected' : ''; ?>>Bangladesh</option>
+                                <option value="Barbados"<?php echo $pais === 'Barbados' ? ' selected' : ''; ?>>Barbados</option>
+                                <option value="Barein"<?php echo $pais === 'Barein' ? ' selected' : ''; ?>>Barein</option>
+                                <option value="Bélgica"<?php echo $pais === 'Bélgica' ? ' selected' : ''; ?>>Bélgica</option>
+                                <option value="Belize"<?php echo $pais === 'Belize' ? ' selected' : ''; ?>>Belize</option>
+                                <option value="Benin"<?php echo $pais === 'Benin' ? ' selected' : ''; ?>>Benin</option>
+                                <option value="Bielorrússia"<?php echo $pais === 'Bielorrússia' ? ' selected' : ''; ?>>Bielorrússia</option>
+                                <option value="Birmânia (Myanmar)"<?php echo $pais === 'Birmânia (Myanmar)' ? ' selected' : ''; ?>>Birmânia (Myanmar)</option>
+                                <option value="Bolívia"<?php echo $pais === 'Bolívia' ? ' selected' : ''; ?>>Bolívia</option>
+                                <option value="Bósnia e Herzegovina"<?php echo $pais === 'Bósnia e Herzegovina' ? ' selected' : ''; ?>>Bósnia e Herzegovina</option>
+                                <option value="Botsuana"<?php echo $pais === 'Botsuana' ? ' selected' : ''; ?>>Botsuana</option>
+                                <option value="Brunei"<?php echo $pais === 'Brunei' ? ' selected' : ''; ?>>Brunei</option>
+                                <option value="Bulgária"<?php echo $pais === 'Bulgária' ? ' selected' : ''; ?>>Bulgária</option>
+                                <option value="Burquina Fasso"<?php echo $pais === 'Burquina Fasso' ? ' selected' : ''; ?>>Burquina Fasso</option>
+                                <option value="Burundi"<?php echo $pais === 'Burundi' ? ' selected' : ''; ?>>Burundi</option>
+                                <option value="Butão"<?php echo $pais === 'Butão' ? ' selected' : ''; ?>>Butão</option>
+                                <option value="Cabo Verde"<?php echo $pais === 'Cabo Verde' ? ' selected' : ''; ?>>Cabo Verde</option>
+                                <option value="Camarões"<?php echo $pais === 'Camarões' ? ' selected' : ''; ?>>Camarões</option>
+                                <option value="Camboja"<?php echo $pais === 'Camboja' ? ' selected' : ''; ?>>Camboja</option>
+                                <option value="Canadá"<?php echo $pais === 'Canadá' ? ' selected' : ''; ?>>Canadá</option>
+                                <option value="Catar"<?php echo $pais === 'Catar' ? ' selected' : ''; ?>>Catar</option>
+                                <option value="Cazaquistão"<?php echo $pais === 'Cazaquistão' ? ' selected' : ''; ?>>Cazaquistão</option>
+                                <option value="Chade"<?php echo $pais === 'Chade' ? ' selected' : ''; ?>>Chade</option>
+                                <option value="Chile"<?php echo $pais === 'Chile' ? ' selected' : ''; ?>>Chile</option>
+                                <option value="China"<?php echo $pais === 'China' ? ' selected' : ''; ?>>China</option>
+                                <option value="Chipre"<?php echo $pais === 'Chipre' ? ' selected' : ''; ?>>Chipre</option>
+                                <option value="Colômbia"<?php echo $pais === 'Colômbia' ? ' selected' : ''; ?>>Colômbia</option>
+                                <option value="Comores"<?php echo $pais === 'Comores' ? ' selected' : ''; ?>>Comores</option>
+                                <option value="Congo"<?php echo $pais === 'Congo' ? ' selected' : ''; ?>>Congo</option>
+                                <option value="Coreia do Norte"<?php echo $pais === 'Coreia do Norte' ? ' selected' : ''; ?>>Coreia do Norte</option>
+                                <option value="Coreia do Sul"<?php echo $pais === 'Coreia do Sul' ? ' selected' : ''; ?>>Coreia do Sul</option>
+                                <option value="Costa do Marfim"<?php echo $pais === 'Costa do Marfim' ? ' selected' : ''; ?>>Costa do Marfim</option>
+                                <option value="Costa Rica"<?php echo $pais === 'Costa Rica' ? ' selected' : ''; ?>>Costa Rica</option>
+                                <option value="Croácia"<?php echo $pais === 'Croácia' ? ' selected' : ''; ?>>Croácia</option>
+                                <option value="Cuba"<?php echo $pais === 'Cuba' ? ' selected' : ''; ?>>Cuba</option>
+                                <option value="Dinamarca"<?php echo $pais === 'Dinamarca' ? ' selected' : ''; ?>>Dinamarca</option>
+                                <option value="Djibuti"<?php echo $pais === 'Djibuti' ? ' selected' : ''; ?>>Djibuti</option>
+                                <option value="Dominica"<?php echo $pais === 'Dominica' ? ' selected' : ''; ?>>Dominica</option>
+                                <option value="Egito"<?php echo $pais === 'Egito' ? ' selected' : ''; ?>>Egito</option>
+                                <option value="El Salvador"<?php echo $pais === 'El Salvador' ? ' selected' : ''; ?>>El Salvador</option>
+                                <option value="Emirados Árabes Unidos"<?php echo $pais === 'Emirados Árabes Unidos' ? ' selected' : ''; ?>>Emirados Árabes Unidos</option>
+                                <option value="Equador"<?php echo $pais === 'Equador' ? ' selected' : ''; ?>>Equador</option>
+                                <option value="Eritreia"<?php echo $pais === 'Eritreia' ? ' selected' : ''; ?>>Eritreia</option>
+                                <option value="Eslováquia"<?php echo $pais === 'Eslováquia' ? ' selected' : ''; ?>>Eslováquia</option>
+                                <option value="Eslovênia"<?php echo $pais === 'Eslovênia' ? ' selected' : ''; ?>>Eslovênia</option>
+                                <option value="Espanha"<?php echo $pais === 'Espanha' ? ' selected' : ''; ?>>Espanha</option>
+                                <option value="Eswatini"<?php echo $pais === 'Eswatini' ? ' selected' : ''; ?>>Eswatini</option>
+                                <option value="Estados Unidos"<?php echo $pais === 'Estados Unidos' ? ' selected' : ''; ?>>Estados Unidos</option>
+                                <option value="Estônia"<?php echo $pais === 'Estônia' ? ' selected' : ''; ?>>Estônia</option>
+                                <option value="Etiópia"<?php echo $pais === 'Etiópia' ? ' selected' : ''; ?>>Etiópia</option>
+                                <option value="Fiji"<?php echo $pais === 'Fiji' ? ' selected' : ''; ?>>Fiji</option>
+                                <option value="Filipinas"<?php echo $pais === 'Filipinas' ? ' selected' : ''; ?>>Filipinas</option>
+                                <option value="Finlândia"<?php echo $pais === 'Finlândia' ? ' selected' : ''; ?>>Finlândia</option>
+                                <option value="França"<?php echo $pais === 'França' ? ' selected' : ''; ?>>França</option>
+                                <option value="Gabão"<?php echo $pais === 'Gabão' ? ' selected' : ''; ?>>Gabão</option>
+                                <option value="Gâmbia"<?php echo $pais === 'Gâmbia' ? ' selected' : ''; ?>>Gâmbia</option>
+                                <option value="Gana"<?php echo $pais === 'Gana' ? ' selected' : ''; ?>>Gana</option>
+                                <option value="Geórgia"<?php echo $pais === 'Geórgia' ? ' selected' : ''; ?>>Geórgia</option>
+                                <option value="Granada"<?php echo $pais === 'Granada' ? ' selected' : ''; ?>>Granada</option>
+                                <option value="Grécia"<?php echo $pais === 'Grécia' ? ' selected' : ''; ?>>Grécia</option>
+                                <option value="Guatemala"<?php echo $pais === 'Guatemala' ? ' selected' : ''; ?>>Guatemala</option>
+                                <option value="Guiana"<?php echo $pais === 'Guiana' ? ' selected' : ''; ?>>Guiana</option>
+                                <option value="Guiné"<?php echo $pais === 'Guiné' ? ' selected' : ''; ?>>Guiné</option>
+                                <option value="Guiné-Bissau"<?php echo $pais === 'Guiné-Bissau' ? ' selected' : ''; ?>>Guiné-Bissau</option>
+                                <option value="Guiné Equatorial"<?php echo $pais === 'Guiné Equatorial' ? ' selected' : ''; ?>>Guiné Equatorial</option>
+                                <option value="Haiti"<?php echo $pais === 'Haiti' ? ' selected' : ''; ?>>Haiti</option>
+                                <option value="Honduras"<?php echo $pais === 'Honduras' ? ' selected' : ''; ?>>Honduras</option>
+                                <option value="Hungria"<?php echo $pais === 'Hungria' ? ' selected' : ''; ?>>Hungria</option>
+                                <option value="Iêmen"<?php echo $pais === 'Iêmen' ? ' selected' : ''; ?>>Iêmen</option>
+                                <option value="Índia"<?php echo $pais === 'Índia' ? ' selected' : ''; ?>>Índia</option>
+                                <option value="Indonésia"<?php echo $pais === 'Indonésia' ? ' selected' : ''; ?>>Indonésia</option>
+                                <option value="Irã"<?php echo $pais === 'Irã' ? ' selected' : ''; ?>>Irã</option>
+                                <option value="Iraque"<?php echo $pais === 'Iraque' ? ' selected' : ''; ?>>Iraque</option>
+                                <option value="Irlanda"<?php echo $pais === 'Irlanda' ? ' selected' : ''; ?>>Irlanda</option>
+                                <option value="Islândia"<?php echo $pais === 'Islândia' ? ' selected' : ''; ?>>Islândia</option>
+                                <option value="Israel"<?php echo $pais === 'Israel' ? ' selected' : ''; ?>>Israel</option>
+                                <option value="Itália"<?php echo $pais === 'Itália' ? ' selected' : ''; ?>>Itália</option>
+                                <option value="Jamaica"<?php echo $pais === 'Jamaica' ? ' selected' : ''; ?>>Jamaica</option>
+                                <option value="Japão"<?php echo $pais === 'Japão' ? ' selected' : ''; ?>>Japão</option>
+                                <option value="Jordânia"<?php echo $pais === 'Jordânia' ? ' selected' : ''; ?>>Jordânia</option>
+                                <option value="Kiribati"<?php echo $pais === 'Kiribati' ? ' selected' : ''; ?>>Kiribati</option>
+                                <option value="Kuwait"<?php echo $pais === 'Kuwait' ? ' selected' : ''; ?>>Kuwait</option>
+                                <option value="Laos"<?php echo $pais === 'Laos' ? ' selected' : ''; ?>>Laos</option>
+                                <option value="Lesoto"<?php echo $pais === 'Lesoto' ? ' selected' : ''; ?>>Lesoto</option>
+                                <option value="Letônia"<?php echo $pais === 'Letônia' ? ' selected' : ''; ?>>Letônia</option>
+                                <option value="Líbano"<?php echo $pais === 'Líbano' ? ' selected' : ''; ?>>Líbano</option>
+                                <option value="Libéria"<?php echo $pais === 'Libéria' ? ' selected' : ''; ?>>Libéria</option>
+                                <option value="Líbia"<?php echo $pais === 'Líbia' ? ' selected' : ''; ?>>Líbia</option>
+                                <option value="Liechtenstein"<?php echo $pais === 'Liechtenstein' ? ' selected' : ''; ?>>Liechtenstein</option>
+                                <option value="Lituânia"<?php echo $pais === 'Lituânia' ? ' selected' : ''; ?>>Lituânia</option>
+                                <option value="Luxemburgo"<?php echo $pais === 'Luxemburgo' ? ' selected' : ''; ?>>Luxemburgo</option>
+                                <option value="Macedônia do Norte"<?php echo $pais === 'Macedônia do Norte' ? ' selected' : ''; ?>>Macedônia do Norte</option>
+                                <option value="Madagascar"<?php echo $pais === 'Madagascar' ? ' selected' : ''; ?>>Madagascar</option>
+                                <option value="Malásia"<?php echo $pais === 'Malásia' ? ' selected' : ''; ?>>Malásia</option>
+                                <option value="Malaui"<?php echo $pais === 'Malaui' ? ' selected' : ''; ?>>Malaui</option>
+                                <option value="Maldivas"<?php echo $pais === 'Maldivas' ? ' selected' : ''; ?>>Maldivas</option>
+                                <option value="Mali"<?php echo $pais === 'Mali' ? ' selected' : ''; ?>>Mali</option>
+                                <option value="Malta"<?php echo $pais === 'Malta' ? ' selected' : ''; ?>>Malta</option>
+                                <option value="Marrocos"<?php echo $pais === 'Marrocos' ? ' selected' : ''; ?>>Marrocos</option>
+                                <option value="Ilhas Marshall"<?php echo $pais === 'Ilhas Marshall' ? ' selected' : ''; ?>>Ilhas Marshall</option>
+                                <option value="Mauritânia"<?php echo $pais === 'Mauritânia' ? ' selected' : ''; ?>>Mauritânia</option>
+                                <option value="Maurício"<?php echo $pais === 'Maurício' ? ' selected' : ''; ?>>Maurício</option>
+                                <option value="México"<?php echo $pais === 'México' ? ' selected' : ''; ?>>México</option>
+                                <option value="Micronésia"<?php echo $pais === 'Micronésia' ? ' selected' : ''; ?>>Micronésia</option>
+                                <option value="Moçambique"<?php echo $pais === 'Moçambique' ? ' selected' : ''; ?>>Moçambique</option>
+                                <option value="Moldávia"<?php echo $pais === 'Moldávia' ? ' selected' : ''; ?>>Moldávia</option>
+                                <option value="Mônaco"<?php echo $pais === 'Mônaco' ? ' selected' : ''; ?>>Mônaco</option>
+                                <option value="Mongólia"<?php echo $pais === 'Mongólia' ? ' selected' : ''; ?>>Mongólia</option>
+                                <option value="Montenegro"<?php echo $pais === 'Montenegro' ? ' selected' : ''; ?>>Montenegro</option>
+                                <option value="Namíbia"<?php echo $pais === 'Namíbia' ? ' selected' : ''; ?>>Namíbia</option>
+                                <option value="Nauru"<?php echo $pais === 'Nauru' ? ' selected' : ''; ?>>Nauru</option>
+                                <option value="Nepal"<?php echo $pais === 'Nepal' ? ' selected' : ''; ?>>Nepal</option>
+                                <option value="Nicarágua"<?php echo $pais === 'Nicarágua' ? ' selected' : ''; ?>>Nicarágua</option>
+                                <option value="Níger"<?php echo $pais === 'Níger' ? ' selected' : ''; ?>>Níger</option>
+                                <option value="Nigéria"<?php echo $pais === 'Nigéria' ? ' selected' : ''; ?>>Nigéria</option>
+                                <option value="Noruega"<?php echo $pais === 'Noruega' ? ' selected' : ''; ?>>Noruega</option>
+                                <option value="Nova Zelândia"<?php echo $pais === 'Nova Zelândia' ? ' selected' : ''; ?>>Nova Zelândia</option>
+                                <option value="Omã"<?php echo $pais === 'Omã' ? ' selected' : ''; ?>>Omã</option>
+                                <option value="Países Baixos"<?php echo $pais === 'Países Baixos' ? ' selected' : ''; ?>>Países Baixos</option>
+                                <option value="Palau"<?php echo $pais === 'Palau' ? ' selected' : ''; ?>>Palau</option>
+                                <option value="Palestina"<?php echo $pais === 'Palestina' ? ' selected' : ''; ?>>Palestina</option>
+                                <option value="Panamá"<?php echo $pais === 'Panamá' ? ' selected' : ''; ?>>Panamá</option>
+                                <option value="Papua-Nova Guiné"<?php echo $pais === 'Papua-Nova Guiné' ? ' selected' : ''; ?>>Papua-Nova Guiné</option>
+                                <option value="Paquistão"<?php echo $pais === 'Paquistão' ? ' selected' : ''; ?>>Paquistão</option>
+                                <option value="Paraguai"<?php echo $pais === 'Paraguai' ? ' selected' : ''; ?>>Paraguai</option>
+                                <option value="Peru"<?php echo $pais === 'Peru' ? ' selected' : ''; ?>>Peru</option>
+                                <option value="Polônia"<?php echo $pais === 'Polônia' ? ' selected' : ''; ?>>Polônia</option>
+                                <option value="Portugal"<?php echo $pais === 'Portugal' ? ' selected' : ''; ?>>Portugal</option>
+                                <option value="Quênia"<?php echo $pais === 'Quênia' ? ' selected' : ''; ?>>Quênia</option>
+                                <option value="Quiribati"<?php echo $pais === 'Quiribati' ? ' selected' : ''; ?>>Quiribati</option>
+                                <option value="Quirguistão"<?php echo $pais === 'Quirguistão' ? ' selected' : ''; ?>>Quirguistão</option>
+                                <option value="Reino Unido"<?php echo $pais === 'Reino Unido' ? ' selected' : ''; ?>>Reino Unido</option>
+                                <option value="República Centro-Africana"<?php echo $pais === 'República Centro-Africana' ? ' selected' : ''; ?>>República Centro-Africana</option>
+                                <option value="República Democrática do Congo"<?php echo $pais === 'República Democrática do Congo' ? ' selected' : ''; ?>>República Democrática do Congo</option>
+                                <option value="República Dominicana"<?php echo $pais === 'República Dominicana' ? ' selected' : ''; ?>>República Dominicana</option>
+                                <option value="República Tcheca"<?php echo $pais === 'República Tcheca' ? ' selected' : ''; ?>>República Tcheca</option>
+                                <option value="Romênia"<?php echo $pais === 'Romênia' ? ' selected' : ''; ?>>Romênia</option>
+                                <option value="Ruanda"<?php echo $pais === 'Ruanda' ? ' selected' : ''; ?>>Ruanda</option>
+                                <option value="Rússia"<?php echo $pais === 'Rússia' ? ' selected' : ''; ?>>Rússia</option>
+                                <option value="Samoa"<?php echo $pais === 'Samoa' ? ' selected' : ''; ?>>Samoa</option>
+                                <option value="San Marino"<?php echo $pais === 'San Marino' ? ' selected' : ''; ?>>San Marino</option>
+                                <option value="Santa Lúcia"<?php echo $pais === 'Santa Lúcia' ? ' selected' : ''; ?>>Santa Lúcia</option>
+                                <option value="São Cristóvão e Nevis"<?php echo $pais === 'São Cristóvão e Nevis' ? ' selected' : ''; ?>>São Cristóvão e Nevis</option>
+                                <option value="São Tomé e Príncipe"<?php echo $pais === 'São Tomé e Príncipe' ? ' selected' : ''; ?>>São Tomé e Príncipe</option>
+                                <option value="São Vicente e Granadinas"<?php echo $pais === 'São Vicente e Granadinas' ? ' selected' : ''; ?>>São Vicente e Granadinas</option>
+                                <option value="Senegal"<?php echo $pais === 'Senegal' ? ' selected' : ''; ?>>Senegal</option>
+                                <option value="Serra Leoa"<?php echo $pais === 'Serra Leoa' ? ' selected' : ''; ?>>Serra Leoa</option>
+                                <option value="Sérvia"<?php echo $pais === 'Sérvia' ? ' selected' : ''; ?>>Sérvia</option>
+                                <option value="Seychelles"<?php echo $pais === 'Seychelles' ? ' selected' : ''; ?>>Seychelles</option>
+                                <option value="Singapura"<?php echo $pais === 'Singapura' ? ' selected' : ''; ?>>Singapura</option>
+                                <option value="Síria"<?php echo $pais === 'Síria' ? ' selected' : ''; ?>>Síria</option>
+                                <option value="Somália"<?php echo $pais === 'Somália' ? ' selected' : ''; ?>>Somália</option>
+                                <option value="Sri Lanka"<?php echo $pais === 'Sri Lanka' ? ' selected' : ''; ?>>Sri Lanka</option>
+                                <option value="Sudão"<?php echo $pais === 'Sudão' ? ' selected' : ''; ?>>Sudão</option>
+                                <option value="Sudão do Sul"<?php echo $pais === 'Sudão do Sul' ? ' selected' : ''; ?>>Sudão do Sul</option>
+                                <option value="Suécia"<?php echo $pais === 'Suécia' ? ' selected' : ''; ?>>Suécia</option>
+                                <option value="Suíça"<?php echo $pais === 'Suíça' ? ' selected' : ''; ?>>Suíça</option>
+                                <option value="Suriname"<?php echo $pais === 'Suriname' ? ' selected' : ''; ?>>Suriname</option>
+                                <option value="Tailândia"<?php echo $pais === 'Tailândia' ? ' selected' : ''; ?>>Tailândia</option>
+                                <option value="Taiwan"<?php echo $pais === 'Taiwan' ? ' selected' : ''; ?>>Taiwan</option>
+                                <option value="Tajiquistão"<?php echo $pais === 'Tajiquistão' ? ' selected' : ''; ?>>Tajiquistão</option>
+                                <option value="Tanzânia"<?php echo $pais === 'Tanzânia' ? ' selected' : ''; ?>>Tanzânia</option>
+                                <option value="Timor-Leste"<?php echo $pais === 'Timor-Leste' ? ' selected' : ''; ?>>Timor-Leste</option>
+                                <option value="Togo"<?php echo $pais === 'Togo' ? ' selected' : ''; ?>>Togo</option>
+                                <option value="Tonga"<?php echo $pais === 'Tonga' ? ' selected' : ''; ?>>Tonga</option>
+                                <option value="Trinidad e Tobago"<?php echo $pais === 'Trinidad e Tobago' ? ' selected' : ''; ?>>Trinidad e Tobago</option>
+                                <option value="Tunísia"<?php echo $pais === 'Tunísia' ? ' selected' : ''; ?>>Tunísia</option>
+                                <option value="Turcomenistão"<?php echo $pais === 'Turcomenistão' ? ' selected' : ''; ?>>Turcomenistão</option>
+                                <option value="Turquia"<?php echo $pais === 'Turquia' ? ' selected' : ''; ?>>Turquia</option>
+                                <option value="Tuvalu"<?php echo $pais === 'Tuvalu' ? ' selected' : ''; ?>>Tuvalu</option>
+                                <option value="Ucrânia"<?php echo $pais === 'Ucrânia' ? ' selected' : ''; ?>>Ucrânia</option>
+                                <option value="Uganda"<?php echo $pais === 'Uganda' ? ' selected' : ''; ?>>Uganda</option>
+                                <option value="Uruguai"<?php echo $pais === 'Uruguai' ? ' selected' : ''; ?>>Uruguai</option>
+                                <option value="Uzbequistão"<?php echo $pais === 'Uzbequistão' ? ' selected' : ''; ?>>Uzbequistão</option>
+                                <option value="Vanuatu"<?php echo $pais === 'Vanuatu' ? ' selected' : ''; ?>>Vanuatu</option>
+                                <option value="Vaticano"<?php echo $pais === 'Vaticano' ? ' selected' : ''; ?>>Vaticano</option>
+                                <option value="Venezuela"<?php echo $pais === 'Venezuela' ? ' selected' : ''; ?>>Venezuela</option>
+                                <option value="Vietnã"<?php echo $pais === 'Vietnã' ? ' selected' : ''; ?>>Vietnã</option>
+                                <option value="Zâmbia"<?php echo $pais === 'Zâmbia' ? ' selected' : ''; ?>>Zâmbia</option>
+                                <option value="Zimbábue"<?php echo $pais === 'Zimbábue' ? ' selected' : ''; ?>>Zimbábue</option>
+                            </select>
+                            <label>País</label>
                         </div>
 
-                        <div class="input-group">
-                            <select name="estado" required>
+                        <div class="input-group"<?php echo $ufSelectStyle; ?>>
+                            <select id="estado" name="estado" required>
                                 <option value="" disabled <?php echo $estadoAtual === '' ? 'selected' : ''; ?> hidden></option>
                                 <?php foreach ($ufs as $uf): ?>
                                     <option value="<?php echo h($uf); ?>" <?php echo $estadoAtual === $uf ? 'selected' : ''; ?>><?php echo h($uf); ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <label>Estado (UF)</label>
+                            <label id="estadoLabel">Estado (UF)</label>
+                        </div>
+                        <div class="input-group" id="estadoTextoGroup"<?php echo $ufTextoStyle; ?>>
+                            <input type="text" id="estado_texto" name="estado" autocomplete="address-level1" maxlength="100" value="<?php echo !$isBrazil ? h($estadoAtual) : ''; ?>" placeholder=" ">
+                            <label>Estado / Região / Província</label>
                         </div>
 
-                        <div class="input-group profile-field-full">
+                        <div class="input-group profile-field-full" id="cidadeSelectGroup"<?php echo $cidadeSelStyle; ?>>
                             <select id="cidade" name="cidade" required data-selected-city="<?php echo h($cidade); ?>">
-                                <?php if ($cidade !== ''): ?>
+                                <?php if ($isBrazil && $cidade !== ''): ?>
                                     <option value="<?php echo h($cidade); ?>" selected><?php echo h($cidade); ?></option>
                                 <?php else: ?>
                                     <option value="" selected hidden></option>
                                 <?php endif; ?>
                             </select>
                             <label>Cidade</label>
-                            <small class="input-hint" id="cityHint"><?php echo $estadoAtual !== '' ? 'Carregando cidades...' : 'Selecione o estado primeiro.'; ?></small>
+                            <small class="input-hint" id="cityHint"><?php echo ($isBrazil && $estadoAtual !== '') ? 'Carregando cidades...' : 'Selecione o estado primeiro.'; ?></small>
+                        </div>
+                        <div class="input-group profile-field-full" id="cidadeTextoGroup"<?php echo $cidadeTextoStyle; ?>>
+                            <input type="text" id="cidade_texto" name="cidade" autocomplete="address-level2" maxlength="120" value="<?php echo !$isBrazil ? h($cidade) : ''; ?>" placeholder=" ">
+                            <label>Cidade</label>
+                        </div>
+
+                        <div class="input-group">
+                            <input type="text" id="telefone" name="telefone" required autocomplete="tel" inputmode="tel" maxlength="25" value="<?php echo h($telefone); ?>">
+                            <label>Telefone</label>
                         </div>
                     </div>
                 </section>

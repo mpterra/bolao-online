@@ -80,11 +80,6 @@ if ($sucesso) {
                 </div>
 
                 <div class="input-group">
-                    <input type="text" id="telefone" name="telefone" required autocomplete="tel" inputmode="tel" maxlength="25">
-                    <label>Telefone</label>
-                </div>
-
-                <div class="input-group">
                     <select id="pais" name="pais" required>
                         <option value="" disabled selected hidden></option>
                         <option value="Brasil">Brasil</option>
@@ -336,6 +331,11 @@ if ($sucesso) {
                 <div class="input-group" id="cidadeTextoGroup" style="display:none">
                     <input type="text" id="cidade_texto" name="cidade" autocomplete="address-level2" maxlength="120" placeholder=" ">
                     <label>Cidade</label>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="telefone" name="telefone" required autocomplete="tel" inputmode="tel" maxlength="25">
+                    <label>Telefone</label>
                 </div>
 
                 <div class="input-group">

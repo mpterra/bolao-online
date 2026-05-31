@@ -85,25 +85,40 @@ function normalize_birth_date_update(string $value): string {
     return $birthDate->format('Y-m-d');
 }
 
-function normalize_phone_update(string $value): string {
-    $digits = preg_replace('/\D+/', '', trim($value)) ?? '';
+function normalize_phone_update(string $value, bool $isBrazil): string {
+    $value = trim($value);
 
-    if ((strlen($digits) === 12 || strlen($digits) === 13) && strncmp($digits, '55', 2) === 0) {
-        $digits = substr($digits, 2);
+    if ($isBrazil) {
+        $digits = preg_replace('/\D+/', '', $value) ?? '';
+        if ((strlen($digits) === 12 || strlen($digits) === 13) && strncmp($digits, '55', 2) === 0) {
+            $digits = substr($digits, 2);
+        }
+        if (!preg_match('/^\d{10,11}$/', $digits)) {
+            redirect_profile_with_flash('Telefone inválido. Informe DDI +55, DDD e número.', 'warn');
+        }
+        $ddd    = substr($digits, 0, 2);
+        $numero = substr($digits, 2);
+        if (strlen($numero) === 8) {
+            return sprintf('+55 (%s) %s-%s', $ddd, substr($numero, 0, 4), substr($numero, 4));
+        }
+        return sprintf('+55 (%s) %s-%s', $ddd, substr($numero, 0, 5), substr($numero, 5));
     }
 
-    if (!preg_match('/^\d{10,11}$/', $digits)) {
-        redirect_profile_with_flash('Telefone inválido. Informe DDD + número.', 'warn');
+    if ($value === '' || $value === '+') {
+        redirect_profile_with_flash('Preencha o telefone com DDI, DDD e número.', 'warn');
     }
-
-    $ddd = substr($digits, 0, 2);
-    $numero = substr($digits, 2);
-
-    if (strlen($numero) === 8) {
-        return sprintf('(%s) %s-%s', $ddd, substr($numero, 0, 4), substr($numero, 4));
+    if ($value[0] !== '+') {
+        $value = '+' . $value;
     }
-
-    return sprintf('(%s) %s-%s', $ddd, substr($numero, 0, 5), substr($numero, 5));
+    $digits = preg_replace('/\D+/', '', substr($value, 1)) ?? '';
+    if (strlen($digits) < 7) {
+        redirect_profile_with_flash('Telefone internacional inválido. Inclua DDI, DDD e número.', 'warn');
+    }
+    if (strlen($digits) > 20) {
+        redirect_profile_with_flash('Telefone muito longo.', 'warn');
+    }
+    $clean = '+' . preg_replace('/[^\d\s()\-]/', '', substr($value, 1)) ?? '';
+    return trim(preg_replace('/\s{2,}/', ' ', $clean) ?? $clean);
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -129,7 +144,17 @@ $dataNascimentoRaw = trim((string)($_POST['data_nascimento'] ?? ''));
 $email = trim((string)($_POST['email'] ?? ''));
 $telefoneRaw = trim((string)($_POST['telefone'] ?? ''));
 $cidade = trim((string)($_POST['cidade'] ?? ''));
-$estado = strtoupper(trim((string)($_POST['estado'] ?? '')));
+$pais = trim(strip_tags((string)($_POST['pais'] ?? '')));
+$pais = mb_substr($pais, 0, 80, 'UTF-8');
+$isBrazil = ($pais === 'Brasil');
+
+if ($isBrazil) {
+    $estado = strtoupper(trim((string)($_POST['estado'] ?? '')));
+} else {
+    $estado = trim((string)($_POST['estado'] ?? ''));
+    $estado = mb_substr($estado, 0, 100, 'UTF-8');
+}
+
 $senha = (string)($_POST['senha'] ?? '');
 $confirmarSenha = (string)($_POST['confirmar_senha'] ?? '');
 
@@ -140,7 +165,7 @@ $nomeCompleto = preg_replace('/\s+/', ' ', $nomeCompleto) ?? $nomeCompleto;
 $nomeCompletoInformado = trim($nomeRaw . ' ' . $sobrenomeRaw);
 $nomeCompletoInformado = preg_replace('/\s+/', ' ', $nomeCompletoInformado) ?? $nomeCompletoInformado;
 
-if ($nome === '' || $sobrenome === '' || $dataNascimentoRaw === '' || $email === '' || $telefoneRaw === '' || $cidade === '' || $estado === '') {
+if ($nome === '' || $sobrenome === '' || $dataNascimentoRaw === '' || $email === '' || $telefoneRaw === '' || $cidade === '' || $estado === '' || $pais === '') {
     redirect_profile_with_flash('Preencha todos os campos obrigatórios.', 'warn');
 }
 
@@ -148,7 +173,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     redirect_profile_with_flash('Email inválido.', 'warn');
 }
 
-if (strlen($estado) !== 2) {
+if ($isBrazil && strlen($estado) !== 2) {
     redirect_profile_with_flash('UF inválida. Use 2 letras.', 'warn');
 }
 
@@ -158,7 +183,7 @@ if ($passwordChanged && $senha !== $confirmarSenha) {
 }
 
 $dataNascimento = normalize_birth_date_update($dataNascimentoRaw);
-$telefone = normalize_phone_update($telefoneRaw);
+$telefone = normalize_phone_update($telefoneRaw, $isBrazil);
 $email = mb_strtolower($email, 'UTF-8');
 $senhaHash = $passwordChanged ? password_hash($senha, PASSWORD_DEFAULT) : null;
 
@@ -194,19 +219,19 @@ try {
     if ($passwordChanged) {
         $updateSql = '
             UPDATE usuarios
-            SET nome = ?, data_nascimento = ?, email = ?, telefone = ?, cidade = ?, estado = ?, senha_hash = ?
+            SET nome = ?, pais = ?, data_nascimento = ?, email = ?, telefone = ?, cidade = ?, estado = ?, senha_hash = ?
             WHERE id = ?
             LIMIT 1
         ';
-        $updateParams = [$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $senhaHash, $usuarioId];
+        $updateParams = [$nomeCompleto, $pais, $dataNascimento, $email, $telefone, $cidade, $estado, $senhaHash, $usuarioId];
     } else {
         $updateSql = '
             UPDATE usuarios
-            SET nome = ?, data_nascimento = ?, email = ?, telefone = ?, cidade = ?, estado = ?
+            SET nome = ?, pais = ?, data_nascimento = ?, email = ?, telefone = ?, cidade = ?, estado = ?
             WHERE id = ?
             LIMIT 1
         ';
-        $updateParams = [$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $usuarioId];
+        $updateParams = [$nomeCompleto, $pais, $dataNascimento, $email, $telefone, $cidade, $estado, $usuarioId];
     }
 
     $updateStmt = $pdo->prepare($updateSql);
@@ -228,6 +253,7 @@ try {
         $usuarioId,
         $nomeCompletoInformado !== '' ? $nomeCompletoInformado : $nomeCompleto,
         $email,
+        $pais,
         $telefone,
         $cidade,
         $estado,

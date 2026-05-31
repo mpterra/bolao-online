@@ -240,6 +240,7 @@ function notify_user_profile_update(
     int $userId,
     string $nomeCompleto,
     string $email,
+    string $pais,
     string $telefone,
     string $cidade,
     string $estado,
@@ -248,6 +249,7 @@ function notify_user_profile_update(
 ): bool {
     $nomeSafe = htmlspecialchars($nomeCompleto, ENT_QUOTES, 'UTF-8');
     $emailSafe = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+    $paisSafe = htmlspecialchars($pais, ENT_QUOTES, 'UTF-8');
     $telefoneSafe = htmlspecialchars($telefone, ENT_QUOTES, 'UTF-8');
     $cidadeSafe = htmlspecialchars($cidade, ENT_QUOTES, 'UTF-8');
     $estadoSafe = htmlspecialchars($estado, ENT_QUOTES, 'UTF-8');
@@ -260,6 +262,7 @@ function notify_user_profile_update(
         . "<p><strong>Nome completo:</strong> {$nomeSafe}</p>"
         . "<p><strong>ID:</strong> {$userId}</p>"
         . "<p><strong>Email:</strong> {$emailSafe}</p>"
+        . "<p><strong>País:</strong> {$paisSafe}</p>"
         . "<p><strong>Telefone:</strong> {$telefoneSafe}</p>"
         . "<p><strong>Cidade/UF:</strong> {$cidadeSafe}/{$estadoSafe}</p>"
         . "<p><strong>Data de nascimento:</strong> {$dataNascimentoSafe}</p>"
@@ -270,6 +273,7 @@ function notify_user_profile_update(
         . "Nome completo: {$nomeCompleto}\n"
         . "ID: {$userId}\n"
         . "Email: {$email}\n"
+        . "País: {$pais}\n"
         . "Telefone: {$telefone}\n"
         . "Cidade/UF: {$cidade}/{$estado}\n"
         . "Data de nascimento: {$dataNascimentoFmt}\n"

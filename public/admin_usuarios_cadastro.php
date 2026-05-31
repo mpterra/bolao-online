@@ -45,6 +45,7 @@ function resolve_users_listing_state(array $query): array {
         "telefone",
         "cidade",
         "estado",
+        "pais",
         "tipo_usuario",
         "ativo",
         "criado_em",
@@ -78,6 +79,7 @@ function build_users_order_by(string $sortCol, string $sortOrder): string {
         "telefone" => "`telefone`",
         "cidade" => "`cidade`",
         "estado" => "`estado`",
+        "pais" => "`pais`",
         "tipo_usuario" => "`tipo_usuario`",
         "ativo" => "`ativo`",
         "criado_em" => "`criado_em`",
@@ -99,9 +101,10 @@ function build_users_order_by(string $sortCol, string $sortOrder): string {
     return $columns[$sortCol] . " " . strtoupper($sortOrder);
 }
 
-function fetch_users(PDO $pdo, bool $somenteAtivos, string $orderBy): array {
+function fetch_users(PDO $pdo, bool $somenteAtivos, string $orderBy, bool $hasPais = false): array {
+    $paisCol = $hasPais ? ", pais" : "";
     $sql = "
-        SELECT id, nome, email, telefone, cidade, estado, tipo_usuario, ativo, criado_em, atualizado_em
+        SELECT id, nome, email, telefone, cidade, estado{$paisCol}, tipo_usuario, ativo, criado_em, atualizado_em
         FROM usuarios
     ";
 
@@ -150,6 +153,8 @@ function sort_indicator(string $column, array $state): string {
     return $state["order"] === "asc" ? "↑" : "↓";
 }
 
+require_once dirname(__DIR__) . "/php/usuario_schema.php";
+
 require_login();
 require_admin();
 
@@ -168,10 +173,14 @@ $listState = resolve_users_listing_state($_GET);
 $sortCol = (string)$listState["sort"];
 $sortOrder = (string)$listState["order"];
 $somenteAtivos = (bool)$listState["somente_ativos"];
-$orderBy = build_users_order_by($sortCol, $sortOrder);
 
 try {
-    $usuarios = fetch_users($pdo, $somenteAtivos, $orderBy);
+    $hasPaisColumn = usuario_column_exists($pdo, 'pais');
+    if (!$hasPaisColumn && $sortCol === 'pais') {
+        $sortCol = 'id';
+    }
+    $orderBy = build_users_order_by($sortCol, $sortOrder);
+    $usuarios = fetch_users($pdo, $somenteAtivos, $orderBy, $hasPaisColumn);
 } catch (Throwable $e) {
     http_response_code(500);
     echo "Erro ao carregar usuários.";
@@ -234,6 +243,7 @@ $columns = [
     ["key" => "telefone", "label" => "Telefone", "class" => "users-col-telefone"],
     ["key" => "cidade", "label" => "Cidade", "class" => "users-col-cidade"],
     ["key" => "estado", "label" => "Estado", "class" => "users-col-estado"],
+    ...($hasPaisColumn ? [["key" => "pais", "label" => "País", "class" => "users-col-pais"]] : []),
     ["key" => "tipo_usuario", "label" => "Tipo", "class" => "users-col-tipo"],
     ["key" => "ativo", "label" => "Ativo", "class" => "users-col-ativo"],
     ["key" => "criado_em", "label" => "Criado em", "class" => "users-col-criado"],
@@ -274,8 +284,10 @@ require_once __DIR__ . "/partials/app_header.php";
         .users-page-content {
             min-width: 0;
             overflow: visible;
-            --users-grid-columns: 64px 260px 245px 138px 150px 60px 112px 92px 148px 148px;
-            --users-grid-inner-width: 1417px;
+            --users-grid-columns: <?php echo $hasPaisColumn
+                ? '64px 260px 245px 138px 150px 60px 110px 112px 92px 148px 148px'
+                : '64px 260px 245px 138px 150px 60px 112px 92px 148px 148px'; ?>;
+            --users-grid-inner-width: <?php echo $hasPaisColumn ? '1527px' : '1417px'; ?>;
             --users-grid-pad-x: 8px;
         }
 
@@ -827,6 +839,7 @@ require_once __DIR__ . "/partials/app_header.php";
                                         $telefone = (string)($u["telefone"] ?? "");
                                         $cidade = (string)($u["cidade"] ?? "");
                                         $estado = (string)($u["estado"] ?? "");
+                                        $pais = (string)($u["pais"] ?? "");
                                         $tipo = (string)($u["tipo_usuario"] ?? "");
                                         $ativo = (int)($u["ativo"] ?? 0);
                                         $criado = isset($u["criado_em"]) ? (string)$u["criado_em"] : null;
@@ -845,6 +858,9 @@ require_once __DIR__ . "/partials/app_header.php";
                                         <div class="users-cell users-cell--mono" role="cell"><?php echo strh($telefone); ?></div>
                                         <div class="users-cell users-cell--wrap" role="cell"><?php echo strh($cidade); ?></div>
                                         <div class="users-cell users-cell--center" role="cell"><?php echo strh($estado); ?></div>
+                                        <?php if ($hasPaisColumn): ?>
+                                            <div class="users-cell users-cell--wrap" role="cell"><?php echo strh($pais); ?></div>
+                                        <?php endif; ?>
                                         <div class="users-cell users-cell--center" role="cell">
                                             <span class="badge <?php echo $tipoBadge; ?>"><?php echo strh($tipoLabel); ?></span>
                                         </div>

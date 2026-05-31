@@ -654,8 +654,8 @@ document.addEventListener("DOMContentLoaded", () => {
       updatePhonePrefix(br);
     });
 
-    // Estado inicial: Brasil já selecionado por padrão no HTML
-    switchLocationFields(true);
+    // Estado inicial: lê o valor já selecionado (pode ser não-Brasil em "Meus Dados")
+    switchLocationFields(isBrazilSelected());
   })();
 
   // =========================================================
@@ -962,6 +962,8 @@ document.addEventListener("DOMContentLoaded", () => {
         input.value = "+";
       }
     }
+    // Atualiza floating label após mudança de prefixo
+    input.dispatchEvent(new Event("input", { bubbles: true }));
   }
 
   (function initPhoneMask() {
@@ -1075,6 +1077,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Estado inicial
     if (input.value === "") input.value = "+55 ";
+    // Garante que o floating label sobe imediatamente quando há valor inicial
+    input.dispatchEvent(new Event("input", { bubbles: true }));
     validatePhoneBR();
   })();
 
