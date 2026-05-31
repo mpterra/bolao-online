@@ -97,25 +97,44 @@ function normalize_data_nascimento(string $s): string {
     return $birthDate->format('Y-m-d');
 }
 
-function normalize_telefone(string $s): string {
-    $digits = preg_replace('/\D+/', '', trim($s)) ?? '';
+function normalize_telefone(string $s, bool $isBrazil): string {
+    $s = trim($s);
 
-    if ((strlen($digits) === 12 || strlen($digits) === 13) && strncmp($digits, '55', 2) === 0) {
-        $digits = substr($digits, 2);
+    if ($isBrazil) {
+        // Remove tudo que não seja dígito; tira DDI 55 se presente
+        $digits = preg_replace('/\D+/', '', $s) ?? '';
+        if ((strlen($digits) === 12 || strlen($digits) === 13) && strncmp($digits, '55', 2) === 0) {
+            $digits = substr($digits, 2);
+        }
+        if (!preg_match('/^\d{10,11}$/', $digits)) {
+            fail("Telefone inválido. Informe DDI +55, DDD e número.");
+        }
+        $ddd    = substr($digits, 0, 2);
+        $numero = substr($digits, 2);
+        if (strlen($numero) === 8) {
+            return sprintf('+55 (%s) %s-%s', $ddd, substr($numero, 0, 4), substr($numero, 4));
+        }
+        return sprintf('+55 (%s) %s-%s', $ddd, substr($numero, 0, 5), substr($numero, 5));
     }
 
-    if (!preg_match('/^\d{10,11}$/', $digits)) {
-        fail("Telefone inválido. Informe DDD + número.");
+    // Internacional: deve começar com +, ter ao menos 7 dígitos após o +
+    if ($s === '' || $s === '+') {
+        fail("Preencha o telefone com DDI, DDD e número.");
     }
-
-    $ddd = substr($digits, 0, 2);
-    $numero = substr($digits, 2);
-
-    if (strlen($numero) === 8) {
-        return sprintf('(%s) %s-%s', $ddd, substr($numero, 0, 4), substr($numero, 4));
+    if ($s[0] !== '+') {
+        $s = '+' . $s;
     }
-
-    return sprintf('(%s) %s-%s', $ddd, substr($numero, 0, 5), substr($numero, 5));
+    $digits = preg_replace('/\D+/', '', substr($s, 1)) ?? '';
+    if (strlen($digits) < 7) {
+        fail("Telefone internacional inválido. Inclua DDI, DDD e número.");
+    }
+    // Limita tamanho para evitar abuso (max 20 dígitos internacionais)
+    if (strlen($digits) > 20) {
+        fail("Telefone muito longo.");
+    }
+    // Normaliza: remove espaços duplos e caracteres inválidos
+    $clean = '+' . preg_replace('/[^\d\s()\-]/', '', substr($s, 1)) ?? '';
+    return trim(preg_replace('/\s{2,}/', ' ', $clean) ?? $clean);
 }
 
 function fail(string $msg, int $code = 400): never {
@@ -133,8 +152,19 @@ $dataNascimentoRaw = trim((string)($_POST["data_nascimento"] ?? ""));
 $email             = trim((string)($_POST["email"] ?? ""));
 $telefoneRaw       = trim((string)($_POST["telefone"] ?? ""));
 $cidade            = trim((string)($_POST["cidade"] ?? ""));
-$estado            = strtoupper(trim((string)($_POST["estado"] ?? "")));
-$senha             = (string)($_POST["senha"] ?? "");
+$pais              = trim(strip_tags((string)($_POST["pais"] ?? "")));
+$pais              = mb_substr($pais, 0, 80, 'UTF-8');
+$isBrazil          = ($pais === 'Brasil');
+
+// Estado: BR = forçar maiúsculas (UF); exterior = texto livre
+if ($isBrazil) {
+    $estado = strtoupper(trim((string)($_POST["estado"] ?? "")));
+} else {
+    $estado = trim((string)($_POST["estado"] ?? ""));
+    $estado = mb_substr($estado, 0, 100, 'UTF-8');
+}
+
+$senha          = (string)($_POST["senha"] ?? "");
 $confirmarSenha = (string)($_POST["confirmar_senha"] ?? "");
 
 // Campo atual do banco: "nome" deve receber Nome + Sobrenome
@@ -143,7 +173,7 @@ $nomeCompleto = preg_replace('/\s+/', ' ', $nomeCompleto) ?? $nomeCompleto;
 $nomeCompletoInformado = trim($nomeRaw . " " . $sobrenomeRaw);
 $nomeCompletoInformado = preg_replace('/\s+/', ' ', $nomeCompletoInformado) ?? $nomeCompletoInformado;
 
-if ($nome === "" || $sobrenome === "" || $dataNascimentoRaw === "" || $email === "" || $telefoneRaw === "" || $cidade === "" || $estado === "" || $senha === "" || $confirmarSenha === "") {
+if ($nome === "" || $sobrenome === "" || $dataNascimentoRaw === "" || $email === "" || $telefoneRaw === "" || $cidade === "" || $estado === "" || $pais === "" || $senha === "" || $confirmarSenha === "") {
     fail("Preencha todos os campos.");
 }
 
@@ -155,7 +185,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     fail("Email inválido.");
 }
 
-if (strlen($estado) !== 2) {
+if ($isBrazil && strlen($estado) !== 2) {
     fail("UF inválida. Use 2 letras.");
 }
 
@@ -165,7 +195,7 @@ if (!isset($pdo) || !($pdo instanceof PDO) || !usuario_ensure_birth_date($pdo)) 
 }
 
 $dataNascimento = normalize_data_nascimento($dataNascimentoRaw);
-$telefone = normalize_telefone($telefoneRaw);
+$telefone = normalize_telefone($telefoneRaw, $isBrazil);
 $email = mb_strtolower($email, 'UTF-8');
 $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
 
@@ -187,9 +217,9 @@ try {
         fail("Já existe uma conta com esse email.", 409);
     }
 
-    $sql = "INSERT INTO usuarios (nome, data_nascimento, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
-    $insertParams = [$nomeCompleto, $dataNascimento, $email, $telefone, $cidade, $estado, $senhaHash];
+    $sql = "INSERT INTO usuarios (nome, pais, data_nascimento, email, telefone, cidade, estado, senha_hash, tipo_usuario, ativo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'APOSTADOR', 1)";
+    $insertParams = [$nomeCompleto, $pais, $dataNascimento, $email, $telefone, $cidade, $estado, $senhaHash];
 
     $ins = $pdo->prepare($sql);
     $ins->execute($insertParams);

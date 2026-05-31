@@ -586,13 +586,86 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =========================================================
+  // PAÍS + alternância de campos de localização
+  // =========================================================
+
+  // Retorna true se o valor de país selecionado é Brasil
+  function isBrazilSelected() {
+    const sel = document.getElementById("pais");
+    return !sel || String(sel.value || "").trim() === "Brasil";
+  }
+
+  // Alterna entre os campos BR (selects) e Internacional (inputs texto)
+  function switchLocationFields(isBrazil) {
+    const ufSelectGroup   = document.getElementById("estado")  && document.getElementById("estado").closest(".input-group");
+    const ufTextoGroup    = document.getElementById("estadoTextoGroup");
+    const cidadeSelGroup  = document.getElementById("cidadeSelectGroup");
+    const cidadeTextoGroup= document.getElementById("cidadeTextoGroup");
+    const ufSelect        = document.getElementById("estado");
+    const ufTexto         = document.getElementById("estado_texto");
+    const cidSel          = document.getElementById("cidade");
+    const cidTexto        = document.getElementById("cidade_texto");
+    const estadoLabel     = document.getElementById("estadoLabel");
+
+    if (isBrazil) {
+      // Mostra selects BR
+      if (ufSelectGroup)    ufSelectGroup.style.display = "";
+      if (ufTextoGroup)     ufTextoGroup.style.display  = "none";
+      if (cidadeSelGroup)   cidadeSelGroup.style.display = "";
+      if (cidadeTextoGroup) cidadeTextoGroup.style.display = "none";
+
+      if (ufSelect)  { ufSelect.required  = true;  }
+      if (ufTexto)   { ufTexto.required   = false; ufTexto.value  = ""; }
+      if (cidTexto)  { cidTexto.required  = false; cidTexto.value = ""; }
+      // cidade select: required é gerenciado pelo initCityLookup
+
+      if (estadoLabel) estadoLabel.textContent = "Estado (UF)";
+    } else {
+      // Mostra inputs texto internacional
+      if (ufSelectGroup)    ufSelectGroup.style.display = "none";
+      if (ufTextoGroup)     ufTextoGroup.style.display  = "";
+      if (cidadeSelGroup)   cidadeSelGroup.style.display = "none";
+      if (cidadeTextoGroup) cidadeTextoGroup.style.display = "";
+
+      if (ufSelect)  { ufSelect.required  = false; ufSelect.value  = ""; }
+      if (cidSel)    { cidSel.required    = false; cidSel.value    = ""; }
+      if (ufTexto)   { ufTexto.required   = true;  }
+      if (cidTexto)  { cidTexto.required  = true;  }
+
+      if (estadoLabel) estadoLabel.textContent = "Estado / Região / Província";
+    }
+  }
+
+  (function initCountrySelect() {
+    const form = document.querySelector(".login-form");
+    if (!form) return;
+
+    const sel = document.getElementById("pais");
+    if (!sel) return;
+
+    attachCustomSelect(sel, {
+      searchPlaceholder: "Filtrar país...",
+      emptyText: "Nenhum país disponível."
+    });
+
+    sel.addEventListener("change", () => {
+      const br = isBrazilSelected();
+      switchLocationFields(br);
+      updatePhonePrefix(br);
+    });
+
+    // Estado inicial: Brasil já selecionado por padrão no HTML
+    switchLocationFields(true);
+  })();
+
+  // =========================================================
   // CUSTOM SELECT (UF)
   // =========================================================
   (function initCustomUfSelect() {
     const form = document.querySelector(".login-form");
     if (!form) return;
 
-    const sel = form.querySelector('select[name="estado"]');
+    const sel = document.getElementById("estado");
     if (!sel) return;
     attachCustomSelect(sel, {
       searchPlaceholder: "Filtrar UF...",
@@ -607,8 +680,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector(".login-form");
     if (!form) return;
 
-    const ufSelect = form.querySelector('select[name="estado"]');
-    const citySelect = form.querySelector('select[name="cidade"]');
+    const ufSelect = document.getElementById("estado");
+    const citySelect = document.getElementById("cidade");
     const cityHint = form.querySelector("#cityHint");
     if (!ufSelect || !citySelect) return;
 
@@ -742,6 +815,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     form.addEventListener("submit", (ev) => {
+      // Só valida selects de cidade quando Brasil estiver selecionado
+      if (!isBrazilSelected()) return;
       if (citySelect.disabled || !citySelect.value) {
         citySelect.setCustomValidity(
           citySelect.disabled
@@ -861,71 +936,146 @@ document.addEventListener("DOMContentLoaded", () => {
   })();
 
   // =========================================================
-  // TELEFONE: máscara com DDD entre parênteses
+  // TELEFONE: máscara DDI+DDD+número (Brasil auto +55, outros livre)
   // =========================================================
+
+  // Atualiza o prefixo do campo telefone ao trocar país
+  function updatePhonePrefix(isBrazil) {
+    const input = document.getElementById("telefone");
+    if (!input) return;
+
+    const current = input.value;
+    if (isBrazil) {
+      // Se vazio ou só tem + ou prefixo de outro país, define +55
+      if (current === "" || current === "+") {
+        input.value = "+55 ";
+      } else if (!current.startsWith("+55")) {
+        // Tinha outro DDI: substitui pelo +55, mantém o resto
+        const rest = current.replace(/^\+\d{1,3}\s*/, "");
+        input.value = "+55 " + rest;
+      }
+    } else {
+      // Saindo do Brasil: troca +55 por +
+      if (current.startsWith("+55")) {
+        input.value = "+" + current.slice(3).trimStart();
+      } else if (current === "") {
+        input.value = "+";
+      }
+    }
+  }
+
   (function initPhoneMask() {
     const form = document.querySelector(".login-form");
     if (!form) return;
 
-    const input = form.querySelector('input[name="telefone"]');
+    const input = document.getElementById("telefone");
     if (!input) return;
 
-    function formatPhone(rawValue) {
+    // ---- Brasil: máscara +55 (DD) NNNNN-NNNN ----
+    function formatPhoneBR(rawValue) {
+      // Extrai apenas dígitos, ignorando o +55 inicial se houver
       let digits = stripDigits(rawValue);
-      if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
+      // Remove DDI 55 se o usuário digitou com ele
+      if (digits.startsWith("55") && digits.length > 11) {
         digits = digits.slice(2);
       }
       digits = digits.slice(0, 11);
 
-      if (digits.length === 0) return "";
-      if (digits.length < 3) return `(${digits}`;
+      if (digits.length === 0) return "+55 ";
+      if (digits.length <= 2)  return `+55 (${digits}`;
 
-      const ddd = digits.slice(0, 2);
+      const ddd    = digits.slice(0, 2);
       const number = digits.slice(2);
 
-      if (number.length === 0) return `(${ddd})`;
-      if (number.length <= 4) return `(${ddd}) ${number}`;
-      if (number.length <= 8) return `(${ddd}) ${number.slice(0, 4)}-${number.slice(4)}`;
-      return `(${ddd}) ${number.slice(0, 5)}-${number.slice(5, 9)}`;
+      if (number.length === 0)  return `+55 (${ddd})`;
+      if (number.length <= 4)   return `+55 (${ddd}) ${number}`;
+      if (number.length <= 8)   return `+55 (${ddd}) ${number.slice(0, 4)}-${number.slice(4)}`;
+      return `+55 (${ddd}) ${number.slice(0, 5)}-${number.slice(5, 9)}`;
     }
 
-    function validatePhone() {
+    function validatePhoneBR() {
       let digits = stripDigits(input.value);
-      if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
-        digits = digits.slice(2);
-      }
+      if (digits.startsWith("55") && digits.length > 11) digits = digits.slice(2);
 
       if (digits.length === 0) {
         input.setCustomValidity("Preencha o telefone.");
         return false;
       }
-
       if (digits.length !== 10 && digits.length !== 11) {
-        input.setCustomValidity("Informe um telefone com DDD válido.");
+        input.setCustomValidity("Informe DDI +55, DDD e número (ex: +55 (11) 91234-5678).");
         return false;
       }
-
       input.setCustomValidity("");
       return true;
     }
 
-    input.addEventListener("input", () => {
-      applyMaskedValue(input, formatPhone);
-      validatePhone();
-    });
+    // ---- Internacional: sem máscara rígida, valida DDI+dígitos ----
+    function formatPhoneIntl(rawValue) {
+      // Garante que começa com +
+      let v = String(rawValue || "").trimStart();
+      if (v === "") return "+";
+      if (!v.startsWith("+")) v = "+" + v;
+      // Remove caracteres que não sejam dígitos, +, espaço, parênteses, hífen
+      v = v.replace(/[^\d+()\- ]/g, "");
+      // Garante que o + só aparece no início
+      v = "+" + v.replace(/\+/g, "");
+      return v;
+    }
 
-    input.addEventListener("blur", () => {
-      validatePhone();
-    });
+    function validatePhoneIntl() {
+      const v = String(input.value || "").trim();
+      if (v === "" || v === "+") {
+        input.setCustomValidity("Preencha o telefone com DDI, DDD e número (ex: +1 212 5551234).");
+        return false;
+      }
+      const digits = stripDigits(v);
+      if (digits.length < 7) {
+        input.setCustomValidity("Telefone muito curto. Inclua DDI, DDD e número.");
+        return false;
+      }
+      input.setCustomValidity("");
+      return true;
+    }
 
-    form.addEventListener("submit", (ev) => {
-      if (!validatePhone()) {
+    function handleInput() {
+      if (isBrazilSelected()) {
+        applyMaskedValue(input, formatPhoneBR);
+        validatePhoneBR();
+      } else {
+        // Aplica formatação leve sem mover cursor para não atrapalhar
+        const v = formatPhoneIntl(input.value);
+        if (input.value !== v) input.value = v;
+        validatePhoneIntl();
+      }
+    }
+
+    function handleBlur() {
+      if (isBrazilSelected()) validatePhoneBR();
+      else validatePhoneIntl();
+    }
+
+    function handleSubmitValidation(ev) {
+      const valid = isBrazilSelected() ? validatePhoneBR() : validatePhoneIntl();
+      if (!valid) {
         ev.preventDefault();
         input.reportValidity();
       }
+    }
+
+    input.addEventListener("input", handleInput);
+    input.addEventListener("blur",  handleBlur);
+    form.addEventListener("submit", handleSubmitValidation);
+
+    // Foco: garante prefixo correto ao entrar no campo
+    input.addEventListener("focus", () => {
+      if (input.value === "") {
+        input.value = isBrazilSelected() ? "+55 " : "+";
+      }
     });
 
-    validatePhone();
+    // Estado inicial
+    if (input.value === "") input.value = "+55 ";
+    validatePhoneBR();
   })();
 
   // =========================================================
