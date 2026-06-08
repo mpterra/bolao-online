@@ -100,6 +100,100 @@ function json_response(array $data, int $code = 200): void {
 	exit;
 }
 
+function app_save_log(string $context, array $extra = [], ?Throwable $e = null): void {
+	$parts = ['[app-save]', trim($context)];
+
+	if (!empty($extra)) {
+		try {
+			$parts[] = json_encode($extra, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		} catch (Throwable $jsonErr) {
+			$parts[] = '[context-unserializable]';
+		}
+	}
+
+	if ($e !== null) {
+		$errorData = [
+			'type' => get_class($e),
+			'message' => $e->getMessage(),
+			'code' => (string)$e->getCode(),
+		];
+
+		if ($e instanceof PDOException && isset($e->errorInfo) && is_array($e->errorInfo)) {
+			$errorData['sqlstate'] = (string)($e->errorInfo[0] ?? '');
+			$errorData['driver_code'] = (string)($e->errorInfo[1] ?? '');
+		}
+
+		try {
+			$parts[] = json_encode($errorData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		} catch (Throwable $jsonErr) {
+			$parts[] = '[error-unserializable]';
+		}
+	}
+
+	error_log(implode(' ', array_filter($parts, static fn($part) => is_string($part) && trim($part) !== '')));
+}
+
+function app_pdo_sqlstate(Throwable $e): string {
+	if ($e instanceof PDOException && isset($e->errorInfo) && is_array($e->errorInfo)) {
+		$sqlState = (string)($e->errorInfo[0] ?? '');
+		if ($sqlState !== '') return $sqlState;
+	}
+
+	$code = $e->getCode();
+	return is_string($code) ? $code : '';
+}
+
+function app_pdo_driver_code(Throwable $e): int {
+	if ($e instanceof PDOException && isset($e->errorInfo) && is_array($e->errorInfo)) {
+		return (int)($e->errorInfo[1] ?? 0);
+	}
+
+	return is_int($e->getCode()) ? $e->getCode() : 0;
+}
+
+function app_is_retryable_db_error(Throwable $e): bool {
+	if (!$e instanceof PDOException) return false;
+
+	$sqlState = strtoupper(app_pdo_sqlstate($e));
+	$driverCode = app_pdo_driver_code($e);
+
+	if (in_array($sqlState, ['40001', '08S01', 'HYT00', 'HYT01'], true)) {
+		return true;
+	}
+
+	return in_array($driverCode, [1205, 1213, 2006, 2013], true);
+}
+
+function app_retry_db_operation(PDO $pdo, callable $operation, string $context, array $logContext = [], int $maxAttempts = 3) {
+	$attempt = 0;
+
+	while (true) {
+		$attempt++;
+
+		try {
+			return $operation($attempt);
+		} catch (Throwable $e) {
+			if ($pdo->inTransaction()) {
+				$pdo->rollBack();
+			}
+
+			$retryable = app_is_retryable_db_error($e);
+			if ($retryable && $attempt < $maxAttempts) {
+				$ctx = $logContext;
+				$ctx['attempt'] = $attempt;
+				$ctx['max_attempts'] = $maxAttempts;
+				$ctx['retrying'] = true;
+				app_save_log($context, $ctx, $e);
+
+				usleep(min(250000 * $attempt, 1000000));
+				continue;
+			}
+
+			throw $e;
+		}
+	}
+}
+
 function require_login(string $loginUrl): void {
 	if (empty($_SESSION["usuario_id"])) {
 		header("Location: " . $loginUrl);
@@ -505,7 +599,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		json_response(["ok" => false, "message" => "Nada para salvar."], 400);
 	}
 
-	$normalized = [];
+	$normalizedByGameId = [];
 	foreach ($items as $it) {
 		$jogoId = isset($it["jogo_id"]) ? (int)$it["jogo_id"] : 0;
 
@@ -522,7 +616,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		$passa = $it["passa_time_id"] ?? null;
 		$passa = ($passa === "" || $passa === null) ? null : (int)$passa;
 
-		$normalized[] = [
+		$normalizedByGameId[$jogoId] = [
 			"jogo_id" => $jogoId,
 			"gols_casa" => $gc,
 			"gols_fora" => $gf,
@@ -530,8 +624,291 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		];
 	}
 
+	$normalized = array_values($normalizedByGameId);
+
 	if (count($normalized) === 0) {
 		json_response(["ok" => false, "message" => "Preencha os placares antes de salvar."], 422);
+	}
+
+	if (false) {
+	try {
+		$edicaoId = app_active_edicao_id($pdo);
+		if ($edicaoId <= 0) throw new RuntimeException("Nenhuma ediÃ§Ã£o ativa.");
+
+		$groupRankDeadlineAt = first_game_start_for_edition($pdo, $edicaoId);
+		if (group_rank_change_is_locked($groupRankDeadlineAt, $now)) {
+			json_response(["ok" => false, "message" => group_rank_lock_message($groupRankDeadlineAt)], 403);
+		}
+
+		$stGrupo = $pdo->prepare("SELECT id FROM grupos WHERE id = :gid AND edicao_id = :eid LIMIT 1");
+		$stGrupo->execute([":gid" => $grupoId, ":eid" => $edicaoId]);
+		$gidOk = (int)$stGrupo->fetchColumn();
+		if ($gidOk <= 0) {
+			json_response(["ok" => false, "message" => "Grupo invÃ¡lido."], 422);
+		}
+
+		[$in, $ids] = app_sql_int_in_clause([$pos1, $pos2, $pos3]);
+		$sqlVal = "
+			SELECT COUNT(*)
+			FROM grupo_time gt
+			WHERE gt.grupo_id = ?
+			  AND gt.time_id IN ($in)
+		";
+		$params = array_merge([$grupoId], $ids);
+		$stVal = $pdo->prepare($sqlVal);
+		$stVal->execute($params);
+		$cnt = (int)$stVal->fetchColumn();
+
+		if ($cnt !== count($ids)) {
+			json_response(["ok" => false, "message" => "Um ou mais times nÃ£o pertencem a este grupo."], 422);
+		}
+
+		app_retry_db_operation(
+			$pdo,
+			static function () use ($pdo, $edicaoId, $grupoId, $usuarioId, $pos1, $pos2, $pos3): void {
+				$pdo->beginTransaction();
+
+				$sqlUp = "
+					INSERT INTO palpite_grupo_classificacao
+						(edicao_id, grupo_id, usuario_id, primeiro_time_id, segundo_time_id, terceiro_time_id)
+					VALUES
+						(:eid, :gid, :uid, :t1, :t2, :t3)
+					ON DUPLICATE KEY UPDATE
+						edicao_id = VALUES(edicao_id),
+						primeiro_time_id = VALUES(primeiro_time_id),
+						segundo_time_id  = VALUES(segundo_time_id),
+						terceiro_time_id = VALUES(terceiro_time_id),
+						atualizado_em = CURRENT_TIMESTAMP
+				";
+				$stUp = $pdo->prepare($sqlUp);
+				$stUp->execute([
+					":eid" => $edicaoId,
+					":gid" => $grupoId,
+					":uid" => $usuarioId,
+					":t1"  => $pos1,
+					":t2"  => $pos2,
+					":t3"  => $pos3,
+				]);
+
+				$pdo->commit();
+			},
+			'group-rank-save',
+			[
+				'usuario_id' => $usuarioId,
+				'grupo_id' => $grupoId,
+			]
+		);
+
+		if (function_exists('bet_notify_track_update')) {
+			bet_notify_track_update($pdo, $usuarioId, ['group-rank:' . $grupoId]);
+		}
+
+		json_response([
+			"ok" => true,
+			"message" => "ClassificaÃ§Ã£o do grupo salva.",
+		]);
+	} catch (Throwable $e) {
+		if ($pdo->inTransaction()) $pdo->rollBack();
+		app_save_log('group-rank-save-failed', [
+			'usuario_id' => $usuarioId,
+			'grupo_id' => $grupoId,
+		], $e);
+		json_response(["ok" => false, "message" => "Falha ao salvar classificaÃ§Ã£o do grupo."], 500);
+	}
+	}
+
+	try {
+		$result = app_retry_db_operation(
+			$pdo,
+			static function () use ($pdo, $normalized, $usuarioId, $now, &$lockCache): array {
+				$sqlCheck = "
+						SELECT
+								j.id,
+								j.data_hora,
+								j.fase,
+								j.grupo_id,
+								j.time_casa_id,
+								j.time_fora_id
+						FROM jogos j
+						INNER JOIN edicoes e ON e.id = j.edicao_id AND e.ativo = 1
+						WHERE j.id = :jogo_id
+							AND (
+										(j.grupo_id IS NOT NULL AND (j.fase = 'GRUPOS' OR j.fase = 'GRUPO' OR j.fase = 'FASE_DE_GRUPOS' OR j.fase LIKE '%GRUP%'))
+								 OR (j.grupo_id IS NULL AND j.fase IN ('16_DE_FINAL','OITAVAS','QUARTAS','SEMI','TERCEIRO_LUGAR','FINAL'))
+							)
+						LIMIT 1
+				";
+				$stCheck = $pdo->prepare($sqlCheck);
+
+				$sqlUpsert = "
+						INSERT INTO palpites (usuario_id, jogo_id, gols_casa, gols_fora, passa_time_id)
+						VALUES (:usuario_id, :jogo_id, :gols_casa, :gols_fora, :passa_time_id)
+						ON DUPLICATE KEY UPDATE
+							gols_casa = VALUES(gols_casa),
+							gols_fora = VALUES(gols_fora),
+							passa_time_id = VALUES(passa_time_id),
+							atualizado_em = CURRENT_TIMESTAMP
+				";
+				$stUpsert = $pdo->prepare($sqlUpsert);
+
+				$blocked = [];
+				$savable = [];
+
+				foreach ($normalized as $row) {
+					$stCheck->execute([":jogo_id" => $row["jogo_id"]]);
+					$game = $stCheck->fetch(PDO::FETCH_ASSOC);
+
+					if (!is_array($game) || empty($game["id"])) {
+						$blocked[] = [
+							"jogo_id" => (int)$row["jogo_id"],
+							"reason"  => "Jogo invÃ¡lido (nÃ£o Ã© fase de grupos/ediÃ§Ã£o ativa)."
+						];
+						continue;
+					}
+
+					$gameDt = dt_from_mysql(isset($game["data_hora"]) ? (string)$game["data_hora"] : null);
+					$reason = lock_reason_for_game($gameDt, $now, $pdo, $lockCache);
+					if ($reason !== null) {
+						$blocked[] = [
+							"jogo_id" => (int)$row["jogo_id"],
+							"reason"  => $reason,
+						];
+						continue;
+					}
+
+					$isKnockout = ((int)($game["grupo_id"] ?? 0) <= 0);
+					$timeCasaId = (int)($game["time_casa_id"] ?? 0);
+					$timeForaId = (int)($game["time_fora_id"] ?? 0);
+					$gc = (int)$row["gols_casa"];
+					$gf = (int)$row["gols_fora"];
+					$passa = $row["passa_time_id"];
+					$passaInt = ($passa === null) ? 0 : (int)$passa;
+
+					if ($isKnockout && $gc === $gf) {
+						if ($passaInt <= 0) {
+							$blocked[] = [
+								"jogo_id" => (int)$row["jogo_id"],
+								"reason"  => "Empate: escolha quem passa."
+							];
+							continue;
+						}
+
+						if ($passaInt !== $timeCasaId && $passaInt !== $timeForaId) {
+							$blocked[] = [
+								"jogo_id" => (int)$row["jogo_id"],
+								"reason"  => "Empate: escolha um dos dois times do jogo."
+							];
+							continue;
+						}
+					} else {
+						$passa = null;
+					}
+
+					$savable[] = [
+						"jogo_id" => (int)$row["jogo_id"],
+						"gols_casa" => $gc,
+						"gols_fora" => $gf,
+						"passa_time_id" => $passa,
+					];
+				}
+
+				$saved = 0;
+				$savedGameIds = [];
+				$changedGameKeys = [];
+
+				if (count($savable) > 0) {
+					$pdo->beginTransaction();
+
+					foreach ($savable as $row) {
+						$stUpsert->execute([
+							":usuario_id" => $usuarioId,
+							":jogo_id"    => $row["jogo_id"],
+							":gols_casa"  => $row["gols_casa"],
+							":gols_fora"  => $row["gols_fora"],
+							":passa_time_id" => $row["passa_time_id"],
+						]);
+
+						$saved++;
+						$savedGameIds[] = (int)$row["jogo_id"];
+						$changedGameKeys['jogo:' . (int)$row["jogo_id"]] = true;
+					}
+
+					$pdo->commit();
+				}
+
+				return [
+					"saved" => $saved,
+					"saved_game_ids" => $savedGameIds,
+					"blocked" => $blocked,
+					"blocked_game_ids" => array_values(array_map(static fn($row) => (int)($row["jogo_id"] ?? 0), $blocked)),
+					"changed_game_keys" => array_keys($changedGameKeys),
+				];
+			},
+			'match-save',
+			[
+				'usuario_id' => $usuarioId,
+				'items' => count($normalized),
+			]
+		);
+
+		$saved = (int)($result["saved"] ?? 0);
+		$blocked = is_array($result["blocked"] ?? null) ? $result["blocked"] : [];
+		$savedGameIds = is_array($result["saved_game_ids"] ?? null) ? array_values($result["saved_game_ids"]) : [];
+		$blockedGameIds = is_array($result["blocked_game_ids"] ?? null) ? array_values($result["blocked_game_ids"]) : [];
+		$changedGameKeys = is_array($result["changed_game_keys"] ?? null) ? $result["changed_game_keys"] : [];
+
+		if (function_exists('bet_notify_track_update') && $saved > 0 && count($changedGameKeys) > 0) {
+			bet_notify_track_update($pdo, $usuarioId, $changedGameKeys);
+		}
+
+		if ($saved <= 0 && count($blocked) > 0) {
+			$firstMsg = $blocked[0]["reason"] ?? "Apostas bloqueadas.";
+			json_response([
+				"ok" => false,
+				"message" => $firstMsg,
+				"saved" => 0,
+				"saved_game_ids" => [],
+				"blocked_count" => count($blocked),
+				"blocked_game_ids" => $blockedGameIds,
+				"blocked" => $blocked,
+			], 423);
+		}
+
+		if ($saved <= 0) {
+			json_response([
+				"ok" => false,
+				"message" => "Nenhum palpite foi salvo (verifique se sÃ£o jogos da fase de grupos).",
+				"saved" => 0,
+				"saved_game_ids" => [],
+			], 422);
+		}
+
+		if (count($blocked) > 0) {
+			json_response([
+				"ok" => true,
+				"partial" => true,
+				"saved" => $saved,
+				"saved_game_ids" => $savedGameIds,
+				"blocked_count" => count($blocked),
+				"blocked_game_ids" => $blockedGameIds,
+				"blocked" => $blocked,
+				"message" => "Alguns palpites foram salvos, mas hÃ¡ itens bloqueados.",
+			]);
+		}
+
+		json_response([
+			"ok" => true,
+			"saved" => $saved,
+			"saved_game_ids" => $savedGameIds,
+			"message" => "Palpites salvos com sucesso."
+		]);
+	} catch (Throwable $e) {
+		if ($pdo->inTransaction()) $pdo->rollBack();
+		app_save_log('match-save-failed', [
+			'usuario_id' => $usuarioId,
+			'items' => count($normalized),
+		], $e);
+		json_response(["ok" => false, "message" => "Falha ao salvar palpites."], 500);
 	}
 
 	try {

@@ -54,6 +54,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const top4DebounceTimers = new WeakMap();
   const savedRankSignatures = new Map();
   let savedTop4Signature = "";
+  const USER_ID = Number(APP_CFG && APP_CFG.user && APP_CFG.user.id ? APP_CFG.user.id : 0) || 0;
+  const MATCH_DRAFT_STORAGE_KEY = "bolao:app:match-drafts:v1:user:" + String(USER_ID || "guest");
+  const GROUP_RANK_DRAFT_STORAGE_KEY = "bolao:app:group-rank-drafts:v1:user:" + String(USER_ID || "guest");
+  const pendingMatchSaves = new Map();
+  const pendingRankSaves = new Map();
+  let matchFlushInProgress = false;
+  let rankFlushInProgress = false;
+  let matchRetryTimer = null;
+  let rankRetryTimer = null;
+  let matchRetryDelayMs = 0;
+  let rankRetryDelayMs = 0;
 
   const selectionByMode = {
     group: null,
@@ -121,6 +132,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function flushChanges({ manual = false } = {}) {
+    captureCurrentMatchDrafts();
+    captureCurrentRankDrafts();
+
+    const matchesFlushed = await flushPendingMatchSaves({ silentToast: !manual }).catch(() => false);
+    const ranksFlushed = await flushPendingRankSaves({ silentToast: !manual }).catch(() => false);
+    if (!matchesFlushed || !ranksFlushed) {
+      if (manual) {
+        showToast("Ainda existem alteraÃ§Ãµes locais pendentes de salvamento.", true);
+      }
+      return;
+    }
+
     if (!hasPendingFinalize || isFinalizing) return;
     isFinalizing = true;
     try {
@@ -183,6 +206,98 @@ document.addEventListener("DOMContentLoaded", () => {
     toast.__t = setTimeout(() => {
       toast.classList.remove("is-open");
     }, 2400);
+  }
+
+  function storageAvailable() {
+    try {
+      const key = "__bolao_storage_test__";
+      window.localStorage.setItem(key, "1");
+      window.localStorage.removeItem(key);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  const HAS_LOCAL_STORAGE = storageAvailable();
+
+  function loadStoredMap(key) {
+    if (!HAS_LOCAL_STORAGE) return {};
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return (parsed && typeof parsed === "object") ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function saveStoredMap(key, value) {
+    if (!HAS_LOCAL_STORAGE) return;
+    try {
+      const entries = Object.keys(value || {});
+      if (!entries.length) {
+        window.localStorage.removeItem(key);
+        return;
+      }
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (_) {}
+  }
+
+  function buildRequestError(res, data, fallbackMsg) {
+    const err = new Error((data && data.message) ? data.message : (fallbackMsg || "Falha ao salvar."));
+    err.status = res ? Number(res.status || 0) : 0;
+    err.data = data || null;
+    return err;
+  }
+
+  async function postJson(url, payload, { keepalive = false } = {}) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify(payload || {}),
+      credentials: "same-origin",
+      keepalive: !!keepalive
+    });
+
+    let data = null;
+    try { data = await res.json(); } catch (_) {}
+    return { res, data };
+  }
+
+  function isRetriableSaveError(error) {
+    const status = Number(error && error.status ? error.status : 0) || 0;
+    if (status === 0) return true;
+    return status >= 500 || status === 408 || status === 429;
+  }
+
+  function isSessionExpiredSaveError(error) {
+    return (Number(error && error.status ? error.status : 0) || 0) === 419;
+  }
+
+  function fireAndForgetJson(url, payload) {
+    const body = JSON.stringify(Object.assign({}, payload || {}, { csrf_token: CSRF_TOKEN }));
+
+    try {
+      if (navigator.sendBeacon) {
+        const blob = new Blob([body], { type: "application/json" });
+        if (navigator.sendBeacon(url, blob)) return true;
+      }
+    } catch (_) {}
+
+    try {
+      fetch(url, {
+        method: "POST",
+        headers: jsonHeaders(),
+        body,
+        credentials: "same-origin",
+        keepalive: true
+      }).catch(() => {});
+      return true;
+    } catch (_) {}
+
+    return false;
   }
 
   function scrollToListTop() {
@@ -337,6 +452,22 @@ document.addEventListener("DOMContentLoaded", () => {
     return Array.from(document.querySelectorAll('.match-card[data-jogo-id="' + jogoId + '"]'));
   }
 
+  function getMatchCardsByGameId(jogoId) {
+    const id = Number(jogoId || 0) || 0;
+    if (id <= 0) return [];
+    return Array.from(document.querySelectorAll('.match-card[data-jogo-id="' + String(id) + '"]'));
+  }
+
+  function getPrimaryMatchCard(jogoId) {
+    return getMatchCardsByGameId(jogoId)[0] || null;
+  }
+
+  function setSavedSignatureForGame(jogoId, signature) {
+    getMatchCardsByGameId(jogoId).forEach((cardEl) => {
+      cardEl.dataset.savedPayloadSignature = signature || "";
+    });
+  }
+
   function setSavingState(cardEl, state, msg) {
     const st = cardEl.querySelector(".save-state");
     if (!st) return;
@@ -482,36 +613,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function saveItems(items) {
-    const res = await fetch(ENDPOINT_SAVE_GAMES, {
-      method: "POST",
-      headers: jsonHeaders(),
-      body: JSON.stringify({ items, csrf_token: CSRF_TOKEN })
-    });
-
-    let data = null;
-    try { data = await res.json(); } catch (_) {}
-
+    const { res, data } = await postJson(ENDPOINT_SAVE_GAMES, { items, csrf_token: CSRF_TOKEN });
     if (!res.ok || !data || data.ok !== true) {
-      const msg = (data && data.message) ? data.message : "Falha ao salvar.";
-      throw new Error(msg);
+      throw buildRequestError(res, data, "Falha ao salvar.");
     }
     markPendingFinalize();
     return data;
   }
 
   async function saveGroupRank(grupoId, picks) {
-    const res = await fetch(ENDPOINT_SAVE_GROUP_RANK, {
-      method: "POST",
-      headers: jsonHeaders(),
-      body: JSON.stringify({ grupo_id: grupoId, picks, csrf_token: CSRF_TOKEN })
-    });
-
-    let data = null;
-    try { data = await res.json(); } catch (_) {}
+    const { res, data } = await postJson(ENDPOINT_SAVE_GROUP_RANK, { grupo_id: grupoId, picks, csrf_token: CSRF_TOKEN });
 
     if (!res.ok || !data || data.ok !== true) {
       const msg = (data && data.message) ? data.message : "Falha ao salvar classificação.";
-      throw new Error(msg);
+      throw buildRequestError(res, data, "Falha ao salvar classificaÃ§Ã£o.");
     }
 
     markPendingFinalize();
@@ -520,18 +635,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function saveTop4(picks) {
-    const res = await fetch(ENDPOINT_SAVE_TOP4, {
-      method: "POST",
-      headers: jsonHeaders(),
-      body: JSON.stringify({ picks, csrf_token: CSRF_TOKEN })
-    });
-
-    let data = null;
-    try { data = await res.json(); } catch (_) {}
+    const { res, data } = await postJson(ENDPOINT_SAVE_TOP4, { picks, csrf_token: CSRF_TOKEN });
 
     if (!res.ok || !data || data.ok !== true) {
       const msg = (data && data.message) ? data.message : "Falha ao salvar Top 4.";
-      throw new Error(msg);
+      throw buildRequestError(res, data, "Falha ao salvar Top 4.");
     }
 
     markPendingFinalize();
@@ -572,6 +680,490 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     return payload;
+  }
+
+  function normalizeMatchPayload(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const jogoId = Number(raw.jogo_id || 0) || 0;
+    const gc = Number(raw.gols_casa);
+    const gf = Number(raw.gols_fora);
+    const passaRaw = (raw.passa_time_id === null || typeof raw.passa_time_id === "undefined") ? null : Number(raw.passa_time_id || 0) || 0;
+
+    if (jogoId <= 0 || !Number.isFinite(gc) || !Number.isFinite(gf)) return null;
+    if (gc < 0 || gc > 99 || gf < 0 || gf > 99) return null;
+
+    return {
+      jogo_id: jogoId,
+      gols_casa: Math.trunc(gc),
+      gols_fora: Math.trunc(gf),
+      passa_time_id: (passaRaw && passaRaw > 0) ? Math.trunc(passaRaw) : null
+    };
+  }
+
+  function normalizeRankDraft(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const picks = {
+      "1": Number(raw["1"] || 0) || 0,
+      "2": Number(raw["2"] || 0) || 0,
+      "3": Number(raw["3"] || 0) || 0
+    };
+    return picks;
+  }
+
+  function persistMatchDraft(payload) {
+    const normalized = normalizeMatchPayload(payload);
+    if (!normalized) return;
+    const stored = loadStoredMap(MATCH_DRAFT_STORAGE_KEY);
+    stored[String(normalized.jogo_id)] = normalized;
+    saveStoredMap(MATCH_DRAFT_STORAGE_KEY, stored);
+  }
+
+  function clearMatchDraft(jogoId, signature = "") {
+    const key = String(Number(jogoId || 0) || 0);
+    if (!key || key === "0") return;
+    const stored = loadStoredMap(MATCH_DRAFT_STORAGE_KEY);
+    const current = normalizeMatchPayload(stored[key]);
+    if (!current) {
+      delete stored[key];
+      saveStoredMap(MATCH_DRAFT_STORAGE_KEY, stored);
+      return;
+    }
+    if (signature && stableSignature(current) !== signature) return;
+    delete stored[key];
+    saveStoredMap(MATCH_DRAFT_STORAGE_KEY, stored);
+  }
+
+  function persistRankDraft(groupId, picks) {
+    const gid = Number(groupId || 0) || 0;
+    const normalized = normalizeRankDraft(picks);
+    if (gid <= 0 || !normalized) return;
+    const stored = loadStoredMap(GROUP_RANK_DRAFT_STORAGE_KEY);
+    stored[String(gid)] = normalized;
+    saveStoredMap(GROUP_RANK_DRAFT_STORAGE_KEY, stored);
+  }
+
+  function clearRankDraft(groupId, signature = "") {
+    const key = String(Number(groupId || 0) || 0);
+    if (!key || key === "0") return;
+    const stored = loadStoredMap(GROUP_RANK_DRAFT_STORAGE_KEY);
+    const current = normalizeRankDraft(stored[key]);
+    if (!current) {
+      delete stored[key];
+      saveStoredMap(GROUP_RANK_DRAFT_STORAGE_KEY, stored);
+      return;
+    }
+    if (signature && stableSignature(current) !== signature) return;
+    delete stored[key];
+    saveStoredMap(GROUP_RANK_DRAFT_STORAGE_KEY, stored);
+  }
+
+  function enqueueMatchSave(payload, { immediate = false } = {}) {
+    const normalized = normalizeMatchPayload(payload);
+    if (!normalized) return "";
+    const signature = stableSignature(normalized);
+    pendingMatchSaves.set(normalized.jogo_id, {
+      jogoId: normalized.jogo_id,
+      payload: normalized,
+      signature,
+      queuedAt: Date.now()
+    });
+    persistMatchDraft(normalized);
+
+    const primaryCard = getPrimaryMatchCard(normalized.jogo_id);
+    if (primaryCard) {
+      setLinkedSavingState(primaryCard, "saving");
+    }
+
+    if (immediate) {
+      flushPendingMatchSaves({ silentToast: true }).catch(() => {});
+    }
+
+    return signature;
+  }
+
+  function enqueueRankSave(groupId, picks, { immediate = false } = {}) {
+    const gid = Number(groupId || 0) || 0;
+    const normalized = normalizeRankDraft(picks);
+    if (gid <= 0 || !normalized) return "";
+    const signature = stableSignature(normalized);
+    pendingRankSaves.set(gid, {
+      groupId: gid,
+      picks: normalized,
+      signature,
+      queuedAt: Date.now()
+    });
+    persistRankDraft(gid, normalized);
+    setRankStateForGroup(gid, "saving");
+
+    if (immediate) {
+      flushPendingRankSaves({ silentToast: true }).catch(() => {});
+    }
+
+    return signature;
+  }
+
+  function scheduleMatchRetry() {
+    if (matchRetryTimer) clearTimeout(matchRetryTimer);
+    matchRetryDelayMs = matchRetryDelayMs > 0 ? Math.min(matchRetryDelayMs * 2, 12000) : 1500;
+    matchRetryTimer = setTimeout(() => {
+      matchRetryTimer = null;
+      flushPendingMatchSaves({ silentToast: true }).catch(() => {});
+    }, matchRetryDelayMs);
+  }
+
+  function scheduleRankRetry() {
+    if (rankRetryTimer) clearTimeout(rankRetryTimer);
+    rankRetryDelayMs = rankRetryDelayMs > 0 ? Math.min(rankRetryDelayMs * 2, 12000) : 1500;
+    rankRetryTimer = setTimeout(() => {
+      rankRetryTimer = null;
+      flushPendingRankSaves({ silentToast: true }).catch(() => {});
+    }, rankRetryDelayMs);
+  }
+
+  function applyMatchPayloadToCards(payload) {
+    const normalized = normalizeMatchPayload(payload);
+    if (!normalized) return false;
+    const primaryCard = getPrimaryMatchCard(normalized.jogo_id);
+    if (!primaryCard) return false;
+
+    const inHome = primaryCard.querySelector(".score-home");
+    const inAway = primaryCard.querySelector(".score-away");
+    if (inHome) {
+      inHome.value = String(normalized.gols_casa);
+      markInvalid(inHome, false);
+    }
+    if (inAway) {
+      inAway.value = String(normalized.gols_fora);
+      markInvalid(inAway, false);
+    }
+
+    setSelectedPassTeamId(primaryCard, normalized.passa_time_id || 0);
+    refreshPassUi(primaryCard);
+    syncLinkedMatchState(primaryCard);
+    return true;
+  }
+
+  function applyRankPicksToCards(groupId, picks) {
+    const gid = Number(groupId || 0) || 0;
+    const normalized = normalizeRankDraft(picks);
+    if (gid <= 0 || !normalized) return false;
+
+    getLinkedRankCards(gid).forEach((cardEl) => {
+      Array.from(cardEl.querySelectorAll(".rank-select[data-rank-pos]")).forEach((sel) => {
+        const pos = String(sel.getAttribute("data-rank-pos") || "");
+        if (pos === "1" || pos === "2" || pos === "3") {
+          sel.value = String(normalized[pos] || 0);
+          if (typeof sel.__BOLAO_SYNC_DISPLAY__ === "function") sel.__BOLAO_SYNC_DISPLAY__();
+        }
+      });
+    });
+
+    refreshRankOptionAvailability(gid);
+    paintRankValidation(gid, normalized);
+    return true;
+  }
+
+  function reconcileBlockedMatchEntries(snapshot, blockedRows) {
+    if (!Array.isArray(blockedRows) || blockedRows.length === 0) return false;
+
+    const blockedByGameId = new Map();
+    blockedRows.forEach((row) => {
+      const gameId = Number(row && row.jogo_id ? row.jogo_id : 0) || 0;
+      if (gameId <= 0) return;
+      blockedByGameId.set(gameId, String(row && row.reason ? row.reason : "Aposta bloqueada."));
+    });
+
+    snapshot.forEach((item) => {
+      const reason = blockedByGameId.get(item.jogoId);
+      if (!reason) return;
+
+      const current = pendingMatchSaves.get(item.jogoId);
+      if (current && current.signature === item.signature) {
+        pendingMatchSaves.delete(item.jogoId);
+        clearMatchDraft(item.jogoId, item.signature);
+      }
+
+      const primaryCard = getPrimaryMatchCard(item.jogoId);
+      if (primaryCard) {
+        setLinkedSavingState(primaryCard, "err", reason);
+      }
+    });
+
+    return blockedByGameId.size > 0;
+  }
+
+  async function flushPendingMatchSaves({ silentToast = true } = {}) {
+    if (matchFlushInProgress || pendingMatchSaves.size === 0) return pendingMatchSaves.size === 0;
+
+    matchFlushInProgress = true;
+    if (matchRetryTimer) {
+      clearTimeout(matchRetryTimer);
+      matchRetryTimer = null;
+    }
+
+    const snapshot = Array.from(pendingMatchSaves.values()).map((entry) => ({
+      jogoId: entry.jogoId,
+      payload: entry.payload,
+      signature: entry.signature
+    }));
+
+    try {
+      const data = await saveItems(snapshot.map((entry) => entry.payload));
+      matchRetryDelayMs = 0;
+
+      const savedIds = Array.isArray(data && data.saved_game_ids)
+        ? data.saved_game_ids.map((id) => Number(id || 0) || 0)
+        : snapshot.map((entry) => entry.jogoId);
+      const savedSet = new Set(savedIds);
+      const blockedRows = Array.isArray(data && data.blocked) ? data.blocked : [];
+      const blockedHandled = reconcileBlockedMatchEntries(snapshot, blockedRows);
+
+      snapshot.forEach((item) => {
+        if (!savedSet.has(item.jogoId)) return;
+
+        const current = pendingMatchSaves.get(item.jogoId);
+        if (current && current.signature !== item.signature) {
+          return;
+        }
+
+        pendingMatchSaves.delete(item.jogoId);
+        clearMatchDraft(item.jogoId, item.signature);
+        setSavedSignatureForGame(item.jogoId, item.signature);
+
+        const primaryCard = getPrimaryMatchCard(item.jogoId);
+        if (!primaryCard) return;
+
+        if (isKnockoutCard(primaryCard) && item.payload.gols_casa === item.payload.gols_fora && item.payload.passa_time_id) {
+          setLinkedSavingState(primaryCard, "ok", "Salvo com quem passa.");
+        } else {
+          setLinkedSavingState(primaryCard, "ok", "Salvo!");
+        }
+      });
+
+      if (blockedHandled && !silentToast) {
+        showToast((data && data.message) ? data.message : "Alguns palpites ficaram bloqueados.", true);
+      }
+    } catch (error) {
+      const blockedHandled = reconcileBlockedMatchEntries(snapshot, error && error.data && Array.isArray(error.data.blocked) ? error.data.blocked : []);
+      if (!blockedHandled) {
+        const retriable = isRetriableSaveError(error);
+        const message = isSessionExpiredSaveError(error)
+          ? (error && error.message ? error.message : "SessÃ£o expirada. Recarregue a pÃ¡gina.")
+          : (retriable ? "Falha temporÃ¡ria. Tentando novamente..." : (error && error.message ? error.message : "Erro ao salvar."));
+
+        snapshot.forEach((item) => {
+          const current = pendingMatchSaves.get(item.jogoId);
+          if (!current || current.signature !== item.signature) return;
+          const primaryCard = getPrimaryMatchCard(item.jogoId);
+          if (primaryCard) {
+            setLinkedSavingState(primaryCard, "err", message);
+          }
+        });
+
+        if (retriable) {
+          scheduleMatchRetry();
+        } else if (!silentToast || isSessionExpiredSaveError(error)) {
+          showToast(message, true);
+        }
+      } else if (!silentToast) {
+        showToast(error && error.message ? error.message : "Alguns palpites ficaram bloqueados.", true);
+      }
+    } finally {
+      matchFlushInProgress = false;
+    }
+
+    if (pendingMatchSaves.size > 0 && !matchRetryTimer) {
+      setTimeout(() => {
+        flushPendingMatchSaves({ silentToast: true }).catch(() => {});
+      }, 60);
+    }
+
+    return pendingMatchSaves.size === 0;
+  }
+
+  async function flushPendingRankSaves({ silentToast = true } = {}) {
+    if (rankFlushInProgress || pendingRankSaves.size === 0) return pendingRankSaves.size === 0;
+
+    rankFlushInProgress = true;
+    if (rankRetryTimer) {
+      clearTimeout(rankRetryTimer);
+      rankRetryTimer = null;
+    }
+
+    const snapshot = Array.from(pendingRankSaves.values())
+      .sort((a, b) => a.groupId - b.groupId)
+      .map((entry) => ({
+        groupId: entry.groupId,
+        picks: entry.picks,
+        signature: entry.signature
+      }));
+
+    try {
+      for (const item of snapshot) {
+        const current = pendingRankSaves.get(item.groupId);
+        if (!current || current.signature !== item.signature) continue;
+
+        try {
+          setRankStateForGroup(item.groupId, "saving");
+          await saveGroupRank(item.groupId, item.picks);
+
+          const afterSave = pendingRankSaves.get(item.groupId);
+          if (afterSave && afterSave.signature !== item.signature) continue;
+
+          pendingRankSaves.delete(item.groupId);
+          clearRankDraft(item.groupId, item.signature);
+          savedRankSignatures.set(item.groupId, item.signature);
+          setRankStateForGroup(item.groupId, "ok", "Grupo salvo!");
+        } catch (error) {
+          const retriable = isRetriableSaveError(error);
+          const message = isSessionExpiredSaveError(error)
+            ? (error && error.message ? error.message : "SessÃ£o expirada. Recarregue a pÃ¡gina.")
+            : (retriable ? "Falha temporÃ¡ria. Tentando novamente..." : (error && error.message ? error.message : "Erro ao salvar."));
+
+          const latest = pendingRankSaves.get(item.groupId);
+          if (latest && latest.signature === item.signature) {
+            setRankStateForGroup(item.groupId, "err", message);
+            if (!retriable && !isSessionExpiredSaveError(error)) {
+              pendingRankSaves.delete(item.groupId);
+              clearRankDraft(item.groupId, item.signature);
+            }
+          }
+
+          if (retriable) {
+            scheduleRankRetry();
+            break;
+          }
+
+          if (!silentToast || isSessionExpiredSaveError(error)) {
+            showToast(message, true);
+          }
+        }
+      }
+    } finally {
+      rankFlushInProgress = false;
+    }
+
+    if (pendingRankSaves.size > 0 && !rankRetryTimer) {
+      setTimeout(() => {
+        flushPendingRankSaves({ silentToast: true }).catch(() => {});
+      }, 60);
+    }
+
+    return pendingRankSaves.size === 0;
+  }
+
+  function captureCurrentMatchDrafts() {
+    const seen = new Set();
+    Array.from(document.querySelectorAll(".match-card")).forEach((cardEl) => {
+      const jogoId = Number(cardEl.getAttribute("data-jogo-id") || 0) || 0;
+      if (jogoId <= 0 || seen.has(jogoId)) return;
+      seen.add(jogoId);
+
+      const payload = getCardPayload(cardEl);
+      if (!payload || payload.invalid) return;
+
+      const signature = stableSignature(payload);
+      if (cardEl.dataset.savedPayloadSignature === signature && !pendingMatchSaves.has(jogoId)) return;
+      enqueueMatchSave(payload);
+    });
+  }
+
+  function captureCurrentRankDrafts() {
+    const seen = new Set();
+    Array.from(document.querySelectorAll(".group-rank-card[data-grupo-rank]")).forEach((cardEl) => {
+      const groupId = Number(cardEl.getAttribute("data-grupo-rank") || 0) || 0;
+      if (groupId <= 0 || seen.has(groupId)) return;
+      seen.add(groupId);
+
+      const picks = readRankPicks(cardEl);
+      if (!validateDistinctPicks(picks) || !allRankPicksFilled(picks)) return;
+
+      const signature = stableSignature(picks);
+      if (savedRankSignatures.get(groupId) === signature && !pendingRankSaves.has(groupId)) return;
+      enqueueRankSave(groupId, picks);
+    });
+  }
+
+  function restoreStoredMatchDrafts() {
+    const stored = loadStoredMap(MATCH_DRAFT_STORAGE_KEY);
+
+    Object.keys(stored).forEach((key) => {
+      const payload = normalizeMatchPayload(stored[key]);
+      if (!payload) {
+        clearMatchDraft(key);
+        return;
+      }
+
+      const primaryCard = getPrimaryMatchCard(payload.jogo_id);
+      if (!primaryCard) {
+        clearMatchDraft(payload.jogo_id);
+        return;
+      }
+
+      const signature = stableSignature(payload);
+      const currentPayload = getCardPayload(primaryCard);
+      if (currentPayload && !currentPayload.invalid) {
+        const currentSignature = stableSignature(currentPayload);
+        if (currentSignature === signature && primaryCard.dataset.savedPayloadSignature === signature) {
+          clearMatchDraft(payload.jogo_id, signature);
+          return;
+        }
+      }
+
+      if (applyMatchPayloadToCards(payload)) {
+        enqueueMatchSave(payload);
+      }
+    });
+  }
+
+  function restoreStoredRankDrafts() {
+    const stored = loadStoredMap(GROUP_RANK_DRAFT_STORAGE_KEY);
+
+    Object.keys(stored).forEach((key) => {
+      const groupId = Number(key || 0) || 0;
+      const picks = normalizeRankDraft(stored[key]);
+      if (groupId <= 0 || !picks) {
+        clearRankDraft(key);
+        return;
+      }
+
+      const rankCards = getLinkedRankCards(groupId);
+      if (!rankCards.length) {
+        clearRankDraft(groupId);
+        return;
+      }
+
+      const signature = stableSignature(picks);
+      const current = readRankPicks(rankCards[0]);
+      if (allRankPicksFilled(current) && stableSignature(current) === signature && savedRankSignatures.get(groupId) === signature) {
+        clearRankDraft(groupId, signature);
+        return;
+      }
+
+      if (applyRankPicksToCards(groupId, picks)) {
+        enqueueRankSave(groupId, picks);
+      }
+    });
+  }
+
+  function dispatchExitSaveFlush(source) {
+    captureCurrentMatchDrafts();
+    captureCurrentRankDrafts();
+
+    if (pendingMatchSaves.size > 0) {
+      fireAndForgetJson(ENDPOINT_SAVE_GAMES, {
+        items: Array.from(pendingMatchSaves.values()).map((entry) => entry.payload),
+        source: source || "exit"
+      });
+    }
+
+    Array.from(pendingRankSaves.values()).forEach((entry) => {
+      fireAndForgetJson(ENDPOINT_SAVE_GROUP_RANK, {
+        grupo_id: entry.groupId,
+        picks: entry.picks,
+        source: source || "exit"
+      });
+    });
   }
 
   function applyGroupRankLockState() {
@@ -1061,17 +1653,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const signature = stableSignature(picks);
-    if (savedRankSignatures.get(groupId) === signature) {
+    const pending = pendingRankSaves.get(groupId);
+    if (savedRankSignatures.get(groupId) === signature && !pending) {
       setRankStateForGroup(groupId, "ok", "Grupo salvo!");
       return;
     }
 
     try {
-      setRankStateForGroup(groupId, "saving");
-      await saveGroupRank(groupId, picks);
-      savedRankSignatures.set(groupId, signature);
+      enqueueRankSave(groupId, picks);
+      await flushPendingRankSaves({ silentToast });
+      if (!pendingRankSaves.has(groupId)) {
       setRankStateForGroup(groupId, "ok", "Grupo salvo!");
       if (!silentToast) showToast("Classificação do grupo salva.");
+      }
     } catch (e) {
       setRankStateForGroup(groupId, "err", e.message || "Erro ao salvar.");
       if (!silentToast) showToast(e.message || "Erro ao salvar grupo.", true);
@@ -1155,6 +1749,11 @@ document.addEventListener("DOMContentLoaded", () => {
       refreshPassUi(cardEl);
       syncLinkedMatchState(cardEl);
 
+      const draftPayload = getCardPayload(cardEl);
+      if (draftPayload && !draftPayload.invalid) {
+        enqueueMatchSave(draftPayload);
+      }
+
       const current = rowTimers.get(cardEl);
       if (current) clearTimeout(current);
 
@@ -1169,20 +1768,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const signature = stableSignature(payload);
-        if (cardEl.dataset.savedPayloadSignature === signature) {
+        const pending = pendingMatchSaves.get(payload.jogo_id);
+        if (cardEl.dataset.savedPayloadSignature === signature && !pending) {
           setLinkedSavingState(cardEl, "ok", "Salvo!");
           return;
         }
 
         try {
-          setLinkedSavingState(cardEl, "saving");
-          await saveItems([payload]);
-          cardEl.dataset.savedPayloadSignature = signature;
-          if (isKnockoutCard(cardEl) && payload.gols_casa === payload.gols_fora && payload.passa_time_id) {
-            setLinkedSavingState(cardEl, "ok", "Salvo com quem passa.");
-          } else {
-            setLinkedSavingState(cardEl, "ok", "Salvo!");
-          }
+          enqueueMatchSave(payload);
+          await flushPendingMatchSaves({ silentToast: true });
         } catch (e) {
           setLinkedSavingState(cardEl, "err", e.message || "Erro ao salvar.");
         }
@@ -1263,16 +1857,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const signature = stableSignature(payload);
-        if (cardEl.dataset.savedPayloadSignature === signature) {
+        const pending = pendingMatchSaves.get(payload.jogo_id);
+        if (cardEl.dataset.savedPayloadSignature === signature && !pending) {
           setLinkedSavingState(cardEl, "ok", "Salvo com quem passa.");
           return;
         }
 
         try {
-          setLinkedSavingState(cardEl, "saving");
-          await saveItems([payload]);
-          cardEl.dataset.savedPayloadSignature = signature;
-          setLinkedSavingState(cardEl, "ok", "Salvo com quem passa.");
+          enqueueMatchSave(payload);
+          await flushPendingMatchSaves({ silentToast: true });
         } catch (e) {
           setLinkedSavingState(cardEl, "err", e.message || "Erro ao salvar.");
         }
@@ -1311,6 +1904,8 @@ document.addEventListener("DOMContentLoaded", () => {
           setRankStateForGroup(grupoId, "", "");
           return;
         }
+
+        enqueueRankSave(grupoId, picks);
 
         if (rankDebounceTimers.has(grupoId)) clearTimeout(rankDebounceTimers.get(grupoId));
         rankDebounceTimers.set(grupoId, setTimeout(() => {
@@ -1458,20 +2053,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  restoreStoredMatchDrafts();
+  restoreStoredRankDrafts();
+  flushPendingMatchSaves({ silentToast: true }).catch(() => {});
+  flushPendingRankSaves({ silentToast: true }).catch(() => {});
+
   installFinalizeButton();
 
-  window.addEventListener("beforeunload", () => {
+  window.addEventListener("beforeunload", (ev) => {
+    dispatchExitSaveFlush("beforeunload");
     dispatchExitFinalize("beforeunload");
+    if (pendingMatchSaves.size > 0 || pendingRankSaves.size > 0) {
+      ev.preventDefault();
+      ev.returnValue = "";
+    }
   });
 
   window.addEventListener("pagehide", () => {
+    dispatchExitSaveFlush("pagehide");
     dispatchExitFinalize("pagehide");
   });
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
+      dispatchExitSaveFlush("visibilitychange");
       dispatchExitFinalize("visibilitychange");
     }
+  });
+
+  window.addEventListener("online", () => {
+    flushPendingMatchSaves({ silentToast: true }).catch(() => {});
+    flushPendingRankSaves({ silentToast: true }).catch(() => {});
   });
 
   const btnRecibo = document.getElementById("btnRecibo");
