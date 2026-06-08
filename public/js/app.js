@@ -692,6 +692,13 @@ document.addEventListener("DOMContentLoaded", () => {
       wrap.appendChild(sel);
 
       const options = Array.from(sel.options).filter((o) => (o.value || "").trim() !== "");
+      const isTouchLike = () => {
+        try {
+          return window.matchMedia("(pointer: coarse), (hover: none), (max-width: 760px)").matches;
+        } catch (_) {
+          return false;
+        }
+      };
 
       function currentValue() {
         return (sel.value || "").trim();
@@ -716,6 +723,8 @@ document.addEventListener("DOMContentLoaded", () => {
       function buildList(activeVal) {
         list.innerHTML = "";
         options.forEach((o) => {
+          if (o.disabled && String(o.value) !== String(activeVal)) return;
+
           const item = document.createElement("div");
           item.className = "bolao-select-opt";
           item.dataset.value = String(o.value);
@@ -785,9 +794,11 @@ document.addEventListener("DOMContentLoaded", () => {
         portal.classList.add("is-open");
         positionPortal();
 
-        setTimeout(() => {
-          try { searchInput.focus(); } catch (_) {}
-        }, 0);
+        if (!isTouchLike()) {
+          setTimeout(() => {
+            try { searchInput.focus(); } catch (_) {}
+          }, 0);
+        }
       }
 
       function closeMenu(keepFocus = false) {
@@ -963,6 +974,31 @@ document.addEventListener("DOMContentLoaded", () => {
         if (pos === "1" || pos === "2" || pos === "3") picks[pos] = val;
       });
     return picks;
+  }
+
+  function refreshRankOptionAvailability(groupId) {
+    getLinkedRankCards(groupId).forEach((cardEl) => {
+      const picks = readRankPicks(cardEl);
+
+      Array.from(cardEl.querySelectorAll(".rank-select[data-rank-pos]"))
+        .forEach((sel) => {
+          const pos = String(sel.getAttribute("data-rank-pos") || "");
+
+          Array.from(sel.options).forEach((opt) => {
+            const val = Number(opt.value || 0) || 0;
+            if (val <= 0) {
+              opt.disabled = false;
+              return;
+            }
+
+            opt.disabled = Object.keys(picks).some((other) => (
+              other !== pos && Number(picks[other] || 0) === val
+            ));
+          });
+
+          if (typeof sel.__BOLAO_SYNC_DISPLAY__ === "function") sel.__BOLAO_SYNC_DISPLAY__();
+        });
+    });
   }
 
   function validateDistinctPicks(picks) {
@@ -1260,6 +1296,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selects.forEach((sel) => {
       sel.addEventListener("change", () => {
         syncRankCards(grupoId, cardEl);
+        refreshRankOptionAvailability(grupoId);
 
         const picks = readRankPicks(cardEl);
         const valid = paintRankValidation(grupoId, picks);
@@ -1290,6 +1327,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (allRankPicksFilled(initialPicks) && !savedRankSignatures.has(grupoId)) {
       savedRankSignatures.set(grupoId, stableSignature(initialPicks));
     }
+
+    refreshRankOptionAvailability(grupoId);
   });
 
   const top4Card = document.querySelector('.group-rank-card[data-top4-card="1"]');
