@@ -176,6 +176,9 @@ function send_admin_mail_with_retry(
 }
 
 function notify_new_user_register(array $mailConfig, int $newUserId, string $nomeCompleto, string $email, string $telefone): bool {
+    cadastro_mail_log("Envio do alerta admin de novo cadastro desativado. Usuario ID={$newUserId}, email={$email}.");
+
+    /*
     $nomeSafe = htmlspecialchars($nomeCompleto, ENT_QUOTES, 'UTF-8');
     $emailSafe = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
     $telefoneSafe = htmlspecialchars($telefone, ENT_QUOTES, 'UTF-8');
@@ -219,6 +222,9 @@ function notify_new_user_register(array $mailConfig, int $newUserId, string $nom
     }
 
     return $allSent;
+    */
+
+    return true;
 }
 
 function cadastro_format_birth_date_for_mail(string $dataNascimento): string {

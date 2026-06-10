@@ -261,10 +261,12 @@ function bet_notify_flush(PDO $pdo, int $usuarioId, bool $force = true): array {
         return $out;
     }
 
+    /*
     if (!bet_load_phpmailer()) {
         $out['reason'] = 'phpmailer-missing';
         return $out;
     }
+    */
 
     $cooldownSeconds = bet_notify_cooldown_seconds();
 
@@ -361,6 +363,9 @@ function bet_notify_flush(PDO $pdo, int $usuarioId, bool $force = true): array {
 
         $htmlBody .= '<p><strong>Partidas/jogos acumulados:</strong> ' . $pending . '</p>';
 
+        bet_notify_log('Envio do alerta admin de atualizacao de aposta desativado. usuario_id=' . $usuarioId . '. pendentes=' . $pending);
+
+        /*
         $recipients = [
             ['email' => 'thiagopterra@gmail.com', 'name' => 'Thiago'],
             ['email' => 'mauriciopterra@gmail.com', 'name' => 'Mauricio'],
@@ -380,6 +385,8 @@ function bet_notify_flush(PDO $pdo, int $usuarioId, bool $force = true): array {
                 $allSent = false;
             }
         }
+        */
+        $allSent = true;
 
         $pdo->beginTransaction();
         if ($allSent) {
