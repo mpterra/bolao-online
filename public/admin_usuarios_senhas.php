@@ -220,7 +220,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $targetLabel = $targetName !== '' ? $targetName : ($targetEmail !== '' ? $targetEmail : ('ID ' . $targetUserId));
 
             admin_password_redirect(
-                'Senha atualizada com sucesso para ' . $targetLabel . '. Tokens pendentes de recuperação foram invalidados.',
+                'Senha trocada com sucesso para ' . $targetLabel . '. Tokens pendentes de recuperação foram invalidados.',
                 'ok',
                 $search
             );
