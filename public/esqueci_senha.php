@@ -5,6 +5,8 @@ require_once dirname(__DIR__) . "/php/security.php";
 app_start_session();
 app_send_security_headers();
 
+
+
 $flash = null;
 if (!empty($_SESSION["flash_reset"]) && is_array($_SESSION["flash_reset"])) {
     $flash = $_SESSION["flash_reset"];
