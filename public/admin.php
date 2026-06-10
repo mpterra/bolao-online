@@ -93,6 +93,9 @@ require_once __DIR__ . "/partials/app_header.php";
                 <a class="btn-receipt" href="/admin_usuarios_cadastro.php">
                     Lista de usuários
                 </a>
+                <a class="btn-receipt" href="/admin_usuarios_senhas.php">
+                    Gerenciar senhas
+                </a>
                 <a class="btn-receipt" href="/php/export_apostas_todas_zip.php">
                     Baixar todas apostas
                 </a>
