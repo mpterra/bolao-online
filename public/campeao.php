@@ -10,7 +10,7 @@ require_once __DIR__ . "/../php/bet_update_notifier.php";
 
 date_default_timezone_set('America/Sao_Paulo');
 
-const CAMPEAO_PICK_DEADLINE = '2026-06-11 15:59:00';
+const CAMPEAO_PICK_DEADLINE = '2026-06-11 15:00:00';
 
 function json_response(array $data, int $code = 200): void {
 	http_response_code($code);
