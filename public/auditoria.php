@@ -101,6 +101,173 @@ function group_section_title_audit(string $key, array $games): string {
 	return phase_label_audit((string)($first["fase"] ?? $key), null);
 }
 
+function flag_slug_from_name_audit(string $nome): string {
+	$s = trim($nome);
+	if ($s === '') return '';
+
+	$s = preg_replace('/\s+ou\s+.*/iu', '', $s) ?? $s;
+	$s = preg_replace('/\s*\(.*?\)\s*/u', ' ', $s) ?? $s;
+	$s = mb_strtolower($s, 'UTF-8');
+
+	$t = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
+	if ($t !== false && $t !== '') $s = $t;
+
+	$s = preg_replace('/[^a-z0-9]+/', '', $s) ?? $s;
+	return $s;
+}
+
+function flag_slug_aliases_audit(string $slugBase): array {
+	$map = [
+		'reptcheca' => 'republicatcheca',
+		'reptchecaouirlandaoudinamarca' => 'republicatcheca',
+		'republicatchecaouirlandaoudinamarca' => 'republicatcheca',
+		'coreiadosul' => 'coreiadosul',
+		'coreiadonorte' => 'coreiadonorte',
+		'estadosunidos' => 'estadosunidos',
+		'mexico' => 'mexico',
+		'africadosul' => 'africadosul',
+		'cotedivoire' => 'costadomarfim',
+	];
+
+	$out = [];
+	if ($slugBase !== '') {
+		$out[] = $slugBase;
+		if (isset($map[$slugBase])) $out[] = $map[$slugBase];
+	}
+
+	return array_values(array_unique($out));
+}
+
+function flag_url_for_team_audit(string $teamName, string $sigla): ?string {
+	$baseDir = __DIR__ . "/img/flags";
+	$candidates = [];
+
+	$slugByName = flag_slug_from_name_audit($teamName);
+	foreach (flag_slug_aliases_audit($slugByName) as $slug) {
+		if ($slug !== '') $candidates[] = $slug;
+	}
+
+	$sig = trim($sigla);
+	if ($sig !== '') {
+		$sig = mb_strtolower($sig, 'UTF-8');
+		$sig = preg_replace('/[^a-z0-9]+/i', '', $sig) ?? $sig;
+		if ($sig !== '') $candidates[] = $sig;
+	}
+
+	$candidates = array_values(array_unique($candidates));
+	foreach ($candidates as $slug) {
+		$fs = $baseDir . "/" . $slug . ".png";
+		if (is_file($fs)) {
+			return "/img/flags/" . $slug . ".png";
+		}
+	}
+
+	return null;
+}
+
+function render_audit_flag_media(?string $flagUrl, string $sigla, string $teamName, string $sizeClass = ''): void {
+	$sig = trim($sigla);
+	if ($sig === '') $sig = upper_utf8(mb_substr(trim($teamName), 0, 3, 'UTF-8'));
+	?>
+	<span class="audit-flag<?php echo $sizeClass !== '' ? ' ' . strh($sizeClass) : ''; ?><?php echo $flagUrl ? '' : ' no-flag'; ?>">
+		<?php if ($flagUrl): ?>
+			<img src="<?php echo strh($flagUrl); ?>" alt="" loading="lazy" decoding="async">
+		<?php endif; ?>
+		<span class="audit-flag-badge"><?php echo strh($sig); ?></span>
+	</span>
+	<?php
+}
+
+function render_audit_game_card(array $game, array $usuarios, array $picks): void {
+	$filled = count($picks);
+	$missing = max(0, count($usuarios) - $filled);
+	$casa = (string)($game["casa_nome"] ?? "");
+	$fora = (string)($game["fora_nome"] ?? "");
+	$casaSigla = (string)($game["casa_sigla"] ?? "");
+	$foraSigla = (string)($game["fora_sigla"] ?? "");
+	$flagCasa = isset($game["casa_flag"]) ? (string)$game["casa_flag"] : flag_url_for_team_audit($casa, $casaSigla);
+	$flagFora = isset($game["fora_flag"]) ? (string)$game["fora_flag"] : flag_url_for_team_audit($fora, $foraSigla);
+	$phase = phase_label_audit((string)($game["fase"] ?? ""), isset($game["grupo_codigo"]) ? (string)$game["grupo_codigo"] : null);
+	?>
+	<article class="audit-game is-collapsed" data-search="<?php echo strh(lower_utf8($casa . ' ' . $casaSigla . ' ' . $fora . ' ' . $foraSigla . ' ' . $phase . ' ' . (string)($game["codigo_fifa"] ?? ''))); ?>">
+		<header class="audit-game-head">
+			<div class="audit-game-main">
+				<div class="audit-game-meta">
+					<span><?php echo strh(fmt_when_audit((string)$game["data_hora"])); ?></span>
+					<span><?php echo strh($phase); ?></span>
+					<?php if (!empty($game["codigo_fifa"])): ?><span>FIFA <?php echo strh((string)$game["codigo_fifa"]); ?></span><?php endif; ?>
+				</div>
+
+				<div class="audit-game-matchup">
+					<div class="audit-game-team">
+						<?php render_audit_flag_media($flagCasa, $casaSigla, $casa, 'is-large'); ?>
+						<div class="audit-game-team-copy">
+							<div class="audit-game-team-name"><?php echo strh($casa); ?></div>
+							<?php if ($casaSigla !== ''): ?><div class="audit-game-team-sigla"><?php echo strh($casaSigla); ?></div><?php endif; ?>
+						</div>
+					</div>
+
+					<div class="audit-game-versus" aria-hidden="true">x</div>
+
+					<div class="audit-game-team">
+						<?php render_audit_flag_media($flagFora, $foraSigla, $fora, 'is-large'); ?>
+						<div class="audit-game-team-copy">
+							<div class="audit-game-team-name"><?php echo strh($fora); ?></div>
+							<?php if ($foraSigla !== ''): ?><div class="audit-game-team-sigla"><?php echo strh($foraSigla); ?></div><?php endif; ?>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="audit-game-counts">
+				<strong><?php echo (int)$filled; ?>/<?php echo (int)count($usuarios); ?></strong>
+				<span><?php echo (int)$missing; ?> sem palpite</span>
+				<button class="audit-toggle-game" type="button" aria-expanded="false">Mostrar apostas</button>
+			</div>
+		</header>
+
+		<div class="audit-picks">
+			<?php foreach ($usuarios as $user): ?>
+				<?php
+				$uid = (int)($user["id"] ?? 0);
+				$isUserAdmin = (upper_utf8((string)($user["tipo_usuario"] ?? "")) === "ADMIN");
+				$pick = $picks[$uid] ?? null;
+				$pickText = "Sem palpite";
+				$passText = "";
+				if (is_array($pick)) {
+					$pickText = (string)(int)$pick["gols_casa"] . " x " . (string)(int)$pick["gols_fora"];
+					if ((int)$pick["gols_casa"] === (int)$pick["gols_fora"] && !empty($pick["passa_nome"])) {
+						$passText = "Passa: " . (string)$pick["passa_nome"];
+					}
+				}
+				?>
+				<div class="audit-pick<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $pick ? '' : ' is-missing'; ?>" data-pick-status="<?php echo $pick ? 'filled' : 'missing'; ?>" data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>" data-search="<?php echo strh(lower_utf8((string)$user["nome"] . ' ' . $pickText . ' ' . $passText . ' ' . $casa . ' ' . $fora . ' ' . $casaSigla . ' ' . $foraSigla)); ?>">
+					<div class="audit-person">
+						<strong><?php echo strh((string)$user["nome"]); ?></strong>
+						<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
+					</div>
+					<div class="audit-score">
+						<div class="audit-score-teams" aria-hidden="true">
+							<div class="audit-score-team">
+								<?php render_audit_flag_media($flagCasa, $casaSigla, $casa, 'is-small'); ?>
+								<span class="audit-score-team-label"><?php echo strh($casaSigla !== '' ? $casaSigla : $casa); ?></span>
+							</div>
+							<span class="audit-score-versus">x</span>
+							<div class="audit-score-team">
+								<?php render_audit_flag_media($flagFora, $foraSigla, $fora, 'is-small'); ?>
+								<span class="audit-score-team-label"><?php echo strh($foraSigla !== '' ? $foraSigla : $fora); ?></span>
+							</div>
+						</div>
+						<strong><?php echo strh($pickText); ?></strong>
+						<?php if ($passText !== ''): ?><small><?php echo strh($passText); ?></small><?php endif; ?>
+					</div>
+				</div>
+			<?php endforeach; ?>
+		</div>
+	</article>
+	<?php
+}
+
 require_login();
 
 $usuarioNome = isset($_SESSION["usuario_nome"]) ? (string)$_SESSION["usuario_nome"] : "Apostador";
@@ -191,6 +358,8 @@ try {
 
 		$game["logical_day"] = $day;
 		$game["lock_at"] = $lockAt instanceof DateTimeImmutable ? $lockAt : $dt;
+		$game["casa_flag"] = flag_url_for_team_audit((string)($game["casa_nome"] ?? ""), (string)($game["casa_sigla"] ?? ""));
+		$game["fora_flag"] = flag_url_for_team_audit((string)($game["fora_nome"] ?? ""), (string)($game["fora_sigla"] ?? ""));
 		$lockedGames[] = $game;
 	}
 
@@ -336,57 +505,8 @@ require_once __DIR__ . "/partials/app_header.php";
 						<?php
 						$jid = (int)$game["id"];
 						$picks = $palpitesByGameUser[$jid] ?? [];
-						$filled = count($picks);
-						$missing = max(0, count($usuarios) - $filled);
-						$casa = (string)$game["casa_nome"];
-						$fora = (string)$game["fora_nome"];
-						$phase = phase_label_audit((string)$game["fase"], isset($game["grupo_codigo"]) ? (string)$game["grupo_codigo"] : null);
 						?>
-						<article class="audit-game is-collapsed" data-search="<?php echo strh(lower_utf8($casa . ' ' . $fora . ' ' . $phase . ' ' . (string)($game["codigo_fifa"] ?? ''))); ?>">
-							<header class="audit-game-head">
-								<div>
-									<div class="audit-game-meta">
-										<span><?php echo strh(fmt_when_audit((string)$game["data_hora"])); ?></span>
-										<span><?php echo strh($phase); ?></span>
-										<?php if (!empty($game["codigo_fifa"])): ?><span>FIFA <?php echo strh((string)$game["codigo_fifa"]); ?></span><?php endif; ?>
-									</div>
-									<h2><?php echo strh($casa); ?> <span>x</span> <?php echo strh($fora); ?></h2>
-								</div>
-								<div class="audit-game-counts">
-									<strong><?php echo (int)$filled; ?>/<?php echo (int)count($usuarios); ?></strong>
-									<span><?php echo (int)$missing; ?> sem palpite</span>
-									<button class="audit-toggle-game" type="button" aria-expanded="false">Mostrar apostas</button>
-								</div>
-							</header>
-
-							<div class="audit-picks">
-								<?php foreach ($usuarios as $user): ?>
-									<?php
-									$uid = (int)$user["id"];
-									$isUserAdmin = (upper_utf8((string)($user["tipo_usuario"] ?? "")) === "ADMIN");
-									$pick = $picks[$uid] ?? null;
-									$pickText = "Sem palpite";
-									$passText = "";
-									if (is_array($pick)) {
-										$pickText = (string)(int)$pick["gols_casa"] . " x " . (string)(int)$pick["gols_fora"];
-										if ((int)$pick["gols_casa"] === (int)$pick["gols_fora"] && !empty($pick["passa_nome"])) {
-											$passText = "Passa: " . (string)$pick["passa_nome"];
-										}
-									}
-									?>
-									<div class="audit-pick<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $pick ? '' : ' is-missing'; ?>" data-pick-status="<?php echo $pick ? 'filled' : 'missing'; ?>" data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>" data-search="<?php echo strh(lower_utf8((string)$user["nome"] . ' ' . $pickText . ' ' . $passText)); ?>">
-										<div class="audit-person">
-											<strong><?php echo strh((string)$user["nome"]); ?></strong>
-											<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
-										</div>
-										<div class="audit-score">
-											<strong><?php echo strh($pickText); ?></strong>
-											<?php if ($passText !== ''): ?><small><?php echo strh($passText); ?></small><?php endif; ?>
-										</div>
-									</div>
-								<?php endforeach; ?>
-							</div>
-						</article>
+						<?php render_audit_game_card($game, $usuarios, $picks); ?>
 					<?php endforeach; ?>
 				</section>
 			<?php endforeach; ?>
@@ -406,57 +526,8 @@ require_once __DIR__ . "/partials/app_header.php";
 						<?php
 						$jid = (int)$game["id"];
 						$picks = $palpitesByGameUser[$jid] ?? [];
-						$filled = count($picks);
-						$missing = max(0, count($usuarios) - $filled);
-						$casa = (string)$game["casa_nome"];
-						$fora = (string)$game["fora_nome"];
-						$phase = phase_label_audit((string)$game["fase"], isset($game["grupo_codigo"]) ? (string)$game["grupo_codigo"] : null);
 						?>
-						<article class="audit-game is-collapsed" data-search="<?php echo strh(lower_utf8($casa . ' ' . $fora . ' ' . $phase . ' ' . (string)($game["codigo_fifa"] ?? ''))); ?>">
-							<header class="audit-game-head">
-								<div>
-									<div class="audit-game-meta">
-										<span><?php echo strh(fmt_when_audit((string)$game["data_hora"])); ?></span>
-										<span><?php echo strh($phase); ?></span>
-										<?php if (!empty($game["codigo_fifa"])): ?><span>FIFA <?php echo strh((string)$game["codigo_fifa"]); ?></span><?php endif; ?>
-									</div>
-									<h2><?php echo strh($casa); ?> <span>x</span> <?php echo strh($fora); ?></h2>
-								</div>
-								<div class="audit-game-counts">
-									<strong><?php echo (int)$filled; ?>/<?php echo (int)count($usuarios); ?></strong>
-									<span><?php echo (int)$missing; ?> sem palpite</span>
-									<button class="audit-toggle-game" type="button" aria-expanded="false">Mostrar apostas</button>
-								</div>
-							</header>
-
-							<div class="audit-picks">
-								<?php foreach ($usuarios as $user): ?>
-									<?php
-									$uid = (int)$user["id"];
-									$isUserAdmin = (upper_utf8((string)($user["tipo_usuario"] ?? "")) === "ADMIN");
-									$pick = $picks[$uid] ?? null;
-									$pickText = "Sem palpite";
-									$passText = "";
-									if (is_array($pick)) {
-										$pickText = (string)(int)$pick["gols_casa"] . " x " . (string)(int)$pick["gols_fora"];
-										if ((int)$pick["gols_casa"] === (int)$pick["gols_fora"] && !empty($pick["passa_nome"])) {
-											$passText = "Passa: " . (string)$pick["passa_nome"];
-										}
-									}
-									?>
-									<div class="audit-pick<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $pick ? '' : ' is-missing'; ?>" data-pick-status="<?php echo $pick ? 'filled' : 'missing'; ?>" data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>" data-search="<?php echo strh(lower_utf8((string)$user["nome"] . ' ' . $pickText . ' ' . $passText)); ?>">
-										<div class="audit-person">
-											<strong><?php echo strh((string)$user["nome"]); ?></strong>
-											<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
-										</div>
-										<div class="audit-score">
-											<strong><?php echo strh($pickText); ?></strong>
-											<?php if ($passText !== ''): ?><small><?php echo strh($passText); ?></small><?php endif; ?>
-										</div>
-									</div>
-								<?php endforeach; ?>
-							</div>
-						</article>
+						<?php render_audit_game_card($game, $usuarios, $picks); ?>
 					<?php endforeach; ?>
 				</section>
 			<?php endforeach; ?>
