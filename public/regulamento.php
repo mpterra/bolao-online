@@ -85,7 +85,7 @@ if ($isLoggedIn) {
 						<p>A primeira é que a partir desse bolão vai ser tudo pela internet!</p>
 						<p>Adeus, planilha!</p>
 						<p>Acessem <a class="rules-link" href="https://www.bolaodothiago.com.br">www.bolaodothiago.com.br</a>, conheçam o bolão, façam seus cadastros e sentem o dedo nos palpites!</p>
-						<p>Como a compra da hospedagem e do domínio tiveram um custo de 700 reais, essa vai ser a primeira vez que vamos usar uma parte do dinheiro das apostas para financiar a estrutura do bolão. Vai ser só esse valor de 700 reais, mais nada. Todo o resto do dinheiro das apostas vai em prêmios.</p>
+						<p>Como a compra da hospedagem/domínio e IAs terão um custo total durante o bolão de 700 reais, essa vai ser a primeira vez que vamos usar uma parte do dinheiro das apostas para financiar a estrutura do bolão. Vai ser só esse valor de 700 reais, mais nada. Todo o resto do dinheiro das apostas vai em prêmios.</p>
 						<p>Mas o site do bolão não é a única novidade!</p>
 						<p>Como agora temos uma solução tecnológica de mais alto nível, acessível a qualquer hora, em qualquer lugar, de computadores ou dispositivos móveis, vai ser possível alterar palpites durante a copa toda!</p>
 						<p>E não para por aí!</p>
@@ -166,7 +166,7 @@ if ($isLoggedIn) {
 			<section id="premiacao" class="rules-section card-glass">
 				<h2>A premiação</h2>
 				<div class="rules-copy">
-					<p>De todo dinheiro arrecadado para o potinho dos prêmios, 700 reais vão ser usados para parar a hospedagem e o domínio do site.</p>
+					<p>De todo dinheiro arrecadado para o potinho dos prêmios, 700 reais vão ser usados para parar a hospedagem/domínio e usos de IA.</p>
 					<p>O resto todo é premiação!</p>
 					<p>Como essa premiação vai ser distribuída?</p>
 					<p>Uma parte do dinheiro vai para os prêmios extras – mais ou menos 28% do potinho – e o resto todo vai para os 10 melhores ao final do bolão, o famoso G10!</p>
