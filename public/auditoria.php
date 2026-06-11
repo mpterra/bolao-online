@@ -241,29 +241,32 @@ function render_audit_game_card(array $game, array $usuarios, array $picks): voi
 					}
 				}
 				?>
-				<div class="audit-pick<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $pick ? '' : ' is-missing'; ?>" data-pick-status="<?php echo $pick ? 'filled' : 'missing'; ?>" data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>" data-search="<?php echo strh(lower_utf8((string)$user["nome"] . ' ' . $pickText . ' ' . $passText . ' ' . $casa . ' ' . $fora . ' ' . $casaSigla . ' ' . $foraSigla)); ?>">
-					<div class="audit-person">
-						<strong><?php echo strh((string)$user["nome"]); ?></strong>
-						<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
-					</div>
+					<div class="audit-pick<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $pick ? '' : ' is-missing'; ?>" data-pick-status="<?php echo $pick ? 'filled' : 'missing'; ?>" data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>" data-search="<?php echo strh(lower_utf8((string)$user["nome"] . ' ' . $pickText . ' ' . $passText . ' ' . $casa . ' ' . $fora . ' ' . $casaSigla . ' ' . $foraSigla)); ?>">
+						<div class="audit-person">
+							<strong><?php echo strh((string)$user["nome"]); ?></strong>
+							<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
+						</div>
 						<div class="audit-score">
-							<div class="audit-score-teams" aria-hidden="true">
-								<div class="audit-score-team">
+							<div class="audit-scoreboard" aria-hidden="true">
+								<div class="audit-score-team is-home">
 									<?php render_audit_flag_media($flagCasa, $casaSigla, $casa, 'is-small'); ?>
 									<span class="audit-score-team-label"><?php echo strh($casa); ?></span>
 								</div>
-								<span class="audit-score-versus">x</span>
-								<div class="audit-score-team">
-									<?php render_audit_flag_media($flagFora, $foraSigla, $fora, 'is-small'); ?>
+
+								<div class="audit-score-result">
+									<strong><?php echo strh($pickText); ?></strong>
+									<?php if ($passText !== ''): ?><small><?php echo strh($passText); ?></small><?php endif; ?>
+								</div>
+
+								<div class="audit-score-team is-away">
 									<span class="audit-score-team-label"><?php echo strh($fora); ?></span>
+									<?php render_audit_flag_media($flagFora, $foraSigla, $fora, 'is-small'); ?>
 								</div>
 							</div>
-							<strong><?php echo strh($pickText); ?></strong>
-						<?php if ($passText !== ''): ?><small><?php echo strh($passText); ?></small><?php endif; ?>
+						</div>
 					</div>
-				</div>
-			<?php endforeach; ?>
-		</div>
+				<?php endforeach; ?>
+			</div>
 	</article>
 	<?php
 }
