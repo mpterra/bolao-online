@@ -1203,7 +1203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .bolao-select-display{ width:100%; padding:12px 44px 12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.10); color:var(--text); font-size:14px; outline:none; transition:220ms ease; cursor:pointer; user-select:none; display:flex; align-items:center; -webkit-tap-highlight-color:transparent; min-height:unset; line-height:normal; }
         .bolao-select-display:focus{ border-color:rgba(16,208,138,.55); box-shadow:0 0 0 4px rgba(16,208,138,.14), 0 10px 22px rgba(0,0,0,.25); background:rgba(255,255,255,.12); }
         .bolao-select-display.is-invalid{ border-color:rgba(255,140,140,.45); box-shadow:0 0 0 4px rgba(255,140,140,.10); }
-        .bolao-select-display.is-disabled{ opacity:.58; cursor:not-allowed; filter:saturate(.7); }
+        .bolao-select-display.is-disabled{ opacity:1; cursor:not-allowed; border-color:rgba(255,255,255,.10); background:rgba(255,255,255,.06); color:rgba(255,255,255,.88); }
         .bolao-select-caret{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:18px; height:18px; pointer-events:none; opacity:.9; }
         .bolao-select-portal{ position:fixed; z-index:999999; border-radius:14px; border:1px solid rgba(255,255,255,.16); background:rgba(0,0,0,.68); backdrop-filter:blur(12px); box-shadow:0 22px 60px rgba(0,0,0,.55); overflow:hidden; display:none; }
         .bolao-select-portal.is-open{ display:block; }
