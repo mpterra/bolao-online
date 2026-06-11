@@ -359,6 +359,24 @@ body::before{
   line-height: 1.45;
 }
 
+#list-top{
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  scroll-margin-top: 120px;
+}
+
+@keyframes pulseTop{
+  0% { box-shadow: 0 0 0 0 rgba(70,220,255,.00); }
+  50%{ box-shadow: 0 0 0 10px rgba(70,220,255,.10); }
+  100%{ box-shadow: 0 0 0 0 rgba(70,220,255,.00); }
+}
+
+#list-top.is-scroll-pulse{
+  border-radius: 999px;
+  animation: pulseTop 420ms ease-out both;
+}
+
 /* =========================================================
    MENU (GRUPOS) — igual app.css
    ========================================================= */
@@ -933,6 +951,8 @@ body::before{
   .score-sep{ display:none; }
 
   .toast{ min-width: calc(100% - 20px); }
+
+  #list-top{ scroll-margin-top: 200px; }
 }
 
 @media (max-width: 380px){

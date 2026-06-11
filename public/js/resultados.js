@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const modeHeads = Array.from(document.querySelectorAll(".content-head[data-content-mode]"));
   const menuLinks = Array.from(document.querySelectorAll(".app-menu .menu-link[data-mode][data-block-type][data-block-key]"));
   const blocks = Array.from(document.querySelectorAll(".group-block[data-view-mode][data-block-type][data-block-key]"));
+  const listTop = document.getElementById("list-top");
 
   const state = {
     mode: CFG && CFG.active_mode ? String(CFG.active_mode) : "group",
@@ -49,11 +50,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }) || null;
   }
 
+  function scrollToListTop() {
+    if (!listTop) return;
+
+    try {
+      listTop.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (_) {
+      window.scrollTo(0, 0);
+    }
+
+    listTop.classList.add("is-scroll-pulse");
+    clearTimeout(listTop.__pulse);
+    listTop.__pulse = setTimeout(() => {
+      listTop.classList.remove("is-scroll-pulse");
+    }, 450);
+  }
+
   function showMode(mode) {
     state.mode = mode;
+    document.body.setAttribute("data-view-mode", mode);
 
     modeButtons.forEach((btn) => {
-      btn.classList.toggle("is-active", normalize(btn.dataset.viewMode) === mode);
+      const active = normalize(btn.dataset.viewMode) === mode;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
 
     menuPanels.forEach((panel) => {
@@ -87,6 +107,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     state.selected[m] = { type: t, key: k };
+
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("modo", m);
+      url.searchParams.set("tipo", t);
+      url.searchParams.set("chave", k);
+      window.history.replaceState({}, document.title, url.toString());
+    } catch (_) {}
   }
 
   function ensureSelectionForMode(mode) {
@@ -118,6 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!mode || mode === state.mode) return;
       showMode(mode);
       ensureSelectionForMode(mode);
+      scrollToListTop();
     });
   });
 
@@ -138,6 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showMode(mode);
       }
       setActiveBlock(mode, type, key);
+      scrollToListTop();
     });
   });
 

@@ -800,6 +800,8 @@ require_once __DIR__ . "/partials/app_header.php";
 
         <main class="app-content">
 
+            <div id="list-top" aria-hidden="true"></div>
+
             <div class="content-head<?php echo $activeMode === 'group' ? ' is-active' : ''; ?>" data-content-mode="group">
                 <h1 class="content-h1">Resultados por grupo</h1>
                 <p class="content-sub">
