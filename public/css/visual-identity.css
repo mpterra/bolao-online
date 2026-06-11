@@ -516,6 +516,36 @@ textarea:focus{
     0 0 16px rgba(255,214,0,.18) !important;
 }
 
+.rank-select,
+.rank-select option,
+.bolao-select-display,
+.bolao-select-search input,
+.bolao-select-opt{
+  font-family:"Segoe UI", Arial, Helvetica, sans-serif !important;
+  font-weight:700 !important;
+  letter-spacing:0 !important;
+  text-transform:none !important;
+  text-shadow:none !important;
+  text-rendering:auto !important;
+  font-synthesis:none !important;
+}
+
+.rank-select,
+.bolao-select-display{
+  line-height:1.2 !important;
+}
+
+.bolao-select-native{
+  display:none !important;
+}
+
+.rank-select:disabled,
+.rank-select[disabled],
+.bolao-select-display.is-disabled{
+  opacity:1 !important;
+  filter:none !important;
+}
+
 .score{
   border-radius:5px !important;
   border:1px solid rgba(255,255,255,.10) !important;

@@ -906,7 +906,7 @@ body::before{
 }
 
 .group-rank-card.is-locked{
-  opacity: .82;
+  opacity: 1;
 }
 
 .group-rank-head{
