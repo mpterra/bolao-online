@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 const REGISTRATION_LOCK_TIMEZONE = 'America/Sao_Paulo';
-const REGISTRATION_LOCK_DEADLINE = '2026-06-11 15:00:00';
+const REGISTRATION_LOCK_DEADLINE = '2026-06-11 12:00:00';
 const REGISTRATION_CLOSED_PATH = '/cadastro_encerrado.php';
 
 function registration_lock_deadline(): DateTimeImmutable
