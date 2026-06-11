@@ -997,6 +997,16 @@ body::before{
   box-shadow: 0 0 0 4px rgba(255,140,140,.10);
 }
 
+.rank-select:disabled,
+.rank-select[disabled]{
+  color: rgba(255,255,255,.88);
+  background-color: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.10);
+  opacity: 1;
+  cursor: not-allowed;
+  -webkit-text-fill-color: rgba(255,255,255,.88);
+}
+
 .group-rank-actions{
   margin-top: 10px;
   display:flex;
