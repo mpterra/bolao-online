@@ -52,7 +52,6 @@ if ($isLoggedIn) {
 					<a class="rules-section-nav__link" href="#extras" data-section-link="extras">Os prêmios extras</a>
 					<a class="rules-section-nav__link" href="#liga" data-section-link="liga">Liga do Mata-Mata</a>
 					<a class="rules-section-nav__link" href="#desempate" data-section-link="desempate">Critérios de desempate</a>
-					<a class="rules-section-nav__link" href="#simulacao" data-section-link="simulacao">Simulação</a>
 					<a class="rules-section-nav__link" href="#final" data-section-link="final">Considerações finais</a>
 				</div>
 			</nav>
@@ -86,7 +85,7 @@ if ($isLoggedIn) {
 						<p>A primeira é que a partir desse bolão vai ser tudo pela internet!</p>
 						<p>Adeus, planilha!</p>
 						<p>Acessem <a class="rules-link" href="https://www.bolaodothiago.com.br">www.bolaodothiago.com.br</a>, conheçam o bolão, façam seus cadastros e sentem o dedo nos palpites!</p>
-						<p>Como a compra da hospedagem e do domínio tiveram um custo de 460 reais, essa vai ser a primeira vez que vamos usar uma parte do dinheiro das apostas para financiar a estrutura do bolão. Vai ser só esse valor de 460 reais, mais nada. Todo o resto do dinheiro das apostas vai em prêmios.</p>
+						<p>Como a compra da hospedagem e do domínio tiveram um custo de 700 reais, essa vai ser a primeira vez que vamos usar uma parte do dinheiro das apostas para financiar a estrutura do bolão. Vai ser só esse valor de 700 reais, mais nada. Todo o resto do dinheiro das apostas vai em prêmios.</p>
 						<p>Mas o site do bolão não é a única novidade!</p>
 						<p>Como agora temos uma solução tecnológica de mais alto nível, acessível a qualquer hora, em qualquer lugar, de computadores ou dispositivos móveis, vai ser possível alterar palpites durante a copa toda!</p>
 						<p>E não para por aí!</p>
@@ -167,7 +166,7 @@ if ($isLoggedIn) {
 			<section id="premiacao" class="rules-section card-glass">
 				<h2>A premiação</h2>
 				<div class="rules-copy">
-					<p>De todo dinheiro arrecadado para o potinho dos prêmios, 460 reais vão ser usados para parar a hospedagem e o domínio do site.</p>
+					<p>De todo dinheiro arrecadado para o potinho dos prêmios, 700 reais vão ser usados para parar a hospedagem e o domínio do site.</p>
 					<p>O resto todo é premiação!</p>
 					<p>Como essa premiação vai ser distribuída?</p>
 					<p>Uma parte do dinheiro vai para os prêmios extras – mais ou menos 28% do potinho – e o resto todo vai para os 10 melhores ao final do bolão, o famoso G10!</p>
@@ -287,49 +286,6 @@ if ($isLoggedIn) {
 
 				<div class="rules-copy">
 					<p>Nós já tivemos 6 bolões: Copa de 2014, Copa de 2018, Copa de 2022, Copa Feminina de 2023, Eurocopa de 2024 e Mundial de Clubes de 2025. Nunca teve dois ou mais apostadores empatados em tudo, mas como o seguro morreu de velho, temos o critério 15, hahaha!</p>
-				</div>
-			</section>
-
-			<section id="simulacao" class="rules-section card-glass">
-				<h2>Simulação de premiação</h2>
-				<div class="rules-copy">
-					<p>Como a essa altura tá todo mundo curioso para saber quanto o potinho do bolão vai ter, vamos simular!</p>
-					<p>A meta é 200 pessoas no bolão! Todo mundo tem que ajudar na divulgação!</p>
-					<p>200 participantes vão gerar 16 mil reais de arrecadação.</p>
-					<p>16 mil reais – 460 reais de custos = 15.540 reais no potinho!</p>
-					<p>Com 15,540 reais no potinho, dá para pagar 440 reais para cada um dos prêmios extras (5,5 vezes a aposta de 80 reais).</p>
-					<p>15.540 reais – (440 reais x 10 prêmios extras) = 11.140 reais para o G10.</p>
-					<p>11.140 reais para o G10 dá o seguinte:</p>
-				</div>
-
-				<div class="rules-table-wrap">
-					<table class="rules-table rules-table--compact">
-						<thead>
-							<tr>
-								<th>G10</th>
-								<th>Premiação</th>
-								<th>%</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr><td>1º</td><td>2.228,00</td><td>20%</td></tr>
-							<tr><td>2º</td><td>1.893,80</td><td>17%</td></tr>
-							<tr><td>3º</td><td>1.559,60</td><td>14%</td></tr>
-							<tr><td>4º</td><td>1.114,00</td><td>10%</td></tr>
-							<tr><td>5º</td><td>1.002,60</td><td>9%</td></tr>
-							<tr><td>6º</td><td>891,20</td><td>8%</td></tr>
-							<tr><td>7º</td><td>779,80</td><td>7%</td></tr>
-							<tr><td>8º</td><td>668,40</td><td>6%</td></tr>
-							<tr><td>9º</td><td>557,00</td><td>5%</td></tr>
-							<tr><td>10º</td><td>445,60</td><td>4%</td></tr>
-						</tbody>
-					</table>
-				</div>
-
-				<div class="rules-copy">
-					<p>É um belo dinheiro!</p>
-					<p>O que vai ser feito é tentar deixar o valor dos prêmios extras igual ao valor do 10º colocado.</p>
-					<p>Se nós tivermos menos de 200 participantes – ou mais! –, o valor dos prêmios extras vai ser ajustado para mais ou para menos para mais para seguir essa regra. Mas o percentual do G10 não vai mudar.</p>
 				</div>
 			</section>
 
