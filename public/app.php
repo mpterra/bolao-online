@@ -483,17 +483,24 @@ function first_game_start_for_edition(PDO $pdo, int $edicaoId): ?DateTimeImmutab
 	return dt_from_mysql(is_string($minDt) ? $minDt : null);
 }
 
+const GROUP_RANK_DEADLINE = '2026-06-11 15:00:00';
+
+function group_rank_deadline(): DateTimeImmutable {
+	static $deadline = null;
+	if ($deadline instanceof DateTimeImmutable) {
+		return $deadline;
+	}
+	$deadline = new DateTimeImmutable(GROUP_RANK_DEADLINE, new DateTimeZone('America/Sao_Paulo'));
+	return $deadline;
+}
+
 function group_rank_change_is_locked(?DateTimeImmutable $firstGameAt, DateTimeImmutable $now): bool {
-	return ($firstGameAt instanceof DateTimeImmutable) && $now >= $firstGameAt;
+	return $now >= group_rank_deadline();
 }
 
 function group_rank_lock_message(?DateTimeImmutable $firstGameAt): string {
-	if (!$firstGameAt) {
-		return "Nao foi possivel identificar o primeiro jogo da edicao.";
-	}
-
-	return "O prazo para escolher ou alterar o 1o, 2o e 3o de cada grupo encerrou no inicio do primeiro jogo, em "
-		. $firstGameAt->format('d/m/Y \a\s H:i') . ".";
+	$label = group_rank_deadline()->format('d/m/Y \à\s H:i');
+	return "O prazo para escolher ou alterar o 1o, 2o e 3o de cada grupo encerrou em {$label}.";
 }
 
 function resolve_receipt_url(string $phpWebBase): ?string {
