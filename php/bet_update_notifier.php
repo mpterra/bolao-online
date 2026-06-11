@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 use PHPMailer\PHPMailer\PHPMailer;
 
+// Defina como true para reativar o envio de e-mails aos admins ao trocar apostas.
+const BET_UPDATE_NOTIFY_ENABLED = false;
+
 function bet_notify_log(string $message): void {
     $line = sprintf("[%s] %s\n", date('Y-m-d H:i:s'), $message);
     $logDir = __DIR__ . '/logs';
@@ -203,6 +206,10 @@ function bet_notify_ensure_table(PDO $pdo): void {
 }
 
 function bet_notify_track_update(PDO $pdo, int $usuarioId, array $itemKeys = []): void {
+    if (!BET_UPDATE_NOTIFY_ENABLED) {
+        return;
+    }
+
     if ($usuarioId <= 0) {
         return;
     }
@@ -255,6 +262,11 @@ function bet_notify_flush(PDO $pdo, int $usuarioId, bool $force = true): array {
         'pending' => 0,
         'reason' => 'unknown',
     ];
+
+    if (!BET_UPDATE_NOTIFY_ENABLED) {
+        $out['reason'] = 'disabled';
+        return $out;
+    }
 
     if ($usuarioId <= 0) {
         $out['reason'] = 'invalid-user';
