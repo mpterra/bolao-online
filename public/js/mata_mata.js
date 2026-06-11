@@ -96,6 +96,39 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/'/g, "&#039;");
   }
 
+  function flagSlug(nome) {
+    let s = normalizeStr(nome);
+    if (!s) return "";
+
+    s = s.replace(/\s+ou\s+.*/iu, "");
+    s = s.replace(/\s*\(.*?\)\s*/gu, " ");
+    s = s.toLowerCase();
+    s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    s = s.replace(/[^a-z0-9]+/g, "");
+    return s;
+  }
+
+  function flagUrl(nome) {
+    const slug = flagSlug(nome);
+    return slug ? `/img/flags/${slug}.png` : "";
+  }
+
+  function renderTeamCell(nome, sigla) {
+    const safeNome = escHtml(nome);
+    const safeSigla = escHtml(sigla);
+    const src = flagUrl(nome);
+    const flag = src
+      ? `<img class="mm-team-flag" src="${escHtml(src)}" alt="Bandeira ${safeNome}" title="${safeNome}" loading="lazy" decoding="async" onerror="this.style.display='none'">`
+      : "";
+
+    return `
+      <span class="mm-team-cell">
+        ${flag}
+        <span class="mm-team-label">${safeNome} <span class="mm-team-sigla">(${safeSigla})</span></span>
+      </span>
+    `;
+  }
+
   function showToast(msg, ms = 2400) {
     if (!toast) return;
     toast.textContent = String(msg || "");
@@ -367,8 +400,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const zebra = (g.zebra === "CASA") ? "Casa" : (g.zebra === "FORA") ? "Fora" : "Nenhuma";
       const lock = g.has_palpites ? `<span class="mm-badge-lock">🔒 ${g.total_palpites} palpite(s)</span>` : "";
 
-      const casa = `${escHtml(g.time_casa_nome)} (${escHtml(g.time_casa_sigla)})`;
-      const fora = `${escHtml(g.time_fora_nome)} (${escHtml(g.time_fora_sigla)})`;
+      const casa = renderTeamCell(g.time_casa_nome, g.time_casa_sigla);
+      const fora = renderTeamCell(g.time_fora_nome, g.time_fora_sigla);
 
       return `
         <tr>

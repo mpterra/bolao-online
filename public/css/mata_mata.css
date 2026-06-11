@@ -668,6 +668,35 @@ select{
 
 .mm-table tr:hover td{ background: rgba(255,255,255,.04); }
 
+.mm-team-cell{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.mm-team-flag{
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 8px 16px rgba(0,0,0,.22);
+}
+
+.mm-team-label{
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mm-team-sigla{
+  color: rgba(255,255,255,.72);
+}
+
 .mm-row-actions{
   display:flex;
   gap: 10px;
@@ -1176,6 +1205,16 @@ select{
   }
 
   /* palpite badge e ações ficam “bons” no card */
+  .mm-team-cell{
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .mm-team-label{
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .mm-badge-lock{
     white-space: nowrap;
   }

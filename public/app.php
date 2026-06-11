@@ -1842,6 +1842,7 @@ require_once __DIR__ . "/partials/app_header.php";
 														class="team-flag"
 														src="<?php echo strh($flagCasa); ?>"
 														alt="Bandeira <?php echo strh($casa); ?>"
+														title="<?php echo strh($casa); ?>"
 														width="36" height="36"
 														loading="lazy" decoding="async"
 														style="width:36px;height:36px;border-radius:14px;object-fit:cover;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 18px rgba(0,0,0,.22);"
@@ -1870,6 +1871,7 @@ require_once __DIR__ . "/partials/app_header.php";
 														class="team-flag"
 														src="<?php echo strh($flagFora); ?>"
 														alt="Bandeira <?php echo strh($fora); ?>"
+														title="<?php echo strh($fora); ?>"
 														width="36" height="36"
 														loading="lazy" decoding="async"
 														style="width:36px;height:36px;border-radius:14px;object-fit:cover;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 18px rgba(0,0,0,.22);"
@@ -2086,7 +2088,7 @@ require_once __DIR__ . "/partials/app_header.php";
 										<div class="team team-home">
 											<div class="team-name"><?php echo strh($casa); ?></div>
 											<?php if ($flagCasa !== null): ?>
-												<img class="team-flag" src="<?php echo strh($flagCasa); ?>" alt="Bandeira <?php echo strh($casa); ?>" width="36" height="36" loading="lazy" decoding="async" style="width:36px;height:36px;border-radius:14px;object-fit:cover;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 18px rgba(0,0,0,.22);">
+												<img class="team-flag" src="<?php echo strh($flagCasa); ?>" alt="Bandeira <?php echo strh($casa); ?>" title="<?php echo strh($casa); ?>" width="36" height="36" loading="lazy" decoding="async" style="width:36px;height:36px;border-radius:14px;object-fit:cover;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 18px rgba(0,0,0,.22);">
 											<?php else: ?>
 												<div class="team-badge"><?php echo strh($csig); ?></div>
 											<?php endif; ?>
@@ -2101,7 +2103,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
 										<div class="team team-away">
 											<?php if ($flagFora !== null): ?>
-												<img class="team-flag" src="<?php echo strh($flagFora); ?>" alt="Bandeira <?php echo strh($fora); ?>" width="36" height="36" loading="lazy" decoding="async" style="width:36px;height:36px;border-radius:14px;object-fit:cover;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 18px rgba(0,0,0,.22);">
+												<img class="team-flag" src="<?php echo strh($flagFora); ?>" alt="Bandeira <?php echo strh($fora); ?>" title="<?php echo strh($fora); ?>" width="36" height="36" loading="lazy" decoding="async" style="width:36px;height:36px;border-radius:14px;object-fit:cover;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 18px rgba(0,0,0,.22);">
 											<?php else: ?>
 												<div class="team-badge"><?php echo strh($fsig); ?></div>
 											<?php endif; ?>
