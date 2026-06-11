@@ -2113,10 +2113,35 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      btnRecibo.addEventListener("click", (ev) => {
+      let reciboFlushPending = false;
+
+      btnRecibo.addEventListener("click", async (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
         if (typeof ev.stopImmediatePropagation === "function") ev.stopImmediatePropagation();
+
+        if (reciboFlushPending) return;
+        reciboFlushPending = true;
+
+        const originalText = btnRecibo.textContent;
+        btnRecibo.disabled = true;
+        btnRecibo.textContent = "Salvando...";
+
+        try {
+          captureCurrentMatchDrafts();
+          captureCurrentRankDrafts();
+          await Promise.race([
+            Promise.all([
+              flushPendingMatchSaves({ silentToast: true }).catch(() => {}),
+              flushPendingRankSaves({ silentToast: true }).catch(() => {}),
+            ]),
+            new Promise((resolve) => setTimeout(resolve, 5000)),
+          ]);
+        } catch (_) {}
+
+        btnRecibo.disabled = false;
+        btnRecibo.textContent = originalText;
+        reciboFlushPending = false;
         openReceiptPdf();
       }, { capture: true, passive: false });
     }

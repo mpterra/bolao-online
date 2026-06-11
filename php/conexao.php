@@ -27,7 +27,7 @@ $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,   // lança exception
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,         // retorna array associativo
     PDO::ATTR_EMULATE_PREPARES   => false,                    // prepared real (segurança)
-    PDO::ATTR_PERSISTENT         => false,                    // conexão não persistente
+    PDO::ATTR_PERSISTENT         => true,                     // conexão persistente (reusa TCP por processo PHP; monitorar max_connections no MySQL)
 
     // ✅ alteração mínima: timeout (quando suportado pelo driver/ambiente)
     PDO::ATTR_TIMEOUT            => 5,

@@ -721,7 +721,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 		$result = app_retry_db_operation(
 			$pdo,
 			static function () use ($pdo, $normalized, $usuarioId, $now, &$lockCache): array {
-				$sqlCheck = "
+				// Batch-load all games in one query instead of N individual SELECTs
+				[$inPlaceholders, $inIds] = app_sql_int_in_clause(array_column($normalized, 'jogo_id'));
+
+				$sqlBatch = "
 						SELECT
 								j.id,
 								j.data_hora,
@@ -731,14 +734,19 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 								j.time_fora_id
 						FROM jogos j
 						INNER JOIN edicoes e ON e.id = j.edicao_id AND e.ativo = 1
-						WHERE j.id = :jogo_id
+						WHERE j.id IN ($inPlaceholders)
 							AND (
 										(j.grupo_id IS NOT NULL AND (j.fase = 'GRUPOS' OR j.fase = 'GRUPO' OR j.fase = 'FASE_DE_GRUPOS' OR j.fase LIKE '%GRUP%'))
 								 OR (j.grupo_id IS NULL AND j.fase IN ('16_DE_FINAL','OITAVAS','QUARTAS','SEMI','TERCEIRO_LUGAR','FINAL'))
 							)
-						LIMIT 1
 				";
-				$stCheck = $pdo->prepare($sqlCheck);
+				$stBatch = $pdo->prepare($sqlBatch);
+				$stBatch->execute($inIds);
+
+				$gamesById = [];
+				foreach ($stBatch->fetchAll(PDO::FETCH_ASSOC) as $g) {
+					$gamesById[(int)$g['id']] = $g;
+				}
 
 				$sqlUpsert = "
 						INSERT INTO palpites (usuario_id, jogo_id, gols_casa, gols_fora, passa_time_id)
@@ -755,8 +763,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save") {
 				$savable = [];
 
 				foreach ($normalized as $row) {
-					$stCheck->execute([":jogo_id" => $row["jogo_id"]]);
-					$game = $stCheck->fetch(PDO::FETCH_ASSOC);
+					$game = $gamesById[(int)$row["jogo_id"]] ?? null;
 
 					if (!is_array($game) || empty($game["id"])) {
 						$blocked[] = [
