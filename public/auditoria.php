@@ -246,19 +246,19 @@ function render_audit_game_card(array $game, array $usuarios, array $picks): voi
 						<strong><?php echo strh((string)$user["nome"]); ?></strong>
 						<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
 					</div>
-					<div class="audit-score">
-						<div class="audit-score-teams" aria-hidden="true">
-							<div class="audit-score-team">
-								<?php render_audit_flag_media($flagCasa, $casaSigla, $casa, 'is-small'); ?>
-								<span class="audit-score-team-label"><?php echo strh($casaSigla !== '' ? $casaSigla : $casa); ?></span>
+						<div class="audit-score">
+							<div class="audit-score-teams" aria-hidden="true">
+								<div class="audit-score-team">
+									<?php render_audit_flag_media($flagCasa, $casaSigla, $casa, 'is-small'); ?>
+									<span class="audit-score-team-label"><?php echo strh($casa); ?></span>
+								</div>
+								<span class="audit-score-versus">x</span>
+								<div class="audit-score-team">
+									<?php render_audit_flag_media($flagFora, $foraSigla, $fora, 'is-small'); ?>
+									<span class="audit-score-team-label"><?php echo strh($fora); ?></span>
+								</div>
 							</div>
-							<span class="audit-score-versus">x</span>
-							<div class="audit-score-team">
-								<?php render_audit_flag_media($flagFora, $foraSigla, $fora, 'is-small'); ?>
-								<span class="audit-score-team-label"><?php echo strh($foraSigla !== '' ? $foraSigla : $fora); ?></span>
-							</div>
-						</div>
-						<strong><?php echo strh($pickText); ?></strong>
+							<strong><?php echo strh($pickText); ?></strong>
 						<?php if ($passText !== ''): ?><small><?php echo strh($passText); ?></small><?php endif; ?>
 					</div>
 				</div>
