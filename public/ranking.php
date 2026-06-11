@@ -109,7 +109,7 @@ try {
         }
     }
 
-    // 2) Ranking (ordem do banco)
+    // 2) Ranking (ordem exibida na tela)
     $sql = "
         SELECT
             r.posicao,
@@ -132,7 +132,12 @@ try {
         FROM ranking r
         INNER JOIN usuarios u ON u.id = r.usuario_id
         WHERE r.edicao_id = :edicao_id
-        ORDER BY r.posicao ASC
+        ORDER BY
+            r.pontos DESC,
+            r.resultados_acertados DESC,
+            r.placares_acertados DESC,
+            u.nome ASC,
+            u.id ASC
     ";
 
     $rows = app_cache_remember('ranking:rows:' . (int)$edicaoId, 30, static function () use ($pdo, $sql, $edicaoId): array {
@@ -254,8 +259,8 @@ function build_row_class(int $uid, int $meId, int $pos): string {
               <th class="c-pos">#</th>
               <th class="c-user">Usuário</th>
               <th class="c-pts">Pontos</th>
-              <th class="c-small">Placares</th>
               <th class="c-small">Resultados</th>
+              <th class="c-small">Placares</th>
               <th class="c-small">1ª fase</th>
               <th class="c-small">Mata-mata</th>
               <th class="c-small">🏆</th>
@@ -266,12 +271,12 @@ function build_row_class(int $uid, int $meId, int $pos): string {
           </thead>
 
           <tbody>
-          <?php foreach ($rows as $r): ?>
+          <?php foreach ($rows as $index => $r): ?>
             <?php
               $uid  = (int)($r["usuario_id"] ?? 0);
               $nome = (string)($r["usuario_nome"] ?? "");
 
-              $pos    = (int)($r["posicao"] ?? 0);
+              $pos    = $index + 1;
               $pontos = (int)($r["pontos"] ?? 0);
               $plac   = (int)($r["placares_acertados"] ?? 0);
               $resu   = (int)($r["resultados_acertados"] ?? 0);
@@ -298,8 +303,8 @@ function build_row_class(int $uid, int $meId, int $pos): string {
               </td>
 
               <td data-label="Pontos" class="c-pts"><span class="rk-points"><?php echo $pontos; ?></span></td>
-              <td data-label="Placares" class="c-small"><?php echo $plac; ?></td>
               <td data-label="Resultados" class="c-small"><?php echo $resu; ?></td>
+              <td data-label="Placares" class="c-small"><?php echo $plac; ?></td>
               <td data-label="1ª fase" class="c-small"><?php echo $pf; ?></td>
               <td data-label="Mata-mata" class="c-small"><?php echo $mm; ?></td>
 
@@ -320,7 +325,7 @@ function build_row_class(int $uid, int $meId, int $pos): string {
       </div>
 
       <div class="rk-foot text-muted">
-        Dica: use a busca para filtrar por nome. A ordem exibida é a do banco (posicao).
+        Dica: use a busca para filtrar por nome. A ordem exibida segue pontos, resultados acertados, placares acertados e ordem alfabética.
       </div>
 
     </div>
