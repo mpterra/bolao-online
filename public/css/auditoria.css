@@ -400,9 +400,9 @@
 
 .audit-pick{
   display:grid;
-  grid-template-columns:minmax(0, 1fr) auto;
-  gap:10px;
-  align-items:center;
+  grid-template-columns:1fr;
+  gap:8px;
+  align-items:start;
   min-height:52px;
   padding:11px 12px;
   border:1px solid rgba(255,255,255,.12);
@@ -428,7 +428,6 @@
   min-width:0;
 }
 
-.audit-person strong,
 .audit-score strong{
   display:block;
   overflow:hidden;
@@ -438,6 +437,11 @@
 
 .audit-person strong{
   font-size:13px;
+  line-height:1.18;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
 }
 
 .audit-person span{
@@ -536,11 +540,6 @@
 }
 
 @media (max-width: 520px){
-  .audit-pick{
-    grid-template-columns:1fr;
-    align-items:flex-start;
-  }
-
   .audit-score{
     width:100%;
   }
