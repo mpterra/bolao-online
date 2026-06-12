@@ -49,6 +49,33 @@ function get_pdo_auditoria(): PDO {
 	throw new RuntimeException("Nao foi possivel obter conexao com o banco.");
 }
 
+const AUDIT_CAMPEAO_PICK_DEADLINE = '2026-06-11 15:00:00';
+const AUDIT_GROUP_RANK_DEADLINE = '2026-06-11 15:00:00';
+
+function champion_pick_deadline_audit(): DateTimeImmutable {
+	static $deadline = null;
+	if ($deadline instanceof DateTimeImmutable) return $deadline;
+	$deadline = new DateTimeImmutable(AUDIT_CAMPEAO_PICK_DEADLINE, new DateTimeZone('America/Sao_Paulo'));
+	return $deadline;
+}
+
+function champion_pick_is_locked_audit(?DateTimeImmutable $now = null): bool {
+	$now = $now ?? new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'));
+	return $now > champion_pick_deadline_audit();
+}
+
+function group_rank_deadline_audit(): DateTimeImmutable {
+	static $deadline = null;
+	if ($deadline instanceof DateTimeImmutable) return $deadline;
+	$deadline = new DateTimeImmutable(AUDIT_GROUP_RANK_DEADLINE, new DateTimeZone('America/Sao_Paulo'));
+	return $deadline;
+}
+
+function group_rank_is_locked_audit(?DateTimeImmutable $now = null): bool {
+	$now = $now ?? new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'));
+	return $now >= group_rank_deadline_audit();
+}
+
 function dt_from_mysql_audit(?string $dt): ?DateTimeImmutable {
 	if (!$dt) return null;
 	try {
@@ -175,6 +202,27 @@ function render_audit_flag_media(?string $flagUrl, string $sigla, string $teamNa
 		<?php endif; ?>
 		<span class="audit-flag-badge"><?php echo strh($sig); ?></span>
 	</span>
+	<?php
+}
+
+function render_audit_team_choice(?array $team, string $label, string $sizeClass = 'is-small'): void {
+	$name = trim((string)($team['nome'] ?? ''));
+	$sigla = trim((string)($team['sigla'] ?? ''));
+	$flagUrl = trim((string)($team['flag_url'] ?? ''));
+	$hasTeam = $name !== '';
+	?>
+	<div class="audit-team-choice<?php echo $hasTeam ? '' : ' is-empty'; ?>">
+		<?php if ($hasTeam): ?>
+			<?php render_audit_flag_media($flagUrl !== '' ? $flagUrl : null, $sigla, $name, $sizeClass); ?>
+		<?php else: ?>
+			<span class="audit-team-choice-placeholder<?php echo $sizeClass !== '' ? ' ' . strh($sizeClass) : ''; ?>">-</span>
+		<?php endif; ?>
+		<div class="audit-team-choice-copy">
+			<?php if ($label !== ''): ?><div class="audit-team-choice-label"><?php echo strh($label); ?></div><?php endif; ?>
+			<div class="audit-team-choice-name"><?php echo strh($hasTeam ? $name : 'Nao preenchido'); ?></div>
+			<?php if ($hasTeam && $sigla !== ''): ?><div class="audit-team-choice-meta"><?php echo strh($sigla); ?></div><?php endif; ?>
+		</div>
+	</div>
 	<?php
 }
 
@@ -305,6 +353,126 @@ try {
 	$admins = array_values(array_filter($usuarios, static function (array $u): bool {
 		return upper_utf8((string)($u["tipo_usuario"] ?? "")) === "ADMIN";
 	}));
+
+	$championDeadlineAt = champion_pick_deadline_audit();
+	$championDeadlineLabel = $championDeadlineAt->format('d/m/Y \à\s H:i:s');
+	$championAuditUnlocked = champion_pick_is_locked_audit($now);
+
+	$groupRankDeadlineAt = group_rank_deadline_audit();
+	$groupRankDeadlineLabel = $groupRankDeadlineAt->format('d/m/Y \à\s H:i');
+	$groupRankAuditUnlocked = group_rank_is_locked_audit($now);
+
+	$stGroups = $pdo->prepare("
+		SELECT id, codigo, COALESCE(nome, CONCAT('Grupo ', codigo)) AS nome
+		FROM grupos
+		WHERE edicao_id = ?
+		ORDER BY codigo ASC, id ASC
+	");
+	$stGroups->execute([$edicaoId]);
+	$groups = $stGroups->fetchAll(PDO::FETCH_ASSOC);
+	if (!is_array($groups)) $groups = [];
+
+	$championPicksByUser = [];
+	$championFilledCount = 0;
+	if ($championAuditUnlocked) {
+		$stChampion = $pdo->prepare("
+			SELECT
+				pc.usuario_id,
+				pc.time_id,
+				t.nome AS time_nome,
+				t.sigla AS time_sigla
+			FROM palpite_campeao pc
+			LEFT JOIN times t ON t.id = pc.time_id
+			WHERE pc.edicao_id = ?
+		");
+		$stChampion->execute([$edicaoId]);
+		while ($row = $stChampion->fetch(PDO::FETCH_ASSOC)) {
+			$uid = (int)($row['usuario_id'] ?? 0);
+			if ($uid <= 0) continue;
+
+			$teamId = (int)($row['time_id'] ?? 0);
+			$teamName = (string)($row['time_nome'] ?? '');
+			$teamSigla = (string)($row['time_sigla'] ?? '');
+			$championPicksByUser[$uid] = [
+				'time_id' => $teamId,
+				'nome' => $teamName,
+				'sigla' => $teamSigla,
+				'flag_url' => $teamId > 0 ? flag_url_for_team_audit($teamName, $teamSigla) : null,
+			];
+
+			if ($teamId > 0) $championFilledCount++;
+		}
+	}
+	$championCoverage = count($usuarios) > 0 ? round(($championFilledCount / count($usuarios)) * 100, 1) : 0;
+
+	$groupRankPicksByGroupUser = [];
+	$groupRankFilledCount = 0;
+	if ($groupRankAuditUnlocked && count($groups) > 0) {
+		$stGroupRanks = $pdo->prepare("
+			SELECT
+				pgc.usuario_id,
+				pgc.grupo_id,
+				pgc.primeiro_time_id,
+				pgc.segundo_time_id,
+				pgc.terceiro_time_id,
+				t1.nome AS primeiro_nome,
+				t1.sigla AS primeiro_sigla,
+				t2.nome AS segundo_nome,
+				t2.sigla AS segundo_sigla,
+				t3.nome AS terceiro_nome,
+				t3.sigla AS terceiro_sigla
+			FROM palpite_grupo_classificacao pgc
+			LEFT JOIN times t1 ON t1.id = pgc.primeiro_time_id
+			LEFT JOIN times t2 ON t2.id = pgc.segundo_time_id
+			LEFT JOIN times t3 ON t3.id = pgc.terceiro_time_id
+			WHERE pgc.edicao_id = ?
+			ORDER BY pgc.grupo_id ASC, pgc.usuario_id ASC
+		");
+		$stGroupRanks->execute([$edicaoId]);
+		while ($row = $stGroupRanks->fetch(PDO::FETCH_ASSOC)) {
+			$gid = (int)($row['grupo_id'] ?? 0);
+			$uid = (int)($row['usuario_id'] ?? 0);
+			if ($gid <= 0 || $uid <= 0) continue;
+
+			$slot1 = [
+				'time_id' => (int)($row['primeiro_time_id'] ?? 0),
+				'nome' => (string)($row['primeiro_nome'] ?? ''),
+				'sigla' => (string)($row['primeiro_sigla'] ?? ''),
+			];
+			$slot2 = [
+				'time_id' => (int)($row['segundo_time_id'] ?? 0),
+				'nome' => (string)($row['segundo_nome'] ?? ''),
+				'sigla' => (string)($row['segundo_sigla'] ?? ''),
+			];
+			$slot3 = [
+				'time_id' => (int)($row['terceiro_time_id'] ?? 0),
+				'nome' => (string)($row['terceiro_nome'] ?? ''),
+				'sigla' => (string)($row['terceiro_sigla'] ?? ''),
+			];
+
+			$slot1['flag_url'] = ((int)$slot1['time_id'] > 0)
+				? flag_url_for_team_audit((string)$slot1['nome'], (string)$slot1['sigla'])
+				: null;
+			$slot2['flag_url'] = ((int)$slot2['time_id'] > 0)
+				? flag_url_for_team_audit((string)$slot2['nome'], (string)$slot2['sigla'])
+				: null;
+			$slot3['flag_url'] = ((int)$slot3['time_id'] > 0)
+				? flag_url_for_team_audit((string)$slot3['nome'], (string)$slot3['sigla'])
+				: null;
+
+			$isFilled = ((int)$slot1['time_id'] > 0 && (int)$slot2['time_id'] > 0 && (int)$slot3['time_id'] > 0);
+			if ($isFilled) $groupRankFilledCount++;
+
+			if (!isset($groupRankPicksByGroupUser[$gid])) $groupRankPicksByGroupUser[$gid] = [];
+			$groupRankPicksByGroupUser[$gid][$uid] = [
+				1 => $slot1,
+				2 => $slot2,
+				3 => $slot3,
+			];
+		}
+	}
+	$groupRankExpectedCount = count($usuarios) * count($groups);
+	$groupRankCoverage = $groupRankExpectedCount > 0 ? round(($groupRankFilledCount / $groupRankExpectedCount) * 100, 1) : 0;
 
 	$stGames = $pdo->prepare("
 		SELECT
@@ -488,6 +656,166 @@ require_once __DIR__ . "/partials/app_header.php";
 			<div class="audit-metric"><strong><?php echo strh((string)$coverage); ?>%</strong><span>palpites preenchidos</span></div>
 		</section>
 
+		<section class="audit-specials" aria-label="Apostas especiais travadas">
+			<section class="audit-special-block"<?php echo ($championAuditUnlocked && count($usuarios) > 0) ? ' data-filter-target=".audit-champion-card"' : ''; ?>>
+				<div class="audit-day-head audit-special-head">
+					<div>
+						<div class="audit-section-title">Campeao</div>
+						<div class="audit-day-sub">Auditoria consolidada de quem cada apostador escolheu para vencer a edicao.</div>
+					</div>
+					<div class="audit-special-stats">
+						<?php if ($championAuditUnlocked): ?>
+							<span><?php echo (int)$championFilledCount; ?>/<?php echo (int)count($usuarios); ?> preenchidos</span>
+							<span><?php echo strh((string)$championCoverage); ?>% cobertura</span>
+						<?php else: ?>
+							<span>Libera em <?php echo strh($championDeadlineLabel); ?></span>
+						<?php endif; ?>
+					</div>
+				</div>
+
+				<div class="audit-special-body">
+					<?php if (!$championAuditUnlocked): ?>
+						<div class="audit-special-pending">
+							A auditoria do campeao aparece aqui automaticamente quando a trava fechar em <?php echo strh($championDeadlineLabel); ?>.
+						</div>
+					<?php elseif (count($usuarios) === 0): ?>
+						<div class="audit-special-pending">Nenhum apostador ativo encontrado para auditar.</div>
+					<?php else: ?>
+						<div class="audit-champion-grid">
+							<?php foreach ($usuarios as $user): ?>
+								<?php
+								$uid = (int)($user['id'] ?? 0);
+								$isUserAdmin = (upper_utf8((string)($user['tipo_usuario'] ?? '')) === 'ADMIN');
+								$championPick = $championPicksByUser[$uid] ?? null;
+								$isFilled = is_array($championPick) && (int)($championPick['time_id'] ?? 0) > 0;
+								$championSearch = lower_utf8(trim(
+									(string)($user['nome'] ?? '') . ' ' .
+									($isFilled ? (string)($championPick['nome'] ?? '') . ' ' . (string)($championPick['sigla'] ?? '') : 'sem palpite campeao')
+								));
+								?>
+								<article class="audit-champion-card<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $isFilled ? '' : ' is-missing'; ?>"
+								         data-pick-status="<?php echo $isFilled ? 'filled' : 'missing'; ?>"
+								         data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>"
+								         data-search="<?php echo strh($championSearch); ?>">
+									<div class="audit-champion-top">
+										<div class="audit-person">
+											<strong><?php echo strh((string)$user['nome']); ?></strong>
+											<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
+										</div>
+										<span class="audit-summary-state <?php echo $isFilled ? 'is-filled' : 'is-missing'; ?>">
+											<?php echo $isFilled ? 'Preenchido' : 'Sem palpite'; ?>
+										</span>
+									</div>
+
+									<div class="audit-champion-pick">
+										<?php render_audit_team_choice($isFilled ? $championPick : null, 'Campeao', 'is-large'); ?>
+									</div>
+								</article>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+				</div>
+			</section>
+
+			<section class="audit-special-block"<?php echo ($groupRankAuditUnlocked && count($groups) > 0 && count($usuarios) > 0) ? ' data-filter-target=".audit-rank-group"' : ''; ?>>
+				<div class="audit-day-head audit-special-head">
+					<div>
+						<div class="audit-section-title">1o, 2o e 3o de cada grupo</div>
+						<div class="audit-day-sub">Auditoria das classificacoes travadas, organizada por grupo para comparacao rapida.</div>
+					</div>
+					<div class="audit-special-stats">
+						<?php if ($groupRankAuditUnlocked): ?>
+							<span><?php echo (int)$groupRankFilledCount; ?>/<?php echo (int)$groupRankExpectedCount; ?> apostas</span>
+							<span><?php echo strh((string)$groupRankCoverage); ?>% cobertura</span>
+						<?php else: ?>
+							<span>Libera em <?php echo strh($groupRankDeadlineLabel); ?></span>
+						<?php endif; ?>
+					</div>
+				</div>
+
+				<div class="audit-special-body">
+					<?php if (count($groups) === 0): ?>
+						<div class="audit-special-pending">Nenhum grupo cadastrado na edicao ativa.</div>
+					<?php elseif (count($usuarios) === 0): ?>
+						<div class="audit-special-pending">Nenhum apostador ativo encontrado para auditar.</div>
+					<?php elseif (!$groupRankAuditUnlocked): ?>
+						<div class="audit-special-pending">
+							A auditoria das classificacoes de grupo sera liberada aqui automaticamente em <?php echo strh($groupRankDeadlineLabel); ?>.
+						</div>
+					<?php else: ?>
+						<div class="audit-rank-groups">
+							<?php foreach ($groups as $group): ?>
+								<?php
+								$gid = (int)($group['id'] ?? 0);
+								$groupCode = trim((string)($group['codigo'] ?? ''));
+								$groupName = trim((string)($group['nome'] ?? ''));
+								$groupPicks = $groupRankPicksByGroupUser[$gid] ?? [];
+								?>
+								<article class="audit-rank-group">
+									<div class="audit-rank-group-head">
+										<div>
+											<div class="audit-rank-group-title"><?php echo strh($groupName !== '' ? $groupName : ('Grupo ' . $groupCode)); ?></div>
+											<div class="audit-rank-group-sub"><?php echo (int)count($groupPicks); ?>/<?php echo (int)count($usuarios); ?> apostadores com classificacao salva</div>
+										</div>
+										<?php if ($groupCode !== ''): ?><span class="audit-rank-group-badge">Grupo <?php echo strh($groupCode); ?></span><?php endif; ?>
+									</div>
+
+									<div class="audit-rank-group-list">
+										<?php foreach ($usuarios as $user): ?>
+											<?php
+											$uid = (int)($user['id'] ?? 0);
+											$isUserAdmin = (upper_utf8((string)($user['tipo_usuario'] ?? '')) === 'ADMIN');
+											$rankPick = $groupPicks[$uid] ?? null;
+											$slot1 = is_array($rankPick) ? ($rankPick[1] ?? null) : null;
+											$slot2 = is_array($rankPick) ? ($rankPick[2] ?? null) : null;
+											$slot3 = is_array($rankPick) ? ($rankPick[3] ?? null) : null;
+											$isFilled = is_array($slot1) && is_array($slot2) && is_array($slot3)
+												&& (int)($slot1['time_id'] ?? 0) > 0
+												&& (int)($slot2['time_id'] ?? 0) > 0
+												&& (int)($slot3['time_id'] ?? 0) > 0;
+											$rankSearch = lower_utf8(trim(implode(' ', [
+												(string)($user['nome'] ?? ''),
+												$groupName,
+												$groupCode,
+												(string)($slot1['nome'] ?? ''),
+												(string)($slot1['sigla'] ?? ''),
+												(string)($slot2['nome'] ?? ''),
+												(string)($slot2['sigla'] ?? ''),
+												(string)($slot3['nome'] ?? ''),
+												(string)($slot3['sigla'] ?? ''),
+												$isFilled ? 'classificacao preenchida' : 'sem classificacao',
+											])));
+											?>
+											<div class="audit-rank-user<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $isFilled ? '' : ' is-missing'; ?>"
+											     data-pick-status="<?php echo $isFilled ? 'filled' : 'missing'; ?>"
+											     data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>"
+											     data-search="<?php echo strh($rankSearch); ?>">
+												<div class="audit-rank-user-head">
+													<div class="audit-person">
+														<strong><?php echo strh((string)$user['nome']); ?></strong>
+														<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
+													</div>
+													<span class="audit-summary-state <?php echo $isFilled ? 'is-filled' : 'is-missing'; ?>">
+														<?php echo $isFilled ? 'Completo' : 'Pendente'; ?>
+													</span>
+												</div>
+
+												<div class="audit-rank-slots">
+													<div class="audit-rank-slot"><?php render_audit_team_choice($slot1, '1o'); ?></div>
+													<div class="audit-rank-slot"><?php render_audit_team_choice($slot2, '2o'); ?></div>
+													<div class="audit-rank-slot"><?php render_audit_team_choice($slot3, '3o'); ?></div>
+												</div>
+											</div>
+										<?php endforeach; ?>
+									</div>
+								</article>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+				</div>
+			</section>
+		</section>
+
 		<?php if (count($lockedGames) === 0): ?>
 			<section class="audit-empty">
 				<strong>Nenhum jogo travado ainda.</strong>
@@ -561,12 +889,45 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 
 	function applyFilters() {
-		var view = activeView();
-		if (!view) return;
-
 		var q = input ? (input.value || "").trim().toLowerCase() : "";
 		var status = pickStatus ? String(pickStatus.value || "all") : "all";
 		var hasActiveFilter = q !== "" || status !== "all";
+
+		document.querySelectorAll(".audit-champion-card").forEach(function (card) {
+			var cardText = card.getAttribute("data-search") || "";
+			var statusOk = status === "all"
+				|| (status === "admin" && card.getAttribute("data-is-admin") === "1")
+				|| (status === card.getAttribute("data-pick-status"));
+			var textOk = !q || cardText.indexOf(q) >= 0;
+			card.hidden = !(statusOk && textOk);
+		});
+
+		document.querySelectorAll(".audit-rank-group").forEach(function (group) {
+			var anyRow = false;
+			group.querySelectorAll(".audit-rank-user").forEach(function (row) {
+				var rowText = row.getAttribute("data-search") || "";
+				var statusOk = status === "all"
+					|| (status === "admin" && row.getAttribute("data-is-admin") === "1")
+					|| (status === row.getAttribute("data-pick-status"));
+				var textOk = !q || rowText.indexOf(q) >= 0;
+				var hit = statusOk && textOk;
+				row.hidden = !hit;
+				if (hit) anyRow = true;
+			});
+			group.hidden = !anyRow;
+		});
+
+		document.querySelectorAll("[data-filter-target]").forEach(function (block) {
+			var selector = block.getAttribute("data-filter-target");
+			if (!selector) return;
+			var anyVisible = Array.prototype.some.call(block.querySelectorAll(selector), function (item) {
+				return !item.hidden;
+			});
+			block.hidden = !anyVisible;
+		});
+
+		var view = activeView();
+		if (!view) return;
 
 		view.querySelectorAll(".audit-game").forEach(function (game) {
 			var gameText = game.getAttribute("data-search") || "";
@@ -637,6 +998,8 @@ document.addEventListener("DOMContentLoaded", function () {
 	document.querySelectorAll(".audit-game").forEach(function (game) {
 		setGameExpanded(game, false);
 	});
+
+	applyFilters();
 });
 </script>
 </body>

@@ -184,6 +184,249 @@
   overflow:hidden;
 }
 
+.audit-specials{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.audit-special-block{
+  border:2px solid rgba(255,214,0,.28);
+  border-radius:8px;
+  background:#064221;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.50),
+    0 14px 32px rgba(0,0,0,.30);
+  overflow:hidden;
+}
+
+.audit-special-head{
+  align-items:flex-start;
+}
+
+.audit-special-stats{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:8px;
+}
+
+.audit-special-stats span,
+.audit-rank-group-badge,
+.audit-summary-state{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:30px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,214,0,.24);
+  background:#075c2d;
+  color:#ffffff;
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+}
+
+.audit-summary-state.is-filled{
+  background:rgba(16,208,138,.18);
+  border-color:rgba(16,208,138,.42);
+  color:#9ff5d0;
+}
+
+.audit-summary-state.is-missing{
+  background:rgba(255,255,255,.06);
+  border-color:rgba(255,255,255,.14);
+  color:rgba(255,255,255,.86);
+}
+
+.audit-special-body{
+  padding:14px;
+}
+
+.audit-special-pending{
+  padding:14px;
+  border:1px dashed rgba(255,214,0,.28);
+  border-radius:10px;
+  color:rgba(255,255,255,.90);
+  background:rgba(4,47,24,.66);
+  font-size:13px;
+  font-weight:850;
+  line-height:1.45;
+}
+
+.audit-champion-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+
+.audit-champion-card,
+.audit-rank-user{
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;
+  background:#042f18;
+  box-shadow:0 10px 18px rgba(0,0,0,.16);
+}
+
+.audit-champion-card{
+  padding:12px;
+}
+
+.audit-champion-card.is-admin,
+.audit-rank-user.is-admin{
+  border:2px solid #ffd600;
+  background:linear-gradient(90deg, #075c2d 0%, #064221 56%, #042f18 100%);
+  box-shadow:
+    inset 5px 0 0 #ffd600,
+    0 0 0 2px rgba(0,0,0,.36),
+    0 10px 20px rgba(0,0,0,.24);
+}
+
+.audit-champion-card.is-missing,
+.audit-rank-user.is-missing{
+  opacity:.9;
+}
+
+.audit-champion-top,
+.audit-rank-user-head,
+.audit-rank-group-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.audit-champion-pick{
+  margin-top:12px;
+  padding:12px;
+  border:1px solid rgba(255,214,0,.16);
+  border-radius:10px;
+  background:linear-gradient(180deg, rgba(255,214,0,.10), rgba(255,214,0,.03));
+}
+
+.audit-team-choice{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+
+.audit-team-choice.is-empty{
+  opacity:.88;
+}
+
+.audit-team-choice-copy{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+}
+
+.audit-team-choice-label{
+  color:rgba(255,255,255,.68);
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.audit-team-choice-name{
+  color:#ffffff;
+  font-size:14px;
+  line-height:1.18;
+  font-weight:950;
+  overflow-wrap:anywhere;
+}
+
+.audit-team-choice-meta{
+  color:rgba(255,255,255,.80);
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.audit-team-choice-placeholder{
+  display:grid;
+  place-items:center;
+  width:26px;
+  height:26px;
+  border-radius:9px;
+  border:1px dashed rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.62);
+  font-size:16px;
+  font-weight:900;
+  flex:0 0 auto;
+}
+
+.audit-team-choice-placeholder.is-large{
+  width:58px;
+  height:58px;
+  border-radius:18px;
+  font-size:26px;
+}
+
+.audit-rank-groups{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+}
+
+.audit-rank-group{
+  border:1px solid rgba(255,214,0,.16);
+  border-radius:10px;
+  background:#042f18;
+  overflow:hidden;
+}
+
+.audit-rank-group-head{
+  padding:12px 14px;
+  border-bottom:1px solid rgba(255,214,0,.14);
+  background:rgba(255,255,255,.03);
+}
+
+.audit-rank-group-title{
+  color:#ffffff;
+  font-size:15px;
+  font-weight:950;
+  text-transform:uppercase;
+}
+
+.audit-rank-group-sub{
+  margin-top:4px;
+  color:rgba(255,255,255,.80);
+  font-size:12px;
+  font-weight:850;
+}
+
+.audit-rank-group-list{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
+  padding:12px;
+}
+
+.audit-rank-user{
+  padding:11px 12px;
+}
+
+.audit-rank-slots{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
+  margin-top:10px;
+}
+
+.audit-rank-slot{
+  padding:9px 10px;
+  border:1px solid rgba(255,214,0,.14);
+  border-radius:10px;
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+}
+
 .audit-view{
   display:none;
   flex-direction:column;
@@ -585,6 +828,10 @@
     align-items:end;
   }
 
+  .audit-champion-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+
   .audit-game-head{
     grid-template-columns:1fr 190px;
     align-items:center;
@@ -604,6 +851,10 @@
 }
 
 @media (min-width: 1040px){
+  .audit-rank-groups{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+
   .audit-picks{
     grid-template-columns:repeat(3, minmax(0, 1fr));
   }
