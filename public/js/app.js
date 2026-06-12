@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const ranksFlushed = await flushPendingRankSaves({ silentToast: !manual }).catch(() => false);
     if (!matchesFlushed || !ranksFlushed) {
       if (manual) {
-        showToast("Ainda existem alteraÃ§Ãµes locais pendentes de salvamento.", true);
+        showToast("Apostas guardadas neste aparelho. Vou reenviar automaticamente ate salvar no banco.");
       }
       return;
     }
@@ -157,12 +157,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.ok && data && data.ok === true) {
         hasPendingFinalize = false;
         updateFinalizeBtn();
-        if (manual) showToast(data.sent ? "Modificações enviadas para o admin." : "Sem modificações pendentes.");
-      } else if (manual) {
-        showToast("Falha ao finalizar alterações.", true);
+        if (manual) showToast(data.sent ? "Apostas salvas e aviso enviado ao admin." : "Apostas salvas.");
+      } else {
+        scheduleAutoFinalize();
+        if (manual) showToast("Apostas salvas. Aviso ao admin pendente; vou tentar de novo automaticamente.");
       }
     } catch (_) {
-      if (manual) showToast("Falha ao finalizar alterações.", true);
+      scheduleAutoFinalize();
+      if (manual) showToast("Apostas salvas. Aviso ao admin pendente; vou tentar de novo automaticamente.");
     } finally {
       isFinalizing = false;
     }
