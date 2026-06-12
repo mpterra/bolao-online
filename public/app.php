@@ -575,13 +575,24 @@ if (isset($_GET["action"]) && $_GET["action"] === "notify_changes") {
 
 	$force = (bool)($payload["force"] ?? true);
 	$result = bet_notify_flush($pdo, $usuarioId, $force);
+	$notifyOk = (bool)($result["ok"] ?? false);
+	$reason = (string)($result["reason"] ?? "");
+
+	if (!$notifyOk && $reason === "disabled") {
+		json_response([
+			"ok" => true,
+			"sent" => false,
+			"pending" => 0,
+			"reason" => $reason,
+		]);
+	}
 
 	json_response([
-		"ok" => (bool)($result["ok"] ?? false),
+		"ok" => $notifyOk,
 		"sent" => (bool)($result["sent"] ?? false),
 		"pending" => (int)($result["pending"] ?? 0),
-		"reason" => (string)($result["reason"] ?? ""),
-	], ((bool)($result["ok"] ?? false)) ? 200 : 500);
+		"reason" => $reason,
+	], $notifyOk ? 200 : 500);
 }
 
 /* ---------------------------
