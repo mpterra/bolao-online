@@ -365,6 +365,24 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  function findCurrentDaySelection() {
+    const currentDayKey = APP_CFG && APP_CFG.lock && APP_CFG.lock.now_logical_day
+      ? String(APP_CFG.lock.now_logical_day)
+      : "";
+
+    if (!currentDayKey) return null;
+
+    const current = document.querySelector(
+      '.menu-panel[data-view-mode-panel="day"] .menu-link[data-block-type="day"][data-block-key="' + currentDayKey + '"]'
+    );
+    if (!current) return null;
+
+    return {
+      type: "day",
+      key: currentDayKey
+    };
+  }
+
   function hasBlock(type, key) {
     return !!document.querySelector(
       '.group-block[data-block-type="' + String(type || "") + '"][data-block-key="' + String(key || "") + '"]'
@@ -412,7 +430,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (_) {}
   }
 
-  function setActiveMode(mode, { silentToast = false, scroll = false } = {}) {
+  function setActiveMode(mode, { silentToast = false, scroll = false, preferCurrentDay = false } = {}) {
     const nextMode = mode === "day" ? "day" : "group";
 
     document.body.setAttribute("data-view-mode", nextMode);
@@ -428,7 +446,16 @@ document.addEventListener("DOMContentLoaded", () => {
       panel.classList.toggle("is-active", panelMode === nextMode);
     });
 
-    let target = selectionByMode[nextMode];
+    let target = null;
+    if (nextMode === "day" && preferCurrentDay) {
+      target = findCurrentDaySelection();
+      if (target) rememberSelection(target.type, target.key);
+    }
+
+    if (!target) {
+      target = selectionByMode[nextMode];
+    }
+
     if (!target || !hasBlock(target.type, target.key)) {
       target = findFirstSelection(nextMode);
       if (target) rememberSelection(target.type, target.key);
@@ -1693,7 +1720,7 @@ document.addEventListener("DOMContentLoaded", () => {
   modeButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const mode = String(btn.getAttribute("data-view-mode-target") || "group");
-      setActiveMode(mode, { scroll: true });
+      setActiveMode(mode, { scroll: true, preferCurrentDay: mode === "day" });
     });
   });
 

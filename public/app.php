@@ -1579,11 +1579,15 @@ try {
 	}
 
 	$firstDay = count($days) > 0 ? (string)$days[0] : '';
+	$defaultDay = $firstDay;
+	if ($nowLogicalDay !== '' && isset($jogosPorDia[$nowLogicalDay])) {
+		$defaultDay = $nowLogicalDay;
+	}
 
 	if ($viewMode === 'day' && $firstDay !== '') {
 		$activeMode = 'day';
 		$activeType = 'day';
-		$activeKey = ($activeDay !== '' && isset($jogosPorDia[$activeDay])) ? $activeDay : $firstDay;
+		$activeKey = ($activeDay !== '' && isset($jogosPorDia[$activeDay])) ? $activeDay : $defaultDay;
 	} else {
 		$activeMode = 'group';
 		$activeType = 'group';
@@ -1594,7 +1598,7 @@ try {
 		} else if ($firstDay !== '') {
 			$activeMode = 'day';
 			$activeType = 'day';
-			$activeKey = $firstDay;
+			$activeKey = $defaultDay;
 		}
 	}
 
