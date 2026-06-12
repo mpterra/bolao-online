@@ -657,19 +657,22 @@ require_once __DIR__ . "/partials/app_header.php";
 		</section>
 
 		<section class="audit-specials" aria-label="Apostas especiais travadas">
-			<section class="audit-special-block"<?php echo ($championAuditUnlocked && count($usuarios) > 0) ? ' data-filter-target=".audit-champion-card"' : ''; ?>>
+			<section class="audit-special-block is-collapsed"<?php echo ($championAuditUnlocked && count($usuarios) > 0) ? ' data-filter-target=".audit-champion-card"' : ''; ?>>
 				<div class="audit-day-head audit-special-head">
 					<div>
 						<div class="audit-section-title">Campeao</div>
 						<div class="audit-day-sub">Auditoria consolidada de quem cada apostador escolheu para vencer a edicao.</div>
 					</div>
-					<div class="audit-special-stats">
-						<?php if ($championAuditUnlocked): ?>
-							<span><?php echo (int)$championFilledCount; ?>/<?php echo (int)count($usuarios); ?> preenchidos</span>
-							<span><?php echo strh((string)$championCoverage); ?>% cobertura</span>
-						<?php else: ?>
-							<span>Libera em <?php echo strh($championDeadlineLabel); ?></span>
-						<?php endif; ?>
+					<div class="audit-special-actions">
+						<div class="audit-special-stats">
+							<?php if ($championAuditUnlocked): ?>
+								<span><?php echo (int)$championFilledCount; ?>/<?php echo (int)count($usuarios); ?> preenchidos</span>
+								<span><?php echo strh((string)$championCoverage); ?>% cobertura</span>
+							<?php else: ?>
+								<span>Libera em <?php echo strh($championDeadlineLabel); ?></span>
+							<?php endif; ?>
+						</div>
+						<button class="audit-toggle-special" type="button" aria-expanded="false">Mostrar</button>
 					</div>
 				</div>
 
@@ -717,19 +720,22 @@ require_once __DIR__ . "/partials/app_header.php";
 				</div>
 			</section>
 
-			<section class="audit-special-block"<?php echo ($groupRankAuditUnlocked && count($groups) > 0 && count($usuarios) > 0) ? ' data-filter-target=".audit-rank-group"' : ''; ?>>
+			<section class="audit-special-block is-collapsed"<?php echo ($groupRankAuditUnlocked && count($groups) > 0 && count($usuarios) > 0) ? ' data-filter-target=".audit-rank-user-card"' : ''; ?>>
 				<div class="audit-day-head audit-special-head">
 					<div>
 						<div class="audit-section-title">1o, 2o e 3o de cada grupo</div>
 						<div class="audit-day-sub">Auditoria das classificacoes travadas, organizada por grupo para comparacao rapida.</div>
 					</div>
-					<div class="audit-special-stats">
-						<?php if ($groupRankAuditUnlocked): ?>
-							<span><?php echo (int)$groupRankFilledCount; ?>/<?php echo (int)$groupRankExpectedCount; ?> apostas</span>
-							<span><?php echo strh((string)$groupRankCoverage); ?>% cobertura</span>
-						<?php else: ?>
-							<span>Libera em <?php echo strh($groupRankDeadlineLabel); ?></span>
-						<?php endif; ?>
+					<div class="audit-special-actions">
+						<div class="audit-special-stats">
+							<?php if ($groupRankAuditUnlocked): ?>
+								<span><?php echo (int)$groupRankFilledCount; ?>/<?php echo (int)$groupRankExpectedCount; ?> grupos completos</span>
+								<span><?php echo strh((string)$groupRankCoverage); ?>% cobertura</span>
+							<?php else: ?>
+								<span>Libera em <?php echo strh($groupRankDeadlineLabel); ?></span>
+							<?php endif; ?>
+						</div>
+						<button class="audit-toggle-special" type="button" aria-expanded="false">Mostrar</button>
 					</div>
 				</div>
 
@@ -743,70 +749,93 @@ require_once __DIR__ . "/partials/app_header.php";
 							A auditoria das classificacoes de grupo sera liberada aqui automaticamente em <?php echo strh($groupRankDeadlineLabel); ?>.
 						</div>
 					<?php else: ?>
-						<div class="audit-rank-groups">
-							<?php foreach ($groups as $group): ?>
+						<div class="audit-rank-users">
+							<?php foreach ($usuarios as $user): ?>
 								<?php
-								$gid = (int)($group['id'] ?? 0);
-								$groupCode = trim((string)($group['codigo'] ?? ''));
-								$groupName = trim((string)($group['nome'] ?? ''));
-								$groupPicks = $groupRankPicksByGroupUser[$gid] ?? [];
+								$uid = (int)($user['id'] ?? 0);
+								$isUserAdmin = (upper_utf8((string)($user['tipo_usuario'] ?? '')) === 'ADMIN');
+								$completedGroups = 0;
+								$searchParts = [(string)($user['nome'] ?? '')];
+								foreach ($groups as $groupIndexItem) {
+									$gidSearch = (int)($groupIndexItem['id'] ?? 0);
+									$groupCodeSearch = trim((string)($groupIndexItem['codigo'] ?? ''));
+									$groupNameSearch = trim((string)($groupIndexItem['nome'] ?? ''));
+									$rankPickSearch = $groupRankPicksByGroupUser[$gidSearch][$uid] ?? null;
+									$slot1Search = is_array($rankPickSearch) ? ($rankPickSearch[1] ?? null) : null;
+									$slot2Search = is_array($rankPickSearch) ? ($rankPickSearch[2] ?? null) : null;
+									$slot3Search = is_array($rankPickSearch) ? ($rankPickSearch[3] ?? null) : null;
+									$isGroupFilledSearch = is_array($slot1Search) && is_array($slot2Search) && is_array($slot3Search)
+										&& (int)($slot1Search['time_id'] ?? 0) > 0
+										&& (int)($slot2Search['time_id'] ?? 0) > 0
+										&& (int)($slot3Search['time_id'] ?? 0) > 0;
+									if ($isGroupFilledSearch) $completedGroups++;
+									$searchParts[] = $groupNameSearch;
+									$searchParts[] = $groupCodeSearch;
+									$searchParts[] = (string)($slot1Search['nome'] ?? '');
+									$searchParts[] = (string)($slot1Search['sigla'] ?? '');
+									$searchParts[] = (string)($slot2Search['nome'] ?? '');
+									$searchParts[] = (string)($slot2Search['sigla'] ?? '');
+									$searchParts[] = (string)($slot3Search['nome'] ?? '');
+									$searchParts[] = (string)($slot3Search['sigla'] ?? '');
+								}
+								$totalGroups = count($groups);
+								$isFilled = ($totalGroups > 0 && $completedGroups === $totalGroups);
+								$statusLabel = $isFilled ? 'Completo' : ($completedGroups > 0 ? 'Incompleto' : 'Sem palpite');
+								$rankSearch = lower_utf8(trim(implode(' ', $searchParts)));
 								?>
-								<article class="audit-rank-group">
-									<div class="audit-rank-group-head">
-										<div>
-											<div class="audit-rank-group-title"><?php echo strh($groupName !== '' ? $groupName : ('Grupo ' . $groupCode)); ?></div>
-											<div class="audit-rank-group-sub"><?php echo (int)count($groupPicks); ?>/<?php echo (int)count($usuarios); ?> apostadores com classificacao salva</div>
+								<article class="audit-rank-user-card<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $isFilled ? '' : ' is-missing'; ?> is-collapsed"
+								         data-pick-status="<?php echo $isFilled ? 'filled' : 'missing'; ?>"
+								         data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>"
+								         data-search="<?php echo strh($rankSearch); ?>">
+									<div class="audit-rank-user-card-head">
+										<div class="audit-person">
+											<strong><?php echo strh((string)$user['nome']); ?></strong>
+											<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
 										</div>
-										<?php if ($groupCode !== ''): ?><span class="audit-rank-group-badge">Grupo <?php echo strh($groupCode); ?></span><?php endif; ?>
+										<div class="audit-rank-user-card-actions">
+											<span class="audit-summary-state <?php echo $isFilled ? 'is-filled' : 'is-missing'; ?>">
+												<?php echo strh($statusLabel); ?>
+											</span>
+											<span class="audit-rank-user-count"><?php echo (int)$completedGroups; ?>/<?php echo (int)$totalGroups; ?> grupos</span>
+											<button class="audit-toggle-rank-user" type="button" aria-expanded="false">Mostrar</button>
+										</div>
 									</div>
 
-									<div class="audit-rank-group-list">
-										<?php foreach ($usuarios as $user): ?>
-											<?php
-											$uid = (int)($user['id'] ?? 0);
-											$isUserAdmin = (upper_utf8((string)($user['tipo_usuario'] ?? '')) === 'ADMIN');
-											$rankPick = $groupPicks[$uid] ?? null;
-											$slot1 = is_array($rankPick) ? ($rankPick[1] ?? null) : null;
-											$slot2 = is_array($rankPick) ? ($rankPick[2] ?? null) : null;
-											$slot3 = is_array($rankPick) ? ($rankPick[3] ?? null) : null;
-											$isFilled = is_array($slot1) && is_array($slot2) && is_array($slot3)
-												&& (int)($slot1['time_id'] ?? 0) > 0
-												&& (int)($slot2['time_id'] ?? 0) > 0
-												&& (int)($slot3['time_id'] ?? 0) > 0;
-											$rankSearch = lower_utf8(trim(implode(' ', [
-												(string)($user['nome'] ?? ''),
-												$groupName,
-												$groupCode,
-												(string)($slot1['nome'] ?? ''),
-												(string)($slot1['sigla'] ?? ''),
-												(string)($slot2['nome'] ?? ''),
-												(string)($slot2['sigla'] ?? ''),
-												(string)($slot3['nome'] ?? ''),
-												(string)($slot3['sigla'] ?? ''),
-												$isFilled ? 'classificacao preenchida' : 'sem classificacao',
-											])));
-											?>
-											<div class="audit-rank-user<?php echo $isUserAdmin ? ' is-admin' : ''; ?><?php echo $isFilled ? '' : ' is-missing'; ?>"
-											     data-pick-status="<?php echo $isFilled ? 'filled' : 'missing'; ?>"
-											     data-is-admin="<?php echo $isUserAdmin ? '1' : '0'; ?>"
-											     data-search="<?php echo strh($rankSearch); ?>">
-												<div class="audit-rank-user-head">
-													<div class="audit-person">
-														<strong><?php echo strh((string)$user['nome']); ?></strong>
-														<?php if ($isUserAdmin): ?><span>ADMIN</span><?php endif; ?>
+									<div class="audit-rank-user-card-body">
+										<div class="audit-rank-user-groups">
+											<?php foreach ($groups as $group): ?>
+												<?php
+												$gid = (int)($group['id'] ?? 0);
+												$groupCode = trim((string)($group['codigo'] ?? ''));
+												$groupName = trim((string)($group['nome'] ?? ''));
+												$rankPick = $groupRankPicksByGroupUser[$gid][$uid] ?? null;
+												$slot1 = is_array($rankPick) ? ($rankPick[1] ?? null) : null;
+												$slot2 = is_array($rankPick) ? ($rankPick[2] ?? null) : null;
+												$slot3 = is_array($rankPick) ? ($rankPick[3] ?? null) : null;
+												$isGroupFilled = is_array($slot1) && is_array($slot2) && is_array($slot3)
+													&& (int)($slot1['time_id'] ?? 0) > 0
+													&& (int)($slot2['time_id'] ?? 0) > 0
+													&& (int)($slot3['time_id'] ?? 0) > 0;
+												?>
+												<section class="audit-rank-user-group<?php echo $isGroupFilled ? '' : ' is-missing'; ?>">
+													<div class="audit-rank-user-group-head">
+														<div>
+															<div class="audit-rank-user-group-title"><?php echo strh($groupName !== '' ? $groupName : ('Grupo ' . $groupCode)); ?></div>
+															<?php if ($groupCode !== ''): ?><div class="audit-rank-user-group-sub">Grupo <?php echo strh($groupCode); ?></div><?php endif; ?>
+														</div>
+														<span class="audit-summary-state <?php echo $isGroupFilled ? 'is-filled' : 'is-missing'; ?>">
+															<?php echo $isGroupFilled ? 'Completo' : 'Pendente'; ?>
+														</span>
 													</div>
-													<span class="audit-summary-state <?php echo $isFilled ? 'is-filled' : 'is-missing'; ?>">
-														<?php echo $isFilled ? 'Completo' : 'Pendente'; ?>
-													</span>
-												</div>
 
-												<div class="audit-rank-slots">
-													<div class="audit-rank-slot"><?php render_audit_team_choice($slot1, '1o'); ?></div>
-													<div class="audit-rank-slot"><?php render_audit_team_choice($slot2, '2o'); ?></div>
-													<div class="audit-rank-slot"><?php render_audit_team_choice($slot3, '3o'); ?></div>
-												</div>
-											</div>
-										<?php endforeach; ?>
+													<div class="audit-rank-slots">
+														<div class="audit-rank-slot"><?php render_audit_team_choice($slot1, '1o'); ?></div>
+														<div class="audit-rank-slot"><?php render_audit_team_choice($slot2, '2o'); ?></div>
+														<div class="audit-rank-slot"><?php render_audit_team_choice($slot3, '3o'); ?></div>
+													</div>
+												</section>
+											<?php endforeach; ?>
+										</div>
 									</div>
 								</article>
 							<?php endforeach; ?>
@@ -888,6 +917,24 @@ document.addEventListener("DOMContentLoaded", function () {
 		}
 	}
 
+	function setSpecialExpanded(block, expanded) {
+		var btn = block.querySelector(".audit-toggle-special");
+		block.classList.toggle("is-collapsed", !expanded);
+		if (btn) {
+			btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+			btn.textContent = expanded ? "Ocultar" : "Mostrar";
+		}
+	}
+
+	function setRankUserExpanded(card, expanded) {
+		var btn = card.querySelector(".audit-toggle-rank-user");
+		card.classList.toggle("is-collapsed", !expanded);
+		if (btn) {
+			btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+			btn.textContent = expanded ? "Ocultar" : "Mostrar";
+		}
+	}
+
 	function applyFilters() {
 		var q = input ? (input.value || "").trim().toLowerCase() : "";
 		var status = pickStatus ? String(pickStatus.value || "all") : "all";
@@ -902,19 +949,15 @@ document.addEventListener("DOMContentLoaded", function () {
 			card.hidden = !(statusOk && textOk);
 		});
 
-		document.querySelectorAll(".audit-rank-group").forEach(function (group) {
-			var anyRow = false;
-			group.querySelectorAll(".audit-rank-user").forEach(function (row) {
-				var rowText = row.getAttribute("data-search") || "";
-				var statusOk = status === "all"
-					|| (status === "admin" && row.getAttribute("data-is-admin") === "1")
-					|| (status === row.getAttribute("data-pick-status"));
-				var textOk = !q || rowText.indexOf(q) >= 0;
-				var hit = statusOk && textOk;
-				row.hidden = !hit;
-				if (hit) anyRow = true;
-			});
-			group.hidden = !anyRow;
+		document.querySelectorAll(".audit-rank-user-card").forEach(function (card) {
+			var cardText = card.getAttribute("data-search") || "";
+			var statusOk = status === "all"
+				|| (status === "admin" && card.getAttribute("data-is-admin") === "1")
+				|| (status === card.getAttribute("data-pick-status"));
+			var textOk = !q || cardText.indexOf(q) >= 0;
+			var hit = statusOk && textOk;
+			card.hidden = !hit;
+			if (hasActiveFilter && hit) setRankUserExpanded(card, true);
 		});
 
 		document.querySelectorAll("[data-filter-target]").forEach(function (block) {
@@ -924,6 +967,7 @@ document.addEventListener("DOMContentLoaded", function () {
 				return !item.hidden;
 			});
 			block.hidden = !anyVisible;
+			if (hasActiveFilter && anyVisible) setSpecialExpanded(block, true);
 		});
 
 		var view = activeView();
@@ -963,6 +1007,22 @@ document.addEventListener("DOMContentLoaded", function () {
 		});
 	});
 
+	document.querySelectorAll(".audit-toggle-special").forEach(function (btn) {
+		btn.addEventListener("click", function () {
+			var block = btn.closest(".audit-special-block");
+			if (!block) return;
+			setSpecialExpanded(block, block.classList.contains("is-collapsed"));
+		});
+	});
+
+	document.querySelectorAll(".audit-toggle-rank-user").forEach(function (btn) {
+		btn.addEventListener("click", function () {
+			var card = btn.closest(".audit-rank-user-card");
+			if (!card) return;
+			setRankUserExpanded(card, card.classList.contains("is-collapsed"));
+		});
+	});
+
 	if (groupMode) {
 		groupMode.addEventListener("change", function () {
 			document.querySelectorAll(".audit-view").forEach(function (view) {
@@ -977,6 +1037,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	if (expandAll) {
 		expandAll.addEventListener("click", function () {
+			document.querySelectorAll(".audit-special-block:not([hidden])").forEach(function (block) {
+				setSpecialExpanded(block, true);
+			});
+			document.querySelectorAll(".audit-rank-user-card:not([hidden])").forEach(function (card) {
+				setRankUserExpanded(card, true);
+			});
 			var view = activeView();
 			if (!view) return;
 			view.querySelectorAll(".audit-game:not([hidden])").forEach(function (game) {
@@ -987,6 +1053,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	if (collapseAll) {
 		collapseAll.addEventListener("click", function () {
+			document.querySelectorAll(".audit-special-block").forEach(function (block) {
+				setSpecialExpanded(block, false);
+			});
+			document.querySelectorAll(".audit-rank-user-card").forEach(function (card) {
+				setRankUserExpanded(card, false);
+			});
 			var view = activeView();
 			if (!view) return;
 			view.querySelectorAll(".audit-game").forEach(function (game) {
@@ -994,6 +1066,14 @@ document.addEventListener("DOMContentLoaded", function () {
 			});
 		});
 	}
+
+	document.querySelectorAll(".audit-special-block").forEach(function (block) {
+		setSpecialExpanded(block, false);
+	});
+
+	document.querySelectorAll(".audit-rank-user-card").forEach(function (card) {
+		setRankUserExpanded(card, false);
+	});
 
 	document.querySelectorAll(".audit-game").forEach(function (game) {
 		setGameExpanded(game, false);
