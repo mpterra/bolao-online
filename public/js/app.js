@@ -1960,6 +1960,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (top4Card) {
     const selects = Array.from(top4Card.querySelectorAll(".rank-select[data-top4-pos]"));
+    const top4Locked = !!(APP_CFG.top4 && APP_CFG.top4.locked);
+    const top4LockedMessage = (APP_CFG.top4 && APP_CFG.top4.locked_message)
+      ? String(APP_CFG.top4.locked_message)
+      : "Palpites de 1º, 2º, 3º e 4º colocados estão bloqueados na semifinal.";
 
     function setTop4State(state, msg) {
       if (!top4State) return;
@@ -2022,6 +2026,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function saveNow({ silentToast = false } = {}) {
+      if (top4Locked) {
+        setTop4State("err", top4LockedMessage);
+        if (!silentToast) showToast(top4LockedMessage, true);
+        return;
+      }
+
       const picks = readTop4Picks();
       const valid = paintTop4Validation(picks);
 
@@ -2056,6 +2066,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     selects.forEach((sel) => {
       sel.addEventListener("change", () => {
+        if (top4Locked) {
+          setTop4State("err", top4LockedMessage);
+          showToast(top4LockedMessage, true);
+          return;
+        }
+
         const picks = readTop4Picks();
         const valid = paintTop4Validation(picks);
 
@@ -2075,6 +2091,10 @@ document.addEventListener("DOMContentLoaded", () => {
         top4DebounceTimers.set(top4Card, setTimeout(() => saveNow({ silentToast: true }), 350));
       });
     });
+
+    if (top4Locked) {
+      setTop4State("err", top4LockedMessage);
+    }
 
     const initialTop4Picks = readTop4Picks();
     if (allTop4Filled(initialTop4Picks)) {

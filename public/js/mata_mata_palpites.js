@@ -609,6 +609,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function validateTop4({ silent = false } = {}) {
+    if (CFG.knockout && CFG.knockout.top4_locked === true) {
+      const lockedMsg = CFG.knockout.top4_locked_message || "Palpites de 1º, 2º, 3º e 4º colocados estão bloqueados na semifinal.";
+      setTop4State(lockedMsg, false);
+      if (!silent) toast(lockedMsg, false);
+      return { ok: false };
+    }
+
     if (!CFG.knockout || CFG.knockout.top4_enabled !== true) {
       setTop4State("Top 4 ainda bloqueado (semifinal não cadastrada).", false);
       if (!silent) toast("Top 4 ainda bloqueado (semifinal não cadastrada).", false);
@@ -680,6 +687,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const initialTop4Values = ["1", "2", "3", "4"].map((pos) => initialTop4Picks[pos] || 0);
   if (initialTop4Values.every((value) => value > 0) && initialTop4Values.length === new Set(initialTop4Values).size) {
     savedTop4Signature = stableSignature(initialTop4Picks);
+  }
+
+  if (CFG.knockout && CFG.knockout.top4_locked === true) {
+    setTop4State(CFG.knockout.top4_locked_message || "Palpites de 1º, 2º, 3º e 4º colocados estão bloqueados na semifinal.", false);
   }
 
   top4Selects.forEach((sel) => {

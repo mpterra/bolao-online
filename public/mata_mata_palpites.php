@@ -407,6 +407,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "save_top4") {
 		$stGate->execute([$edicaoId]);
 		$hasSemi = ((int)$stGate->fetchColumn() > 0);
 		if (!$hasSemi) json_response(["ok" => false, "message" => "Top 4 só libera após cadastrar os jogos da semifinal."], 423);
+		json_response(["ok" => false, "message" => "Palpites de 1º, 2º, 3º e 4º colocados estão bloqueados na semifinal."], 423);
 
 		$stAllowed = $pdo->prepare("
 			SELECT DISTINCT x.tid
@@ -549,6 +550,8 @@ try {
 	}
 
 	$top4Enabled = !empty($temJogosFase["SEMI"]) && count($semiTeamIds) > 0;
+	$top4Locked = $top4Enabled;
+	$top4LockMessage = "Palpites de 1º, 2º, 3º e 4º colocados estão bloqueados na semifinal.";
 
 	$timesSemi = [];
 	if ($top4Enabled) {
@@ -654,7 +657,7 @@ require_once __DIR__ . "/partials/app_header.php";
 					<?php endif; ?>
 					<?php if ($top4Enabled): ?>
 						<br><br>
-						<small><strong>Top 4 liberado</strong> (semifinal cadastrada) e com salvamento automático.</small>
+						<small><strong>Top 4 bloqueado</strong> na semifinal.</small>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -823,7 +826,7 @@ require_once __DIR__ . "/partials/app_header.php";
 								<div class="group-rank-card" data-top4-card="1">
 									<div class="group-rank-head">
 										<div class="group-rank-title">Top 4 do torneio</div>
-										<div class="group-rank-sub">Libera após existir jogo(s) na semifinal. Independe dos placares.</div>
+										<div class="group-rank-sub">Os palpites de 1º a 4º ficam bloqueados na semifinal.</div>
 									</div>
 
 									<?php if (!$top4Enabled): ?>
@@ -834,7 +837,7 @@ require_once __DIR__ . "/partials/app_header.php";
 										<div class="group-rank-grid">
 											<div class="rank-field">
 												<label>1º</label>
-												<select class="rank-select" data-top4-pos="1">
+												<select class="rank-select" data-top4-pos="1" <?php echo $top4Locked ? 'disabled aria-disabled="true"' : ''; ?>>
 													<option value="0"><?php echo strh("—"); ?></option>
 													<?php foreach ($timesSemi as $t): ?>
 														<option value="<?php echo (int)$t["id"]; ?>" <?php echo ((int)$t["id"] === (int)$top4["1"]) ? "selected" : ""; ?>>
@@ -846,7 +849,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
 											<div class="rank-field">
 												<label>2º</label>
-												<select class="rank-select" data-top4-pos="2">
+												<select class="rank-select" data-top4-pos="2" <?php echo $top4Locked ? 'disabled aria-disabled="true"' : ''; ?>>
 													<option value="0"><?php echo strh("—"); ?></option>
 													<?php foreach ($timesSemi as $t): ?>
 														<option value="<?php echo (int)$t["id"]; ?>" <?php echo ((int)$t["id"] === (int)$top4["2"]) ? "selected" : ""; ?>>
@@ -858,7 +861,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
 											<div class="rank-field">
 												<label>3º</label>
-												<select class="rank-select" data-top4-pos="3">
+												<select class="rank-select" data-top4-pos="3" <?php echo $top4Locked ? 'disabled aria-disabled="true"' : ''; ?>>
 													<option value="0"><?php echo strh("—"); ?></option>
 													<?php foreach ($timesSemi as $t): ?>
 														<option value="<?php echo (int)$t["id"]; ?>" <?php echo ((int)$t["id"] === (int)$top4["3"]) ? "selected" : ""; ?>>
@@ -870,7 +873,7 @@ require_once __DIR__ . "/partials/app_header.php";
 
 											<div class="rank-field">
 												<label>4º</label>
-												<select class="rank-select" data-top4-pos="4">
+												<select class="rank-select" data-top4-pos="4" <?php echo $top4Locked ? 'disabled aria-disabled="true"' : ''; ?>>
 													<option value="0"><?php echo strh("—"); ?></option>
 													<?php foreach ($timesSemi as $t): ?>
 														<option value="<?php echo (int)$t["id"]; ?>" <?php echo ((int)$t["id"] === (int)$top4["4"]) ? "selected" : ""; ?>>
@@ -882,7 +885,7 @@ require_once __DIR__ . "/partials/app_header.php";
 										</div>
 
 										<div class="group-rank-actions">
-											<div class="rank-state" id="top4State" aria-live="polite"></div>
+											<div class="rank-state" id="top4State" aria-live="polite"><?php echo $top4Locked ? strh($top4LockMessage) : ''; ?></div>
 										</div>
 									<?php endif; ?>
 								</div>
@@ -914,6 +917,8 @@ echo json_encode([
 	],
 	"knockout" => [
 		"top4_enabled" => (bool)$top4Enabled,
+		"top4_locked" => (bool)$top4Locked,
+		"top4_locked_message" => $top4LockMessage,
 	],
 	"endpoints" => [
 		"save_games"  => "/mata_mata_palpites.php?action=save",
