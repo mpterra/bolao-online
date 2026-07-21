@@ -35,7 +35,6 @@ app_send_security_headers();
                 <a class="closed-instagram" href="https://instagram.com/bolaodothiago" target="_blank" rel="noopener noreferrer">
                     instagram.com/bolaodothiago
                 </a>
-                <a class="closed-back" href="/regulamento.php">Ver regulamento</a>
             </div>
         </main>
     </div>
