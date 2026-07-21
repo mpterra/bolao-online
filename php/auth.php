@@ -8,8 +8,10 @@ declare(strict_types=1);
 */
 
 require_once __DIR__ . "/security.php";
+require_once __DIR__ . "/registration_lock.php";
 app_start_session();
 app_send_security_headers();
+redirect_if_login_blocked();
 
 require_once __DIR__ . "/conexao.php";
 

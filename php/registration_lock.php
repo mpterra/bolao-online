@@ -4,6 +4,8 @@ declare(strict_types=1);
 const REGISTRATION_LOCK_TIMEZONE = 'America/Sao_Paulo';
 const REGISTRATION_LOCK_DEADLINE = '2026-06-11 12:00:00';
 const REGISTRATION_CLOSED_PATH = '/cadastro_encerrado.php';
+const LOGIN_IS_BLOCKED = true;
+const LOGIN_BLOCKED_PATH = '/cadastro_encerrado.php';
 
 function registration_lock_deadline(): DateTimeImmutable
 {
@@ -28,5 +30,15 @@ function redirect_if_registration_closed(): void
     }
 
     header('Location: ' . REGISTRATION_CLOSED_PATH, true, 302);
+    exit;
+}
+
+function redirect_if_login_blocked(): void
+{
+    if (!LOGIN_IS_BLOCKED) {
+        return;
+    }
+
+    header('Location: ' . LOGIN_BLOCKED_PATH, true, 302);
     exit;
 }

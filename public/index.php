@@ -2,8 +2,10 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . "/php/security.php";
+require_once dirname(__DIR__) . "/php/registration_lock.php";
 app_start_session();
 app_send_security_headers();
+redirect_if_login_blocked();
 
 /**
  * Flash message vindo do auth.php:
